@@ -3,6 +3,7 @@ package org.fuzzer.utils;
 import org.antlr.v4.runtime.misc.OrderedHashSet;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -10,22 +11,26 @@ public class Tree<T> {
     private final T value;
 
     private final Set<Tree<T>> children;
-    private Tree<T> parent;
-
-
+    private Optional<Tree<T>> parent;
 
     public Tree(T value, Tree<T> parent) {
         this.value = value;
-        this.parent = parent;
+        this.parent = Optional.of(parent);
         this.children = new OrderedHashSet<>();
     }
 
     public Tree(T value) {
-        this(value, null);
+        this.value = value;
+        this.parent = Optional.empty();
+        this.children = new OrderedHashSet<>();
     }
 
     public T getValue() {
         return value;
+    }
+
+    public Optional<Tree<T>> getParent() {
+        return parent;
     }
 
     public Set<Tree<T>> getChildren() {
@@ -37,11 +42,13 @@ public class Tree<T> {
     }
 
     public void addChild(Tree<T> child) {
-        child.parent = this;
+        if (child.getParent().isPresent())
+            throw new IllegalArgumentException("Child with value " + child.getValue() + " already has a parent.");
+        child.parent = Optional.of(this);
         this.children.add(child);
     }
     public void addChild(T value) {
-        addChild(new Tree<>(value, this));
+        addChild(new Tree<>(value));
     }
 
     public void addChildren(List<T> values) {
@@ -50,20 +57,19 @@ public class Tree<T> {
         }
     }
 
-    public Tree<T> find(T value) {
+    public Optional<Tree<T>> find(T value) {
         if (this.value.equals(value))
-            return this;
+            return Optional.of(this);
 
         for (Tree<T> child : this.children) {
-            Tree<T> result = child.find(value);
-            if (result != null)
+            Optional<Tree<T>> result = child.find(value);
+            if (result.isPresent())
                 return result;
         }
-
-        return null;
+        return Optional.empty();
     }
     public boolean hasDescendant(T value) {
-        return this.find(value) != null;
+        return this.find(value).isPresent();
     }
 
     public boolean hasAncestor(T value) {
@@ -71,7 +77,7 @@ public class Tree<T> {
             return true;
         }
 
-        return parent != null && parent.hasAncestor(value);
+        return parent.isPresent() && parent.get().hasAncestor(value);
     }
 
     public boolean equals(Object other) {
@@ -81,7 +87,15 @@ public class Tree<T> {
         if (!(other instanceof Tree))
             return false;
 
-        return this.value.equals(((Tree<?>) other).value);
+        Tree<T> otherTree = (Tree<T>) other;
+
+        if (!this.value.equals((otherTree).getValue()))
+            return false;
+
+        if (!this.children.equals(otherTree.getChildren()))
+            return false;
+
+        return this.getParent().equals(otherTree.getParent());
     }
 
     public boolean hasChildren() {

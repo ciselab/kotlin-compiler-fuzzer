@@ -6,6 +6,7 @@ import org.fuzzer.utils.RandomNumberGenerator;
 import org.fuzzer.utils.StringUtilities;
 import org.fuzzer.utils.Tree;
 
+import javax.swing.text.html.Option;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -30,9 +31,11 @@ public class Context {
         Tree<KType> root = new Tree<>(new KType("Any"));
         root.addChildren(Arrays.stream(new String[]{"Number", "String", "Char", "Boolean"}).map(KType::new).toList());
 
-        Tree<KType> numberType = root.find(new KType("Number"));
+        Optional<Tree<KType>> numberType = root.find(new KType("Number"));
 
-        numberType.addChildren(Arrays.stream(new String[]{"Byte", "Short", "Int", "Long"}).map(KType::new).toList());
+        assert numberType.isPresent();
+
+        numberType.get().addChildren(Arrays.stream(new String[]{"Byte", "Short", "Int", "Long"}).map(KType::new).toList());
         return root;
     }
 
@@ -77,7 +80,8 @@ public class Context {
         List<KCallable> alternatives = identifiers
                 .entrySet()
                 .stream()
-                .filter(tuple -> typeHierarchy.find(type).hasDescendant(tuple.getValue().getOutputType()))
+                .filter(tuple -> typeHierarchy.find(type).isPresent())
+                .filter(tuple -> typeHierarchy.find(type).get().hasDescendant(tuple.getValue().getOutputType()))
                 .map(Map.Entry::getValue)
                 .toList();
 
@@ -99,13 +103,19 @@ public class Context {
     }
 
     public Boolean isSubtypeOf(KType subtype, KType supertype) {
-        return typeHierarchy.find(supertype).hasDescendant(subtype);
+        Optional<Tree<KType>> superTypeNode = typeHierarchy.find(supertype);
+        Optional<Tree<KType>> subTypeNode = typeHierarchy.find(subtype);
+
+        if (!(subTypeNode.isPresent() && superTypeNode.isPresent()))
+            throw new IllegalArgumentException("Types " + subtype + " and " + supertype + " not available in type hierarchy.");
+
+        return superTypeNode.get().hasDescendant(subtype);
     }
 
     public Optional<KCallable> randomCallableOfType(KType type, Predicate<KCallable> condition) throws CloneNotSupportedException {
         List<KCallable> alternatives = new ArrayList<>(callables
                 .stream()
-                .filter(kCallable -> typeHierarchy.find(type).hasDescendant(kCallable.getOutputType()))
+                .filter(kCallable -> typeHierarchy.find(type).get().hasDescendant(kCallable.getOutputType()))
                 .filter(condition)
                 .toList());
 
@@ -130,14 +140,14 @@ public class Context {
     }
 
     public void addType(KType parent, KType newType) {
-        if (typeHierarchy.find(parent) == null)
+        if (typeHierarchy.find(parent).isEmpty())
             throw new IllegalArgumentException("Parent type " + parent.toString() + "not in current type hierarchy.");
 
-        if (typeHierarchy.find(newType) != null) {
+        if (typeHierarchy.find(newType).isEmpty()) {
             throw new IllegalArgumentException("New type " + newType + "already in the type hierarchy.");
         }
 
-        typeHierarchy.find(parent).addChild(newType);
+        typeHierarchy.find(parent).get().addChild(newType);
     }
 
     public void addIdentifier(String id, KIdentifierCallable callable) {
