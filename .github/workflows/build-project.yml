@@ -19,7 +19,3 @@ jobs:
           gradle-version: 7.6
       - name: Execute Gradle build
         run: ./gradlew build
-      - name: Setup Gradle
-        uses: gradle/gradle-build-action@v2
-      - name: Run build with Gradle Wrapper
-        run: ./gradlew build
