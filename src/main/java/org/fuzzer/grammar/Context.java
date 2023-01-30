@@ -2,11 +2,12 @@ package org.fuzzer.grammar;
 
 import org.fuzzer.representations.callables.*;
 import org.fuzzer.representations.types.KType;
+import org.fuzzer.representations.types.TreeTypeEnvironment;
+import org.fuzzer.representations.types.TypeEnvironment;
 import org.fuzzer.utils.RandomNumberGenerator;
 import org.fuzzer.utils.StringUtilities;
 import org.fuzzer.utils.Tree;
 
-import javax.swing.text.html.Option;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -15,7 +16,7 @@ public class Context {
     private final Map<String, KCallable> identifiers;
 
     private final Set<KCallable> callables;
-    private final Tree<KType> typeHierarchy;
+    private final TypeEnvironment typeHierarchy;
 
     private final RandomNumberGenerator rng;
 
@@ -23,20 +24,9 @@ public class Context {
         this.identifiers = new HashMap<>();
         this.callables = primitiveConsumerCallables();
         callables.addAll(primitiveTerminalCallables(rng));
-        this.typeHierarchy = defaultTypeHierarchy();
+
+        this.typeHierarchy = new TreeTypeEnvironment(rng);
         this.rng = rng;
-    }
-
-    private static Tree<KType> defaultTypeHierarchy() {
-        Tree<KType> root = new Tree<>(new KType("Any"));
-        root.addChildren(Arrays.stream(new String[]{"Number", "String", "Char", "Boolean"}).map(KType::new).toList());
-
-        Optional<Tree<KType>> numberType = root.find(new KType("Number"));
-
-        assert numberType.isPresent();
-
-        numberType.get().addChildren(Arrays.stream(new String[]{"Byte", "Short", "Int", "Long"}).map(KType::new).toList());
-        return root;
     }
 
     private static Set<KCallable> primitiveConsumerCallables() {
@@ -77,11 +67,11 @@ public class Context {
     }
 
     public List<KCallable> identifiersOfType(KType type) {
+        Set<KType> subtypes = typeHierarchy.supertypesOf(type);
         List<KCallable> alternatives = identifiers
                 .entrySet()
                 .stream()
-                .filter(tuple -> typeHierarchy.find(type).isPresent())
-                .filter(tuple -> typeHierarchy.find(type).get().hasDescendant(tuple.getValue().getOutputType()))
+                .filter(tuple ->  subtypes.contains(tuple.getValue().getOutputType()))
                 .map(Map.Entry::getValue)
                 .toList();
 
@@ -103,19 +93,14 @@ public class Context {
     }
 
     public Boolean isSubtypeOf(KType subtype, KType supertype) {
-        Optional<Tree<KType>> superTypeNode = typeHierarchy.find(supertype);
-        Optional<Tree<KType>> subTypeNode = typeHierarchy.find(subtype);
-
-        if (!(subTypeNode.isPresent() && superTypeNode.isPresent()))
-            throw new IllegalArgumentException("Types " + subtype + " and " + supertype + " not available in type hierarchy.");
-
-        return superTypeNode.get().hasDescendant(subtype);
+        return typeHierarchy.isSubtypeOf(subtype, supertype);
     }
 
     public Optional<KCallable> randomCallableOfType(KType type, Predicate<KCallable> condition) throws CloneNotSupportedException {
+        Set<KType> subtypes = typeHierarchy.subtypesOf(type);
         List<KCallable> alternatives = new ArrayList<>(callables
                 .stream()
-                .filter(kCallable -> typeHierarchy.find(type).get().hasDescendant(kCallable.getOutputType()))
+                .filter(kCallable -> subtypes.contains(kCallable.getOutputType()))
                 .filter(condition)
                 .toList());
 
@@ -140,14 +125,7 @@ public class Context {
     }
 
     public void addType(KType parent, KType newType) {
-        if (typeHierarchy.find(parent).isEmpty())
-            throw new IllegalArgumentException("Parent type " + parent.toString() + "not in current type hierarchy.");
-
-        if (typeHierarchy.find(newType).isEmpty()) {
-            throw new IllegalArgumentException("New type " + newType + "already in the type hierarchy.");
-        }
-
-        typeHierarchy.find(parent).get().addChild(newType);
+        typeHierarchy.addType(parent, newType);
     }
 
     public void addIdentifier(String id, KIdentifierCallable callable) {
@@ -158,21 +136,6 @@ public class Context {
     }
 
     public KType getRandomType() {
-        Tree<KType> currentNode = typeHierarchy;
-
-        while (currentNode.hasChildren() && rng.randomBoolean()) {
-            Set<Tree<KType>> children = currentNode.getChildren();
-            int randomPosition = rng.fromUniformDiscrete(0, children.size() - 1);
-
-            int currIndex = 0;
-            for (Tree<KType> child : children) {
-                if (currIndex++ == randomPosition)
-                    return child.getValue();
-            }
-        }
-
-        return currentNode.getValue();
+        return typeHierarchy.randomType();
     }
-
-
 }

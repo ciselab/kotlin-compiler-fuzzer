@@ -1,16 +1,20 @@
 package org.fuzzer.utils;
 
 import org.antlr.v4.runtime.misc.OrderedHashSet;
+import org.fuzzer.representations.types.KType;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 public class Tree<T> {
+
     private final T value;
 
     private final Set<Tree<T>> children;
+
     private Optional<Tree<T>> parent;
 
     public Tree(T value, Tree<T> parent) {
@@ -47,6 +51,7 @@ public class Tree<T> {
         child.parent = Optional.of(this);
         this.children.add(child);
     }
+
     public void addChild(T value) {
         addChild(new Tree<>(value));
     }
@@ -68,6 +73,7 @@ public class Tree<T> {
         }
         return Optional.empty();
     }
+
     public boolean hasDescendant(T value) {
         return this.find(value).isPresent();
     }
@@ -78,6 +84,23 @@ public class Tree<T> {
         }
 
         return parent.isPresent() && parent.get().hasAncestor(value);
+    }
+
+    public Set<Tree<T>> allDescendants() {
+        Set<Tree<T>> allSubtrees = new HashSet<>();
+        allSubtrees.add(this);
+
+        for (Tree<T> child : this.getChildren()) {
+            allSubtrees.addAll(child.allDescendants());
+        }
+
+        return allSubtrees;
+    }
+
+    public List<T> toList() {
+        return allDescendants().stream()
+                .map(Tree::getValue)
+                .collect(Collectors.toList());
     }
 
     public boolean equals(Object other) {

@@ -43,6 +43,13 @@ public class KType {
     }
 
     @Override
+    public int hashCode() {
+        int result = name.hashCode();
+        result = 31 * result + genericType.hashCode();
+        return result;
+    }
+
+    @Override
     public String toString() {
         return "[" + name + (genericType.isPresent() ? ("<" + genericType.get() + ">") : "") + "]";
     }
