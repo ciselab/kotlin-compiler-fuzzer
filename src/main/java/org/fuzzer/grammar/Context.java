@@ -1,6 +1,8 @@
 package org.fuzzer.grammar;
 
 import org.fuzzer.representations.callables.*;
+import org.fuzzer.representations.context.IdentifierStore;
+import org.fuzzer.representations.context.MapIdentifierStore;
 import org.fuzzer.representations.types.KType;
 import org.fuzzer.representations.types.TreeTypeEnvironment;
 import org.fuzzer.representations.types.TypeEnvironment;
@@ -13,7 +15,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class Context {
-    private final Map<String, KCallable> identifiers;
+    private final IdentifierStore idStore;
 
     private final Set<KCallable> callables;
     private final TypeEnvironment typeHierarchy;
@@ -21,11 +23,11 @@ public class Context {
     private final RandomNumberGenerator rng;
 
     public Context(RandomNumberGenerator rng) {
-        this.identifiers = new HashMap<>();
         this.callables = primitiveConsumerCallables();
         callables.addAll(primitiveTerminalCallables(rng));
 
         this.typeHierarchy = new TreeTypeEnvironment(rng);
+        this.idStore = new MapIdentifierStore(typeHierarchy, rng);
         this.rng = rng;
     }
 
@@ -63,33 +65,19 @@ public class Context {
     }
 
     public Boolean hasAnyVariables() {
-        return !identifiers.isEmpty();
+        return !idStore.isEmpty();
     }
 
     public List<KCallable> identifiersOfType(KType type) {
-        Set<KType> subtypes = typeHierarchy.supertypesOf(type);
-        List<KCallable> alternatives = identifiers
-                .entrySet()
-                .stream()
-                .filter(tuple ->  subtypes.contains(tuple.getValue().getOutputType()))
-                .map(Map.Entry::getValue)
-                .toList();
-
-        return alternatives;
+        return idStore.callablesOfType(type);
     }
 
     public String randomIdentifier() {
-        if (!hasAnyVariables())
-            throw new IllegalStateException("Cannot sample identifiers from empty context.");
-        List<String> allIdentifiers = identifiers.keySet().stream().toList();
-        return allIdentifiers.get(rng.fromUniformDiscrete(0, allIdentifiers.size() - 1));
+        return idStore.randomIdentifier();
     }
 
     public KType typeOfIdentifier(String id) {
-        if (!identifiers.containsKey(id))
-            throw new IllegalArgumentException("Identifier " + id + " not defined in context.");
-
-        return identifiers.get(id).getOutputType();
+        return idStore.typeOfIdentifier(id);
     }
 
     public Boolean isSubtypeOf(KType subtype, KType supertype) {
@@ -121,7 +109,7 @@ public class Context {
     }
 
     public boolean containsIdentifier(String identifier) {
-        return identifiers.containsKey(identifier);
+        return idStore.hasIdentifier(identifier);
     }
 
     public void addType(KType parent, KType newType) {
@@ -129,10 +117,7 @@ public class Context {
     }
 
     public void addIdentifier(String id, KIdentifierCallable callable) {
-        if (identifiers.containsKey(id))
-            throw new IllegalArgumentException("Id " + id + " already defined in context.");
-
-        identifiers.put(id, callable);
+        idStore.addIdentifier(id, callable);
     }
 
     public KType getRandomType() {

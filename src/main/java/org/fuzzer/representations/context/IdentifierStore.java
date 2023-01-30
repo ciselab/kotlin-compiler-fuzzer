@@ -8,21 +8,19 @@ import java.util.List;
 import java.util.Optional;
 
 public interface IdentifierStore {
-    List<KCallable> callablesOfType();
 
     boolean isEmpty();
+    List<KCallable> identifiersOfType(KType type);
 
-    boolean containsIdentifier(String identifier);
+    boolean hasIdentifier(String identifier);
 
-    Optional<String> randomIdentifier();
+    String randomIdentifier();
 
     void addIdentifier(String identifier, KCallable callable);
 
-    Optional<KCallable>  typeOfIdentifier();
+    void updateIdentifier(String identifier, KCallable callable);
 
-    Optional<KCallable> callableOfType(KType returnType);
+    KType typeOfIdentifier(String id);
 
-    Optional<KCallable> terminalCallableOfType(KType returnType);
-
-    Optional<KCallable> consumerCallableOfType(KType returnType);
+    public List<KCallable> callablesOfType(KType returnType);
 }
