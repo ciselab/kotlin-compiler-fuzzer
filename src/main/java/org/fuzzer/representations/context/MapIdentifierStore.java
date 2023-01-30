@@ -11,12 +11,15 @@ import java.util.stream.Collectors;
 public class MapIdentifierStore implements IdentifierStore {
 
     private final Map<String, KCallable> identifierMap;
+
+    private final Map<String, KType> typeMap;
     private final TypeEnvironment typeEnvironment;
 
     private final RandomNumberGenerator rng;
 
     public MapIdentifierStore(TypeEnvironment typeEnvironment, RandomNumberGenerator rng) {
         this.identifierMap = new HashMap<>();
+        this.typeMap = new HashMap<>();
         this.typeEnvironment = typeEnvironment;
         this.rng = rng;
     }
@@ -29,16 +32,22 @@ public class MapIdentifierStore implements IdentifierStore {
     @Override
     public List<KCallable> identifiersOfType(KType type) {
         Set<KType> allSubtypes = typeEnvironment.subtypesOf(type);
-        return identifierMap.entrySet()
+        return typeMap.entrySet()
                 .stream()
-                .filter(entry -> allSubtypes.contains(entry.getValue().getOutputType()))
-                .map(Map.Entry::getValue)
-                .collect(Collectors.toList());
+                .filter(entry -> allSubtypes.contains(entry.getValue()))
+                .map(entry -> identifierMap.get(entry.getKey()))
+                .toList();
     }
 
     @Override
     public boolean hasIdentifier(String identifier) {
         return identifierMap.containsKey(identifier);
+    }
+
+    @Override
+    public KCallable getIdentifier(String identifier) {
+        verifyExists(identifier);
+        return identifierMap.get(identifier);
     }
 
     @Override
@@ -51,32 +60,40 @@ public class MapIdentifierStore implements IdentifierStore {
         return identifierList.get(rng.fromUniformDiscrete(0, identifierList.size() - 1));
     }
 
+
+
     @Override
     public void addIdentifier(String identifier, KCallable callable) {
         verifyNotExists(identifier);
         identifierMap.put(identifier, callable);
+        typeMap.put(identifier, callable.getOutputType());
     }
 
     @Override
     public void updateIdentifier(String identifier, KCallable callable) {
-        verifyNotExists(identifier);
+        verifyExists(identifier);
+
+        KType currentType = getIdentifier(identifier).getOutputType();
+        if (!typeEnvironment.isSubtypeOf(callable.getOutputType(), currentType))
+            throw new IllegalArgumentException("Identifier " + identifier + " of type " + currentType + " cannot be assigned to type " + callable.getOutputType());
+
         identifierMap.put(identifier, callable);
     }
 
     @Override
     public KType typeOfIdentifier(String identifier) {
         verifyExists(identifier);
-        return identifierMap.get(identifier).getOutputType();
+        return typeMap.get(identifier);
     }
 
     @Override
     public List<KCallable> callablesOfType(KType returnType) {
         Set<KType> subtypes = typeEnvironment.subtypesOf(returnType);
-        return new ArrayList<>(identifierMap
+        return new ArrayList<>(typeMap
                 .entrySet()
                 .stream()
-                .filter(entry -> subtypes.contains(entry.getValue().getOutputType()))
-                .map(Map.Entry::getValue)
+                .filter(entry -> subtypes.contains(entry.getValue()))
+                .map(entry -> identifierMap.get(entry.getKey()))
                 .toList());
     }
 

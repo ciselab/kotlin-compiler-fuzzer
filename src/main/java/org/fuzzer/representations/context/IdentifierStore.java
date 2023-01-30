@@ -1,6 +1,7 @@
 package org.fuzzer.representations.context;
 
 import org.fuzzer.representations.callables.KCallable;
+import org.fuzzer.representations.callables.KIdentifierCallable;
 import org.fuzzer.representations.types.KType;
 
 import javax.swing.text.html.Option;
@@ -13,6 +14,8 @@ public interface IdentifierStore {
     List<KCallable> identifiersOfType(KType type);
 
     boolean hasIdentifier(String identifier);
+
+    KCallable getIdentifier(String identifier);
 
     String randomIdentifier();
 

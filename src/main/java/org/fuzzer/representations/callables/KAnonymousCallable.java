@@ -13,11 +13,6 @@ public class KAnonymousCallable extends KCallable {
         this.representation = representation;
     }
 
-    public KAnonymousCallable(KAnonymousCallable other) {
-        super(other);
-        this.representation = other.representation;
-    }
-
     @Override
     public String call(Context ctx, List<KCallable> input) {
         verifyInput(ctx, input);

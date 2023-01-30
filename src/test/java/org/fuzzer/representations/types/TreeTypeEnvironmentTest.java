@@ -1,7 +1,5 @@
-package org.fuzzer.representation.types;
+package org.fuzzer.representations.types;
 
-import org.fuzzer.representations.types.KType;
-import org.fuzzer.representations.types.TreeTypeEnvironment;
 import org.fuzzer.utils.RandomNumberGenerator;
 import org.fuzzer.utils.Tree;
 import org.junit.jupiter.api.BeforeEach;
