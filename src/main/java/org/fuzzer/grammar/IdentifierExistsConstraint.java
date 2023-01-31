@@ -1,5 +1,7 @@
 package org.fuzzer.grammar;
 
+import org.fuzzer.representations.context.Context;
+
 public class IdentifierExistsConstraint extends Constraint {
     private final String identifier;
 

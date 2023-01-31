@@ -17,34 +17,34 @@ import java.util.UUID;
 
 public class Main {
     public static void main(String[] args) throws IOException, RecognitionException, CloneNotSupportedException {
-        File lexerFile = new File("./src/main/resources/KotlinLexer.g4");
-        File parserFile = new File("./src/main/resources/KotlinParser.g4");
-
-        LexerGrammar lexerGrammar = new LexerGrammar(FileUtilities.fileContentToString(lexerFile));
-        Grammar parserGrammar = new Grammar(FileUtilities.fileContentToString(parserFile));
-
-        RuleHandler ruleHandler = new RuleHandler(lexerGrammar, parserGrammar);
-
-        RandomNumberGenerator rng = new RandomNumberGenerator(0);
-
-        for (int j = 0; j < 100; j ++) {
-            CodeFragment code = new CodeFragment();
-            CodeGenerator generator = new CodeGenerator(ruleHandler, rng, 3);
-            for (int i = 0; i < 15; i++) {
-                CodeFragment newCode = generator.sampleAssignment();
-                code.extend(newCode);
-            }
-            String randomFilename = UUID.randomUUID().toString();
-
-            String text = "fun main(args: Array<String>) {\n";
-            text += code.getText();
-            text += "\n}";
-
-            BufferedWriter writer = new BufferedWriter(new FileWriter(randomFilename + ".kt"));
-            writer.write(text);
-
-            writer.close();
-
-        }
+//        File lexerFile = new File("./src/main/resources/KotlinLexer.g4");
+//        File parserFile = new File("./src/main/resources/KotlinParser.g4");
+//
+//        LexerGrammar lexerGrammar = new LexerGrammar(FileUtilities.fileContentToString(lexerFile));
+//        Grammar parserGrammar = new Grammar(FileUtilities.fileContentToString(parserFile));
+//
+//        RuleHandler ruleHandler = new RuleHandler(lexerGrammar, parserGrammar);
+//
+//        RandomNumberGenerator rng = new RandomNumberGenerator(0);
+//
+//        for (int j = 0; j < 100; j ++) {
+//            CodeFragment code = new CodeFragment();
+//            CodeGenerator generator = new CodeGenerator(ruleHandler, rng, 3);
+//            for (int i = 0; i < 15; i++) {
+//                CodeFragment newCode = generator.sampleAssignment();
+//                code.extend(newCode);
+//            }
+//            String randomFilename = UUID.randomUUID().toString();
+//
+//            String text = "fun main(args: Array<String>) {\n";
+//            text += code.getText();
+//            text += "\n}";
+//
+//            BufferedWriter writer = new BufferedWriter(new FileWriter(randomFilename + ".kt"));
+//            writer.write(text);
+//
+//            writer.close();
+//
+//        }
     }
 }

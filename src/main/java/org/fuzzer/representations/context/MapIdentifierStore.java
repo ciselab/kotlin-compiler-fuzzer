@@ -6,7 +6,6 @@ import org.fuzzer.representations.types.TypeEnvironment;
 import org.fuzzer.utils.RandomNumberGenerator;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class MapIdentifierStore implements IdentifierStore {
 
@@ -60,22 +59,20 @@ public class MapIdentifierStore implements IdentifierStore {
         return identifierList.get(rng.fromUniformDiscrete(0, identifierList.size() - 1));
     }
 
-
-
     @Override
     public void addIdentifier(String identifier, KCallable callable) {
         verifyNotExists(identifier);
         identifierMap.put(identifier, callable);
-        typeMap.put(identifier, callable.getOutputType());
+        typeMap.put(identifier, callable.getReturnType());
     }
 
     @Override
     public void updateIdentifier(String identifier, KCallable callable) {
         verifyExists(identifier);
 
-        KType currentType = getIdentifier(identifier).getOutputType();
-        if (!typeEnvironment.isSubtypeOf(callable.getOutputType(), currentType))
-            throw new IllegalArgumentException("Identifier " + identifier + " of type " + currentType + " cannot be assigned to type " + callable.getOutputType());
+        KType currentType = getIdentifier(identifier).getReturnType();
+        if (!typeEnvironment.isSubtypeOf(callable.getReturnType(), currentType))
+            throw new IllegalArgumentException("Identifier " + identifier + " of type " + currentType + " cannot be assigned to type " + callable.getReturnType());
 
         identifierMap.put(identifier, callable);
     }

@@ -1,7 +1,6 @@
 package org.fuzzer.utils;
 
 import org.antlr.v4.runtime.misc.OrderedHashSet;
-import org.fuzzer.representations.types.KType;
 
 import java.util.HashSet;
 import java.util.List;
@@ -52,12 +51,12 @@ public class Tree<T> {
         this.children.add(child);
     }
 
-    public void addChild(T value) {
+    public <S extends T> void addChild(S value) {
         addChild(new Tree<>(value));
     }
 
-    public void addChildren(List<T> values) {
-        for (T t : values) {
+    public <S extends T> void addChildren(List<S> values) {
+        for (S t : values) {
             this.addChild(t);
         }
     }
@@ -74,12 +73,12 @@ public class Tree<T> {
         return Optional.empty();
     }
 
-    public boolean hasDescendant(T value) {
+    public <S extends T> boolean hasDescendant(S value) {
         return this.find(value).isPresent();
     }
 
-    public boolean hasAncestor(T value) {
-        if (this.value == value) {
+    public <S extends T> boolean hasAncestor(S value) {
+        if (this.value.equals(value)) {
             return true;
         }
 

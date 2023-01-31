@@ -1,8 +1,8 @@
 package org.fuzzer.representations.context;
 
-import org.fuzzer.representations.callables.KAnonymousCallable;
 import org.fuzzer.representations.callables.KCallable;
 import org.fuzzer.representations.callables.KIdentifierCallable;
+import org.fuzzer.representations.types.KClassType;
 import org.fuzzer.representations.types.KType;
 import org.fuzzer.representations.types.TreeTypeEnvironment;
 import org.fuzzer.representations.types.TypeEnvironment;
@@ -36,27 +36,28 @@ class MapIdentifierStoreTest {
 
     @BeforeEach
     void setUp() {
-        intType = new KType("Int");
-        stringType = new KType("String");
+        intType = new KClassType("Int", true, false);
+        stringType = new KClassType("String", true, false);
         RandomNumberGenerator rng = new RandomNumberGenerator(0);
 
-        Tree<KType> root = new Tree<>(new KType("Any"));
-        root.addChildren(Arrays.stream(new String[]{"Number", "String", "Char", "Boolean"}).map(KType::new).toList());
+        Tree<KType> root = new Tree<>(new KClassType("Any", true, true));
+        root.addChildren(Arrays.stream(new String[]{"Number", "String", "Char", "Boolean"}).map(name -> new KClassType(name, true, false)).toList());
 
-        Optional<Tree<KType>> numberType = root.find(new KType("Number"));
-        numberType.get().addChildren(Arrays.stream(new String[]{"Byte", "Short", "Int", "Long"}).map(KType::new).toList());
+        Optional<Tree<KType>> numberType = root.find(new KClassType("Number", true, false));
+        numberType.get().addChildren(Arrays.stream(new String[]{"Byte", "Short", "Int", "Long"}).map(name -> new KClassType(name, true, false)).toList());
 
         env = new TreeTypeEnvironment(root, rng);
 
         emptyStore = new MapIdentifierStore(env, rng);
 
         store = new MapIdentifierStore(env, rng);
-        store.addIdentifier("x", new KAnonymousCallable(intType, "42"));
-        store.addIdentifier("y", new KAnonymousCallable(stringType,  "foo"));
-        store.addIdentifier("z", new KAnonymousCallable(stringType,  "bar"));
+        store.addIdentifier("x", new KIdentifierCallable("x", intType));
+        store.addIdentifier("y", new KIdentifierCallable("y", stringType));
+        store.addIdentifier("z", new KIdentifierCallable("z", stringType));
 
-        fakeType = new KType("Fake");
+        fakeType = new KClassType("String", true, false);
     }
+
     @Test
     void isEmpty() {
         assertTrue(emptyStore.isEmpty());
@@ -65,17 +66,18 @@ class MapIdentifierStoreTest {
 
     @Test
     void identifiersOfType() {
-        List<KCallable> numCallables =  store.identifiersOfType(new KType("Number"));
+        List<KCallable> numCallables = store.identifiersOfType(new KClassType("Number", true, false) {
+        });
 
         assertEquals(1, numCallables.size());
-        assertInstanceOf(KAnonymousCallable.class, numCallables.get(0));
+        assertInstanceOf(KIdentifierCallable.class, numCallables.get(0));
 
-        List<KCallable> stringCallables =  store.identifiersOfType(stringType);
+        List<KCallable> stringCallables = store.identifiersOfType(stringType);
         assertEquals(2, stringCallables.size());
-        assertInstanceOf(KAnonymousCallable.class, stringCallables.get(0));
-        assertInstanceOf(KAnonymousCallable.class, stringCallables.get(1));
+        assertInstanceOf(KIdentifierCallable.class, stringCallables.get(0));
+        assertInstanceOf(KIdentifierCallable.class, stringCallables.get(1));
 
-        assertTrue(store.identifiersOfType(new KType("Boolean")).isEmpty());
+        assertTrue(store.identifiersOfType(new KClassType("Boolean", true, false)).isEmpty());
     }
 
     @Test
@@ -93,7 +95,7 @@ class MapIdentifierStoreTest {
     @Test
     void addIdentifier() {
         String id = "x";
-        emptyStore.addIdentifier(id, new KAnonymousCallable(intType, ""));
+        emptyStore.addIdentifier(id, new KIdentifierCallable(id, stringType));
         assertTrue(emptyStore.hasIdentifier(id));
     }
 
@@ -102,14 +104,14 @@ class MapIdentifierStoreTest {
         String id = "x";
         assertThrows(IllegalArgumentException.class,
                 () -> {
-                    store.addIdentifier(id, new KAnonymousCallable(intType, ""));
+                    store.addIdentifier(id, new KIdentifierCallable(id, intType));
                 });
     }
 
     @Test
     void updateIdentifier() {
         String id = "x";
-        KType newType = new KType("SubInt");
+        KType newType = new KClassType("SubInt", true, false);
         env.addType(intType, newType);
         KIdentifierCallable newCallable = new KIdentifierCallable(id, newType);
         store.updateIdentifier(id, newCallable);
@@ -156,10 +158,10 @@ class MapIdentifierStoreTest {
     @Test
     void callablesOfType() {
         assertEquals(1, store.callablesOfType(intType).size());
-        assertEquals(3, store.callablesOfType(new KType("Any")).size());
+        assertEquals(3, store.callablesOfType(new KClassType("Any", true, true)).size());
 
         for (KCallable callable : store.callablesOfType(stringType)) {
-            assertInstanceOf(KAnonymousCallable.class, callable);
+            assertInstanceOf(KIdentifierCallable.class, callable);
         }
 
         assertEquals(0, emptyStore.callablesOfType(intType).size());

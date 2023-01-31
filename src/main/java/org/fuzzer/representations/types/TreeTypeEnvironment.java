@@ -29,15 +29,7 @@ public class TreeTypeEnvironment implements TypeEnvironment {
      */
     @Override
     public void populateEnvironment() {
-        Tree<KType> root = new Tree<>(new KType("Any"));
-        root.addChildren(Arrays.stream(new String[]{"Number", "String", "Char", "Boolean"}).map(KType::new).toList());
-
-        Optional<Tree<KType>> numberType = root.find(new KType("Number"));
-
-        assert numberType.isPresent();
-
-        numberType.get().addChildren(Arrays.stream(new String[]{"Byte", "Short", "Int", "Long"}).map(KType::new).toList());
-        this.typeTree = root;
+        return;
     }
 
     @Override
