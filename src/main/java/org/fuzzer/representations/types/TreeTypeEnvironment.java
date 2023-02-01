@@ -7,9 +7,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class TreeTypeEnvironment implements TypeEnvironment {
-    Tree<KType> typeTree;
+    private Tree<KType> typeTree;
 
-    List<KType> listOfTypes;
+    private List<KType> listOfTypes;
 
     private final RandomNumberGenerator rng;
 
