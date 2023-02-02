@@ -1,5 +1,6 @@
 package org.fuzzer.representations.types;
 
+import kotlin.NotImplementedError;
 import org.fuzzer.utils.RandomNumberGenerator;
 import org.fuzzer.utils.Tree;
 
@@ -80,6 +81,11 @@ public class TreeTypeEnvironment implements TypeEnvironment {
 
         typeTree.find(parent).get().addChild(newType);
         listOfTypes.add(newType);
+    }
+
+    @Override
+    public void addType(Set<KType> parents, KType newType) {
+        throw new NotImplementedError("Tree type environment does not support multiple parents.");
     }
 
     @Override

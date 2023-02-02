@@ -15,5 +15,7 @@ public interface TypeEnvironment {
 
     void addType(KType parent, KType newType);
 
+    void addType(Set<KType> parents, KType newType);
+
     KType randomType();
 }

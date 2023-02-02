@@ -62,7 +62,12 @@ public class DAGTypeEnvironment implements TypeEnvironment {
 
     @Override
     public void addType(KType parent, KType newType) {
-        dag.addNode(newType, Collections.singleton(newType));
+        addType(new HashSet<>(Collections.singleton(parent)), newType);
+    }
+
+    @Override
+    public void addType(Set<KType> parents, KType newType) {
+        dag.addNode(newType, parents);
     }
 
     @Override
