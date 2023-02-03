@@ -2,6 +2,7 @@ buildscript {
     ext.kotlin_version = '1.8.0'
     repositories {
         mavenCentral()
+        mavenLocal()
     }
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
@@ -20,11 +21,16 @@ apply plugin: 'antlr'
 
 repositories {
     mavenCentral()
+    flatDir {
+        dirs 'local_dependencies'
+    }
 }
 
 dependencies {
     // Regex generator
     implementation 'com.github.mifmif:generex:1.0.1'
+//    implementation files('kotlin-grammar-parser-0.1.jar', 'kotlin-grammar-tools-0.1.jar')
+    implementation 'org.jetbrains.kotlin.spec.grammar.tools:kotlin-grammar-tools:0.1'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
     testImplementation "org.mockito:mockito-core:3.+"
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
@@ -35,6 +41,7 @@ dependencies {
 test {
     useJUnitPlatform()
 }
+
 compileKotlin {
     kotlinOptions {
         jvmTarget = "17"
