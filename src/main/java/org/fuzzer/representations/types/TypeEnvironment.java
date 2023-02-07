@@ -1,5 +1,7 @@
 package org.fuzzer.representations.types;
 
+import org.jetbrains.kotlin.spec.grammar.tools.KotlinParseTree;
+
 import java.util.Set;
 
 public interface TypeEnvironment {
