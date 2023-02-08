@@ -348,8 +348,8 @@ public class Context {
 
         KTypeModifiers modifiers = null;
         String funcName = null;
-        List<String> parameterTypes = null;
-        String returnType = null;
+        List<KTypeWrapper> parameterTypes = null;
+        KType returnType = null;
 
         for (KotlinParseTree child : funcDeclNode.getChildren()) {
             switch (child.getName()) {
@@ -363,29 +363,25 @@ public class Context {
                     parameterTypes = getFuncValueParams(child);
                 }
                 case KGrammarVocabulary.type -> {
-                    returnType = getType(child);
+                    // TODO: nested functions
+                    returnType = getType(child).toClass(true, false);
                 }
             }
         }
 
-        // TODO handle inheritance and abstraction
-        List<KType> inputTypes = parameterTypes.stream()
-                .map(name -> (KType) new KClassType(name, true, false))
-                .toList();
-
         if (returnType == null) {
-            return new KFuncType(funcName, new ArrayList<>(), inputTypes);
+            return new KFuncType(funcName, new ArrayList<>(), parameterTypes.stream().map(KTypeWrapper::toType).toList());
         } else {
-            return new KFuncType(funcName, new ArrayList<>(), inputTypes, new KClassType(returnType, true, true));
+            return new KFuncType(funcName, new ArrayList<>(), parameterTypes.stream().map(KTypeWrapper::toType).toList(), returnType);
         }
     }
 
-    private List<String> getFuncValueParams(KotlinParseTree funcParamsNode) {
+    private List<KTypeWrapper> getFuncValueParams(KotlinParseTree funcParamsNode) {
         if (!KGrammarVocabulary.functionValueParameters.equals(funcParamsNode.getName())) {
             throw new IllegalArgumentException("Parse tree " + funcParamsNode + " is not a function params value node.");
         }
 
-        List<String> parameterTypeNames = new ArrayList<>();
+        List<KTypeWrapper> parameterTypeNames = new ArrayList<>();
 
         for (KotlinParseTree funcValueParam : funcParamsNode.getChildren()) {
 
@@ -405,7 +401,7 @@ public class Context {
      * : parameterModifiers? parameter (NL* ASSIGNMENT NL* expression)?
      * ;
      */
-    private String getFuncValueParam(KotlinParseTree funcParamNode) {
+    private KTypeWrapper getFuncValueParam(KotlinParseTree funcParamNode) {
         if (!KGrammarVocabulary.functionValueParameter.equals(funcParamNode.getName())) {
             throw new IllegalArgumentException("Parse tree " + funcParamNode + " is not a function value parameter node.");
         }
@@ -425,13 +421,13 @@ public class Context {
      * : simpleIdentifier NL* COLON NL* type
      * ;
      */
-    private String getParameter(KotlinParseTree paramNode) {
+    private KTypeWrapper getParameter(KotlinParseTree paramNode) {
         if (!KGrammarVocabulary.parameter.equals(paramNode.getName())) {
             throw new IllegalArgumentException("Parse tree " + paramNode + " is not a parameter node.");
         }
 
         String parameterName = null;
-        String type = null;
+        KTypeWrapper type = null;
 
         for (KotlinParseTree child : paramNode.getChildren()) {
             switch (child.getName()) {
@@ -461,7 +457,7 @@ public class Context {
      * | functionType)
      * ;
      */
-    private String getType(KotlinParseTree typeNode) {
+    private KTypeWrapper getType(KotlinParseTree typeNode) {
         if (!(
                 KGrammarVocabulary.type.equals(typeNode.getName()) ||
                         KGrammarVocabulary.userType.equals(typeNode.getName()) ||
@@ -523,11 +519,47 @@ public class Context {
                 return getType(nestedTypes.get(0));
             }
             case KGrammarVocabulary.simpleUserType -> {
-                return getIdentifierName(typeNode.getChildren().get(0));
+                // Assume classes. Should refactor.
+                return new KTypeWrapper(KTypeIndicator.CLASS, getIdentifierName(typeNode.getChildren().get(0)));
             }
-            // TODO
+            /*
+            functionType
+                : (receiverType NL* DOT NL*)? functionTypeParameters NL* ARROW NL* type
+                ;
+             */
             case KGrammarVocabulary.functionType -> {
-                throw new UnsupportedOperationException("Cannot yet parse function types");
+                KotlinParseTree functionParameters = typeNode.getChildren().stream()
+                        .filter(n -> KGrammarVocabulary.functionTypeParameters.equals(n.getName()))
+                        .toList()
+                        .get(0);
+
+                // Select the type and parameter
+                /*
+                functionTypeParameters
+                    : LPAREN NL* (parameter | type)? (NL* COMMA NL* (parameter | type))* NL* RPAREN
+                    ;
+                 */
+                List<KotlinParseTree> nestedTypesOrParams = functionParameters.getChildren().stream()
+                        .filter(n -> KGrammarVocabulary.type.equals(n.getName()) ||
+                                KGrammarVocabulary.parameter.equals(n.getName()))
+                        .toList();
+
+                List<KTypeWrapper> inputTypes = new ArrayList<>();
+
+                for (KotlinParseTree typeOrParam : nestedTypesOrParams) {
+                    KTypeWrapper extractedType = switch (typeOrParam.getName()) {
+                        case KGrammarVocabulary.parameter -> getParameter(typeOrParam);
+                        case KGrammarVocabulary.type -> getType(typeOrParam);
+                        default -> throw new IllegalArgumentException("Unexpected input of type: " + typeOrParam.getName());
+                    };
+                    inputTypes.add(extractedType);
+                }
+
+                KotlinParseTree returnTypeNode = typeNode.getChildren().get(typeNode.getChildren().size() - 1);
+
+                KTypeWrapper returnType = getType(returnTypeNode);
+
+                return new KTypeWrapper(KTypeIndicator.FUNCTION, "", new ArrayList<>(), inputTypes, Optional.of(returnType));
             }
             default -> {
                 throw new IllegalArgumentException("Cannot parse type node of type: " + typeNode);

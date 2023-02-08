@@ -78,4 +78,6 @@ public final class KGrammarVocabulary {
     public static final String typeParameters = "typeParameters";
 
     public static final String typeParameter = "typeParameter";
+
+    public static String functionTypeParameters = "functionTypeParameters";
 }
