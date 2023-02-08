@@ -10,6 +10,8 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.toList;
+
 public class Context {
     private final IdentifierStore idStore;
 
@@ -283,13 +285,13 @@ public class Context {
 
         // For each declaration
         for (KotlinParseTree classMemberDecl : classMemberDecls) {
-            memberTypes.add(getClassMemberDecl(classMemberDecl));
+            memberTypes.addAll(getClassMemberDecl(classMemberDecl));
         }
 
         return memberTypes;
     }
 
-    public KType getClassMemberDecl(KotlinParseTree memberDeclNode) {
+    public List<KType> getClassMemberDecl(KotlinParseTree memberDeclNode) {
         if (!KGrammarVocabulary.classMemberDeclaration.equals(memberDeclNode.getName())) {
             throw new IllegalArgumentException("Parse tree " + memberDeclNode + " is not a class member declaration.");
         }
@@ -305,11 +307,19 @@ public class Context {
                 // e.g.: declaration -> functionDeclaration
                 KotlinParseTree nestedDecl = declNode.getChildren().get(0);
 
-                if (!(nestedDecl.getName().equals(KGrammarVocabulary.funcDecl))) {
-                    throw new UnsupportedOperationException(nestedDecl.getName() + " not yet supported during parsing.");
+                switch (nestedDecl.getName()) {
+                    case KGrammarVocabulary.funcDecl -> {
+                        List<KType> res = new ArrayList<>();
+                        res.add(getFuncDeclaration(nestedDecl));
+                        return res;
+                    }
+                    case KGrammarVocabulary.propertyDecl -> {
+                        return getPropertyDeclaration(nestedDecl);
+                    }
+                    default -> {
+                        throw new UnsupportedOperationException(nestedDecl.getName() + " not yet supported during parsing.");
+                    }
                 }
-
-                return getFuncDeclaration(nestedDecl);
             }
 
             case KGrammarVocabulary.companionObject -> {
@@ -320,8 +330,24 @@ public class Context {
                 throw new UnsupportedOperationException("Cannot yet parse anonymous initializer nodes.");
             }
 
+            /*
+            secondaryConstructor
+                : modifiers? CONSTRUCTOR NL* functionValueParameters (NL* COLON NL* constructorDelegationCall)? NL* block?
+                ;
+             */
             case KGrammarVocabulary.secondaryConstructor -> {
-                throw new UnsupportedOperationException("Cannot yet parse secondary constructor nodes.");
+                KotlinParseTree funcValParams = declNode.getChildren().stream()
+                        .filter(n -> KGrammarVocabulary.functionValueParameters.equals(n.getName()))
+                        .toList().get(0);
+
+                List<KTypeWrapper> parameterTypes = getFuncValueParams(funcValParams);
+
+                // TODO handle constructor
+                KFuncType func = new KFuncType("constructor", new ArrayList<>(), parameterTypes.stream().map(KTypeWrapper::toType).toList());
+                List<KType> res = new ArrayList<>();
+                res.add(func);
+
+                return res;
             }
 
             default -> {
@@ -329,6 +355,88 @@ public class Context {
             }
         }
     }
+
+    private List<KType> getPropertyDeclaration(KotlinParseTree propertyDecl) {
+        if (!KGrammarVocabulary.propertyDecl.equals(propertyDecl.getName())) {
+            throw new IllegalArgumentException("Parse tree " + propertyDecl + " is not a property declaraiton.");
+        }
+
+        // Handle modifiers
+        Optional<KotlinParseTree> modifiersNode = KGrammarVocabulary.modifiers
+                .equals(propertyDecl.getChildren().get(0).getName()) ?
+                Optional.of(propertyDecl.getChildren().get(0)) :
+                Optional.empty();
+
+        final Optional<KTypeModifiers> modifiers = modifiersNode.map(this::getModifiers);
+
+        // Handle declaration(s)
+        KotlinParseTree varDeclNode = propertyDecl.getChildren().stream()
+                .filter(n ->
+                    KGrammarVocabulary.varDecl.equals(n.getName()) ||
+                            KGrammarVocabulary.multiVarDecl.equals(n.getName()))
+                .toList()
+                .get(0);
+
+        List<KTypeWrapper> varTypes = new ArrayList<>();
+        switch (varDeclNode.getName()) {
+            case KGrammarVocabulary.multiVarDecl -> {
+                varTypes = getMultiVarDecl(varDeclNode);
+            }
+            case KGrammarVocabulary.varDecl -> {
+                varTypes.add(getVarDecl(varDeclNode));
+            }
+        }
+
+        return varTypes.stream()
+                .map(wrapper -> modifiers.isEmpty() ? wrapper.toType() : wrapper.toType(modifiers.get()))
+                .toList();
+    }
+
+    /**
+     * multiVariableDeclaration
+     *     : LPAREN NL* variableDeclaration (NL* COMMA NL* variableDeclaration)* NL* RPAREN
+     *     ;
+     */
+    private List<KTypeWrapper> getMultiVarDecl(KotlinParseTree multiVarDeclNode) {
+        if (!KGrammarVocabulary.propertyDecl.equals(multiVarDeclNode.getName())) {
+            throw new IllegalArgumentException("Parse tree " + multiVarDeclNode + " is not a multi variable declaration.");
+        }
+
+        List<KotlinParseTree> varDeclNodes = multiVarDeclNode.getChildren().stream()
+                .filter(n -> KGrammarVocabulary.varDecl.equals(n.getName()))
+                .toList();
+
+        return varDeclNodes.stream().map(this::getVarDecl).toList();
+    }
+
+    /**
+     * variableDeclaration
+     *     : annotation* NL* simpleIdentifier (NL* COLON NL* type)?
+     *     ;
+     */
+    private KTypeWrapper getVarDecl(KotlinParseTree varDeclNode) {
+        if (!KGrammarVocabulary.varDecl.equals(varDeclNode.getName())) {
+            throw new IllegalArgumentException("Parse tree " + varDeclNode + " is not a variable declaration.");
+        }
+
+        String varName = null;
+        KTypeWrapper type = null;
+
+        for (KotlinParseTree child : varDeclNode.getChildren()) {
+            switch (child.getName()) {
+                case KGrammarVocabulary.simpleId -> {
+                    varName = getIdentifierName(child);
+                }
+                case KGrammarVocabulary.type -> {
+                    type = getType(child);
+                }
+            }
+        }
+
+        // Disregard variable name for now
+        return type;
+    }
+
 
     /**
      * Extracts a function callable from the definition below:

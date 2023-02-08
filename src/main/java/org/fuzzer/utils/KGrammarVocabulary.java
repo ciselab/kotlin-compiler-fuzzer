@@ -9,6 +9,8 @@ public final class KGrammarVocabulary {
 
     public static final String funcDecl = "functionDeclaration";
 
+    public static final String propertyDecl = "propertyDeclaration";
+
     public static final String simpleId = "simpleIdentifier";
 
     public static final String id = "Identifier";
@@ -79,5 +81,9 @@ public final class KGrammarVocabulary {
 
     public static final String typeParameter = "typeParameter";
 
-    public static String functionTypeParameters = "functionTypeParameters";
+    public static final String functionTypeParameters = "functionTypeParameters";
+
+    public static final String varDecl = "variableDeclaration";
+
+    public static final String multiVarDecl = "multiVariableDeclaration";
 }

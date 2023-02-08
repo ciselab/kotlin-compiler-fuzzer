@@ -62,4 +62,8 @@ public record KTypeWrapper(KTypeIndicator indicator,
     public KType toType() {
         return toType(Optional.empty(), Optional.empty());
     }
+
+    public KType toType(KTypeModifiers modifiers) {
+        return toType(Optional.of(modifiers.isOpen()), Optional.of(modifiers.isAbstract()));
+    }
 }

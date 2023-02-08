@@ -41,7 +41,7 @@ public class TreeTypeEnvironmentTest {
     void hasType() {
         for (KType type : typeList) {
             assertTrue(env.hasType(type));
-            assertFalse(env.hasType(new KClassType(type.getName() + "_", true, false)));
+            assertFalse(env.hasType(new KClassType(type.name() + "_", true, false)));
         }
     }
 
