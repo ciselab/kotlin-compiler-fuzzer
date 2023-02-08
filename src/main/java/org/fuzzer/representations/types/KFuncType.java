@@ -8,20 +8,20 @@ public class KFuncType implements KType {
 
     private final String name;
 
-    private final List<KType> generics;
+    private final List<KGenericType> generics;
 
     private final List<KType> inputTypes;
 
     private final Optional<KType> returnType;
 
-    public KFuncType(String name, List<KType> generics, List<KType> inputTypes, KType outputTypes) {
+    public KFuncType(String name, List<KGenericType> generics, List<KType> inputTypes, KType outputTypes) {
         this.name = name;
         this.generics = generics;
         this.inputTypes = inputTypes;
         this.returnType = Optional.of(outputTypes);
     }
 
-    public KFuncType(String name, List<KType> generics, List<KType> inputTypes) {
+    public KFuncType(String name, List<KGenericType> generics, List<KType> inputTypes) {
         this.name = name;
         this.generics = generics;
         this.inputTypes = inputTypes;
@@ -29,12 +29,12 @@ public class KFuncType implements KType {
     }
 
     @Override
-    public String getName() {
+    public String name() {
         return name;
     }
 
     @Override
-    public List<KType> getGenerics() {
+    public List<KGenericType> getGenerics() {
         return new ArrayList<>();
     }
 

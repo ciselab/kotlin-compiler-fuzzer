@@ -6,9 +6,9 @@ import java.util.List;
 public abstract class KClassifierType implements KType {
     private final String name;
 
-    private final List<KType> generics;
+    private final List<KGenericType> generics;
 
-    protected KClassifierType(String name, List<KType> generics) {
+    protected KClassifierType(String name, List<KGenericType> generics) {
         this.name = name;
         this.generics = generics;
     }
@@ -19,12 +19,12 @@ public abstract class KClassifierType implements KType {
     }
 
     @Override
-    public String getName() {
+    public String name() {
         return name;
     }
 
     @Override
-    public List<KType> getGenerics() {
+    public List<KGenericType> getGenerics() {
         return generics;
     }
 

@@ -1,15 +1,13 @@
 package org.fuzzer.representations.types;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class KInterfaceType extends KClassifierType {
+public record KGenericType(String name) implements KType {
 
-    public KInterfaceType(String name, List<KGenericType> generics) {
-        super(name, generics);
-    }
-
-    public KInterfaceType(String name) {
-        super(name);
+    @Override
+    public List<KGenericType> getGenerics() {
+        return new ArrayList<>();
     }
 
     @Override
@@ -24,6 +22,6 @@ public class KInterfaceType extends KClassifierType {
 
     @Override
     public boolean canBeDeclared() {
-        return true;
+        return false;
     }
 }

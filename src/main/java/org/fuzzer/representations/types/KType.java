@@ -4,9 +4,9 @@ import java.util.List;
 
 public interface KType {
 
-    String getName();
+    String name();
 
-    List<KType> getGenerics();
+    List<KGenericType> getGenerics();
 
     boolean canBeInherited();
 

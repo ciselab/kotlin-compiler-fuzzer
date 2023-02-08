@@ -15,7 +15,7 @@ public class KClassType extends KClassifierType {
         this.abs = abs;
     }
 
-    public KClassType(String name, List<KType> generics, boolean open, boolean abs) {
+    public KClassType(String name, List<KGenericType> generics, boolean open, boolean abs) {
         super(name, generics);
         this.open = open;
         this.abs = abs;
