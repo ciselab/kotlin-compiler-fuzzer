@@ -10,7 +10,8 @@ import java.io.File
 class KMain {
     fun foo(): KotlinParseTree? {
         val tokens = try {
-            val fileName : String = "src/test/resources/kotlin/Any.kt";
+//            val fileName : String = "src/test/resources/kotlin/Any.kt"
+            val fileName : String = "src/test/resources/kotlin/Comparable.kt"
             val fileContents = fileContentToString(File(fileName));
             tokenizeKotlinCode("val x = foo() + 10;")
             tokenizeKotlinCode(fileContents);

@@ -126,6 +126,7 @@ public class Context {
             throw new IllegalArgumentException("Parse tree " + classDeclNode.getName() + " does not is not a class declaration.");
         }
 
+        // Handle class name
         KotlinParseTree idNode = classDeclNode.getChildren().stream()
                 .filter(n -> KGrammarVocabulary.simpleId.equals(n.getName()))
                 .toList()
@@ -133,6 +134,7 @@ public class Context {
 
         String name = getIdentifierName(idNode);
 
+        // Handle class members
         KotlinParseTree classBody = classDeclNode.getChildren().stream()
                 .filter(n -> KGrammarVocabulary.classBody.equals(n.getName()))
                 .toList()
@@ -140,6 +142,7 @@ public class Context {
 
         members = getClassMembers(classBody);
 
+        // Handle class modifiers
         KTypeModifiers classModifiers = null;
 
         List<KotlinParseTree> modifierNodeList = classDeclNode.getChildren().stream()
@@ -150,18 +153,71 @@ public class Context {
             classModifiers = getModifiers(modifierNodeList.get(0));
         }
 
+        // Handle class type parameters
+        List<KotlinParseTree> classTypeParamsNodeList = classDeclNode.getChildren().stream()
+                .filter(x -> KGrammarVocabulary.typeParameters.equals(x.getName()))
+                .toList();
+
+        List<KGenericType> genericTypes = new ArrayList<>();
+
+        if (!classTypeParamsNodeList.isEmpty()) {
+            genericTypes = getTypeParams(classTypeParamsNodeList.get(0));
+        }
+
         boolean isClass = classDeclNode.getChildren().stream()
                 .anyMatch(x -> KGrammarVocabulary.className.equals(x.getName()));
 
         if (classModifiers != null) {
             return isClass ?
-                    new KClassType(name, classModifiers.isOpen(), classModifiers.isAbstract()) :
-                    new KInterfaceType(name);
+                    new KClassType(name, genericTypes, classModifiers.isOpen(), classModifiers.isAbstract()) :
+                    new KInterfaceType(name, genericTypes);
         } else {
             return isClass ?
-                    new KClassType(name, true, false) :
-                    new KInterfaceType(name);
+                    new KClassType(name, genericTypes,true, false) :
+                    new KInterfaceType(name, genericTypes);
         }
+    }
+
+    /**
+     * typeParameters
+     *     : LANGLE NL* typeParameter (NL* COMMA NL* typeParameter)* NL* RANGLE
+     *     ;
+     */
+    public List<KGenericType> getTypeParams(KotlinParseTree typeParamsNode) {
+        if (!KGrammarVocabulary.typeParameters.equals(typeParamsNode.getName())) {
+            throw new IllegalArgumentException("Parse tree" + typeParamsNode.getName() + " is not a type parameter node.");
+        }
+
+        // Select "typeParameter" nodes and skip syntax
+        List<KotlinParseTree> typeParamChildren = typeParamsNode.getChildren().stream()
+                .filter(n -> KGrammarVocabulary.typeParameter.equals(n.getName()))
+                .toList();
+
+        List<KGenericType> types = new ArrayList<>();
+
+        for (KotlinParseTree child : typeParamChildren) {
+            types.add(new KGenericType(getTypeParam(child)));
+        }
+
+        return types;
+    }
+
+    /**
+     * typeParameter
+     *     : typeParameterModifiers? NL* simpleIdentifier (NL* COLON NL* type)?
+     *     ;
+     */
+    public String getTypeParam(KotlinParseTree typeParamNode) {
+        if (!KGrammarVocabulary.typeParameter.equals(typeParamNode.getName())) {
+            throw new IllegalArgumentException("Parse tree" + typeParamNode.getName() + " is not a type parameter node.");
+        }
+
+        // Ignore modifiers and types
+        List<KotlinParseTree> idNode = typeParamNode.getChildren().stream()
+                .filter(n -> KGrammarVocabulary.simpleId.equals(n.getName()))
+                .toList();
+
+        return getIdentifierName(idNode.get(0));
     }
 
     public KTypeModifiers getModifiers(KotlinParseTree modifiersNode) {

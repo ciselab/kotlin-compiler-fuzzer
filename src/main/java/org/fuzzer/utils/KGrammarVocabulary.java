@@ -74,4 +74,8 @@ public final class KGrammarVocabulary {
     public static final String kotlinFile = "kotlinFile";
 
     public static final String topLevelObject = "topLevelObject";
+
+    public static final String typeParameters = "typeParameters";
+
+    public static final String typeParameter = "typeParameter";
 }
