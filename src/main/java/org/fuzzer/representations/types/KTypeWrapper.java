@@ -4,14 +4,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public record KTypeWrapper(KTypeIndicator indicator,
+public record KTypeWrapper(List<KTypeWrapper> parent,
+                           KTypeIndicator indicator,
                            String name,
                            List<KGenericType> generics,
                            List<KTypeWrapper> inputTypes,
                            Optional<KTypeWrapper> returnType) {
 
     public KTypeWrapper(KTypeIndicator indicator, String name) {
-        this(indicator, name, new ArrayList<>(), new ArrayList<>(), Optional.empty());
+        this(new ArrayList<>(), indicator, name, new ArrayList<>(), new ArrayList<>(), Optional.empty());
     }
 
     public KClassType toClass(boolean open, boolean abs) {

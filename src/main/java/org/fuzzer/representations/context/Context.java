@@ -4,13 +4,17 @@ import org.fuzzer.representations.callables.*;
 import org.fuzzer.representations.types.*;
 import org.fuzzer.utils.KGrammarVocabulary;
 import org.fuzzer.utils.RandomNumberGenerator;
-import org.jetbrains.kotlin.spec.grammar.tools.KotlinParseTree;
+import org.fuzzer.utils.FileUtilities;
+import org.jetbrains.kotlin.spec.grammar.tools.*;
 
+
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toList;
+import static org.jetbrains.kotlin.spec.grammar.tools.KotlinGrammarToolsKt.parseKotlinCode;
+import static org.jetbrains.kotlin.spec.grammar.tools.KotlinGrammarToolsKt.tokenizeKotlinCode;
 
 public class Context {
     private final IdentifierStore idStore;
@@ -83,7 +87,33 @@ public class Context {
         return typeHierarchy.randomType();
     }
 
-    public void fromParseTree(KotlinParseTree parseTree) {
+    public void fromFileNames(List<String> fileNames) {
+        HashMap<String, KClassifierType> classes = new HashMap<>();
+        HashMap<String, List<KType>> extractedTypes = new HashMap<>();
+        HashMap<String, List<KTypeWrapper>> parents = new HashMap<>();
+        for (String fileName : fileNames) {
+            KotlinParseTree parseTree = null;
+            try {
+                String fileContents = FileUtilities.fileContentToString(new File(fileName));
+                KotlinTokensList tokens = tokenizeKotlinCode(fileContents);
+                parseTree = parseKotlinCode(tokens);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            fromParseTree(parseTree, classes, extractedTypes, parents);
+        }
+
+
+        if (!classes.containsKey("Any")) {
+            throw new IllegalStateException("Could not find root of type hierarchy in environment.");
+        }
+    }
+
+    public void fromParseTree(KotlinParseTree parseTree,
+                              HashMap<String, KClassifierType> classNames,
+                              HashMap<String, List<KType>> extractedTypes,
+                              HashMap<String, List<KTypeWrapper>> parents) {
         if (!KGrammarVocabulary.kotlinFile.equals(parseTree.getName())) {
             throw new IllegalArgumentException("Parse tree " + parseTree.getName() + " is not a file.");
         }
@@ -109,8 +139,14 @@ public class Context {
             if (!KGrammarVocabulary.classDecl.equals(decl.getName())) {
                 continue;
             }
+            List<KType> types = new ArrayList<>();
+            List<KTypeWrapper> parentList = new ArrayList<>();
 
-            KClassifierType classType = getClassAndMembers(decl, new ArrayList<>(), new ArrayList<>());
+            KClassifierType classType = getClassAndMembers(decl, types, parentList);
+
+            classNames.put(classType.name(), classType);
+            extractedTypes.put(classType.name(), types);
+            parents.put(classType.name(), parentList);
         }
     }
 
@@ -123,7 +159,7 @@ public class Context {
      * (NL* classBody | NL* enumClassBody)?
      * ;
      */
-    public KClassifierType getClassAndMembers(KotlinParseTree classDeclNode, List<KType> members, List<String> memberNames) {
+    public KClassifierType getClassAndMembers(KotlinParseTree classDeclNode, List<KType> members, List<KTypeWrapper> parents) {
         if (!KGrammarVocabulary.classDecl.equals(classDeclNode.getName())) {
             throw new IllegalArgumentException("Parse tree " + classDeclNode.getName() + " does not is not a class declaration.");
         }
@@ -142,7 +178,7 @@ public class Context {
                 .toList()
                 .get(0);
 
-        members = getClassMembers(classBody);
+        members.addAll(getClassMembers(classBody));
 
         // Handle class modifiers
         KTypeModifiers classModifiers = null;
@@ -162,8 +198,18 @@ public class Context {
 
         List<KGenericType> genericTypes = new ArrayList<>();
 
+
         if (!classTypeParamsNodeList.isEmpty()) {
             genericTypes = getTypeParams(classTypeParamsNodeList.get(0));
+        }
+
+        // Handle inheritance
+        List<KotlinParseTree> delegationSpecifierNodes = classDeclNode.getChildren().stream()
+                .filter(x -> KGrammarVocabulary.delegationSpecifiers.equals(x.getName()))
+                .toList();
+
+        if (!delegationSpecifierNodes.isEmpty()) {
+            parents.addAll(getDelegationSpecifiers(delegationSpecifierNodes.get(0)));
         }
 
         boolean isClass = classDeclNode.getChildren().stream()
@@ -177,6 +223,89 @@ public class Context {
             return isClass ?
                     new KClassType(name, genericTypes,true, false) :
                     new KInterfaceType(name, genericTypes);
+        }
+    }
+
+    /**
+     * delegationSpecifiers
+     *     : annotatedDelegationSpecifier (NL* COMMA NL* annotatedDelegationSpecifier)*
+     *     ;
+     */
+    private List<KTypeWrapper> getDelegationSpecifiers(KotlinParseTree delegationSpecifierNode) {
+        if (!(KGrammarVocabulary.delegationSpecifiers.equals(delegationSpecifierNode.getName()) ||
+                KGrammarVocabulary.delegationSpecifier.equals(delegationSpecifierNode.getName()) ||
+                KGrammarVocabulary.annotatedDelegationSpecifier.equals(delegationSpecifierNode.getName())))  {
+            throw new IllegalArgumentException("Parse tree " + delegationSpecifierNode.getName() + " does not is not a class declaration.");
+        }
+
+        /*
+        delegationSpecifier
+            : constructorInvocation
+            | explicitDelegation
+            | userType
+            | functionType
+            ;
+         */
+        switch (delegationSpecifierNode.getName()) {
+            case KGrammarVocabulary.delegationSpecifier -> {
+                KotlinParseTree child = delegationSpecifierNode.getChildren().get(0);
+                switch (child.getName()) {
+                    case KGrammarVocabulary.userType -> {
+                        List<KTypeWrapper> types = new ArrayList<>();
+                        types.add(getType(child));
+
+                        return types;
+                    }
+                    /*
+                    constructorInvocation
+                        : userType valueArguments
+                        ;
+                     */
+                    case KGrammarVocabulary.constructorInvocation -> {
+                        List<KTypeWrapper> types = new ArrayList<>();
+                        KTypeWrapper type = getType(child.getChildren().get(0));
+                        types.add(type);
+
+                        return types;
+                    }
+                    default -> {
+                        throw new UnsupportedOperationException("Cannot yet parse delegation specifier of type: " + child);
+                    }
+                }
+            }
+            /*
+            annotatedDelegationSpecifier
+                : annotation* NL* delegationSpecifier
+                ;
+             */
+            case KGrammarVocabulary.annotatedDelegationSpecifier -> {
+                List<KotlinParseTree> children = delegationSpecifierNode.getChildren();
+
+                // Ignore annotation for now
+                return getDelegationSpecifiers(children.get(children.size() - 1));
+            }
+
+            /*
+            delegationSpecifiers
+                : annotatedDelegationSpecifier (NL* COMMA NL* annotatedDelegationSpecifier)*
+                ;
+             */
+            case KGrammarVocabulary.delegationSpecifiers -> {
+                List<KotlinParseTree> annotatedDelSpecs = delegationSpecifierNode.getChildren().stream()
+                        .filter(n -> KGrammarVocabulary.annotatedDelegationSpecifier.equals(n.getName()))
+                        .toList();
+
+                List<KTypeWrapper> types = new ArrayList<>();
+
+                for (KotlinParseTree child : annotatedDelSpecs) {
+                    types.addAll(getDelegationSpecifiers(child));
+                }
+
+                return types;
+            }
+            default -> {
+                throw new IllegalArgumentException("Parse tree " + delegationSpecifierNode.getName() + " does not is not a class declaration.");
+            }
         }
     }
 
@@ -675,7 +804,7 @@ public class Context {
 
                 KTypeWrapper returnType = getType(returnTypeNode);
 
-                return new KTypeWrapper(KTypeIndicator.FUNCTION, "", new ArrayList<>(), inputTypes, Optional.of(returnType));
+                return new KTypeWrapper(new ArrayList<>(), KTypeIndicator.FUNCTION, "", new ArrayList<>(), inputTypes, Optional.of(returnType));
             }
             default -> {
                 throw new IllegalArgumentException("Cannot parse type node of type: " + typeNode);

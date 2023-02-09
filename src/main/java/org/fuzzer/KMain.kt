@@ -8,12 +8,9 @@ import java.io.File
 
 
 class KMain {
-    fun foo(): KotlinParseTree? {
+    fun foo(fileName : String): KotlinParseTree? {
         val tokens = try {
-//            val fileName : String = "src/test/resources/kotlin/Any.kt"
-            val fileName : String = "src/test/resources/kotlin/Comparable.kt"
             val fileContents = fileContentToString(File(fileName));
-            tokenizeKotlinCode("val x = foo() + 10;")
             tokenizeKotlinCode(fileContents);
         } catch (e: KotlinLexerException) {
             println("Tokenization the code fails")
@@ -31,10 +28,14 @@ class KMain {
 }
 
 fun main(args: Array<String>) {
-    val tree : KotlinParseTree? = KMain().foo()
-    print("done")
-    val rng : RandomNumberGenerator = RandomNumberGenerator(0);
-    val ctx : Context = Context(rng);
+    val classPath = "src/test/resources/kotlin/";
+    val classes = listOf("Any.kt", "Comparable.kt", "Arrays.kt",
+        "Char.kt", "CharSequence.kt", "Number.kt",
+        "Primitives.kt")
 
-    ctx.fromParseTree(tree);
+    val rng : RandomNumberGenerator = RandomNumberGenerator(0)
+    val ctx : Context = Context(rng)
+
+    val fileNames = classes.map { x -> classPath + x }
+    ctx.fromFileNames(fileNames)
 }

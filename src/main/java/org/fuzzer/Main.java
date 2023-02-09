@@ -6,6 +6,10 @@ import org.antlr.v4.tool.LexerGrammar;
 import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.generator.CodeGenerator;
 import org.fuzzer.grammar.RuleHandler;
+import org.fuzzer.representations.types.KClassType;
+import org.fuzzer.representations.types.KClassifierType;
+import org.fuzzer.representations.types.KInterfaceType;
+import org.fuzzer.representations.types.KType;
 import org.fuzzer.utils.FileUtilities;
 import org.fuzzer.utils.RandomNumberGenerator;
 

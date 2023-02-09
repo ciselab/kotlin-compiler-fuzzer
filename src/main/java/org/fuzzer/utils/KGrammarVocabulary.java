@@ -86,4 +86,12 @@ public final class KGrammarVocabulary {
     public static final String varDecl = "variableDeclaration";
 
     public static final String multiVarDecl = "multiVariableDeclaration";
+
+    public static final String delegationSpecifiers = "delegationSpecifiers";
+
+    public static final String delegationSpecifier = "delegationSpecifier";
+
+    public static final String annotatedDelegationSpecifier = "annotatedDelegationSpecifier";
+
+    public static final String constructorInvocation = "constructorInvocation";
 }
