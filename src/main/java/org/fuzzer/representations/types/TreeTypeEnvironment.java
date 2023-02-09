@@ -89,6 +89,23 @@ public class TreeTypeEnvironment implements TypeEnvironment {
     }
 
     @Override
+    public KType getTypeByName(String typeName) {
+        List<KType> matchingTypes = subtypesOf(typeTree.getValue()).stream()
+                .filter(type -> type.name().equals(typeName))
+                .toList();
+
+        if (matchingTypes.isEmpty()) {
+            throw new IllegalArgumentException("Could not find type named: " + typeName + ".");
+        }
+
+        if (matchingTypes.size() > 1) {
+            throw new IllegalArgumentException("Multiple types names " + typeName + " found: " + matchingTypes + ".");
+        }
+
+        return matchingTypes.get(0);
+    }
+
+    @Override
     public KType randomType() {
         return listOfTypes.get(rng.fromUniformDiscrete(0, listOfTypes.size() - 1));
     }

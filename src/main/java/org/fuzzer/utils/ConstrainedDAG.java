@@ -1,10 +1,8 @@
 package org.fuzzer.utils;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public class ConstrainedDAG<T> implements Graph<T> {
 
@@ -134,5 +132,9 @@ public class ConstrainedDAG<T> implements Graph<T> {
         if (parentList.containsKey(node) || childrenList.containsKey(node)) {
             throw new IllegalArgumentException("Node " + node + "does already exists in the graph.");
         }
+    }
+
+    public List<T> allEntries() {
+        return parentList.keySet().stream().toList();
     }
 }

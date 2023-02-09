@@ -19,5 +19,7 @@ public interface TypeEnvironment {
 
     void addType(Set<KType> parents, KType newType);
 
+    KType getTypeByName(String typeName);
+
     KType randomType();
 }

@@ -1,5 +1,6 @@
 package org.fuzzer.representations.context;
 
+import org.antlr.v4.codegen.model.SrcOp;
 import org.fuzzer.representations.callables.*;
 import org.fuzzer.representations.types.*;
 import org.fuzzer.utils.KGrammarVocabulary;
@@ -12,6 +13,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static org.jetbrains.kotlin.spec.grammar.tools.KotlinGrammarToolsKt.parseKotlinCode;
 import static org.jetbrains.kotlin.spec.grammar.tools.KotlinGrammarToolsKt.tokenizeKotlinCode;
@@ -27,7 +29,7 @@ public class Context {
     public Context(RandomNumberGenerator rng) {
         this.callables = new HashSet<>();
 
-        this.typeHierarchy = new TreeTypeEnvironment(rng);
+        this.typeHierarchy = new DAGTypeEnvironment(rng);
         this.idStore = new MapIdentifierStore(typeHierarchy, rng);
         this.rng = rng;
     }
@@ -75,8 +77,12 @@ public class Context {
         return idStore.hasIdentifier(identifier);
     }
 
-    public void addType(KType parent, KType newType) {
-        typeHierarchy.addType(parent, newType);
+    public void addType(Set<KType> parents, KType newType) {
+        typeHierarchy.addType(parents, newType);
+    }
+
+    public KType getTypeByName(String typeName) {
+        return typeHierarchy.getTypeByName(typeName);
     }
 
     public void addIdentifier(String id, KCallable callable) {
@@ -107,6 +113,42 @@ public class Context {
 
         if (!classes.containsKey("Any")) {
             throw new IllegalStateException("Could not find root of type hierarchy in environment.");
+        }
+
+        // Topologically add all the extracted types to the environment
+        Set<String> addedClasses = new HashSet<>();
+        Set<String> classesToAdd = new HashSet<>(classes.keySet());
+
+        addType(new HashSet<>(), classes.get("Any"));
+
+        addedClasses.add("Any");
+        classesToAdd.remove("Any");
+
+        while (addedClasses.size() < classes.size()) {
+            List<String> canAddNext = parents.entrySet().stream()
+                    .filter(entry -> classesToAdd.contains(entry.getKey()))
+                    .filter(entry -> entry.getValue().stream().map(KTypeWrapper::name).allMatch(addedClasses::contains))
+                    .map(Map.Entry::getKey)
+                    .toList();
+
+            if (canAddNext.isEmpty()) {
+                throw new IllegalStateException("No new classes can be topologically added.");
+            }
+
+            KClassifierType nextAddition = classes.get(canAddNext.get(0));
+            Set<KType> parentsOfAddition = parents.get(nextAddition.name()).stream()
+                    .map(wrapper -> getTypeByName(wrapper.name()))
+                    .collect(Collectors.toSet());
+
+            // If there are no parents, it is a descendant of Any
+            if (parentsOfAddition.isEmpty()) {
+                parentsOfAddition.add(getTypeByName("Any"));
+            }
+
+            addType(parentsOfAddition, nextAddition);
+
+            classesToAdd.remove(nextAddition.name());
+            addedClasses.add(nextAddition.name());
         }
     }
 
