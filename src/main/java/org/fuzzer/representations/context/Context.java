@@ -323,7 +323,15 @@ public class Context {
             }
 
             case KGrammarVocabulary.companionObject -> {
-                throw new UnsupportedOperationException("Cannot yet parse companion object nodes.");
+                List<KotlinParseTree> classBodyNodeList = declNode.getChildren().stream()
+                        .filter(n -> KGrammarVocabulary.classBody.equals(n.getName()))
+                        .toList();
+                if (classBodyNodeList.isEmpty()) {
+                    throw new UnsupportedOperationException("Cannot yet parse empty companion object nodes.");
+                }
+
+                // Ignore companion object and treat its attributes as the class' atributes
+                return getClassMembers(classBodyNodeList.get(0));
             }
 
             case KGrammarVocabulary.anonymousInitializer -> {
