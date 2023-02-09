@@ -21,25 +21,27 @@ public class TreeTypeEnvironmentTest {
     @BeforeEach
     void setUp() {
         typeList = Arrays.stream(new String[]{"Any", "Number", "Byte", "Short", "Int", "Long", "String", "Char", "Boolean"})
-                .map(KType::new).toList();
+                .map(name -> (KType) new KClassType(name, true, false)).toList();
 
-        Tree<KType> root = new Tree<>(new KType("Any"));
-        root.addChildren(Arrays.stream(new String[]{"Number", "String", "Char", "Boolean"}).map(KType::new).toList());
+        Tree<KType> root = new Tree<>(new KClassType("Any", true, false));
+        root.addChildren(Arrays.stream(new String[]{"Number", "String", "Char", "Boolean"})
+                .map(name -> (KType) new KClassType(name, true, false)).toList());
 
-        Optional<Tree<KType>> numberType = root.find(new KType("Number"));
-        numberType.get().addChildren(Arrays.stream(new String[]{"Byte", "Short", "Int", "Long"}).map(KType::new).toList());
+        Optional<Tree<KType>> numberType = root.find(new KClassType("Number", true, false));
+        numberType.get().addChildren(Arrays.stream(new String[]{"Byte", "Short", "Int", "Long"})
+                .map(name -> (KType) new KClassType(name, true, false)).toList());
 
         RandomNumberGenerator rng = new RandomNumberGenerator(0);
         env = new TreeTypeEnvironment(root, rng);
 
-        fakeType = new KType("Fake");
+        fakeType = new KClassType("Fake", true, false);
     }
 
     @Test
     void hasType() {
         for (KType type : typeList) {
             assertTrue(env.hasType(type));
-            assertFalse(env.hasType(new KType(type.getName() + "_")));
+            assertFalse(env.hasType(new KClassType(type.name() + "_", true, false)));
         }
     }
 
@@ -58,8 +60,8 @@ public class TreeTypeEnvironmentTest {
                     });
         }
 
-        assertFalse(env.isSubtypeOf(new KType("Byte"), new KType("Int")));
-        assertTrue(env.isSubtypeOf(new KType("Int"), new KType("Number")));
+        assertFalse(env.isSubtypeOf(new KClassType("Byte", true, false), new KClassType("Int", true, false)));
+        assertTrue(env.isSubtypeOf(new KClassType("Int", true, false), new KClassType("Number", true, false)));
     }
 
     @Test
@@ -71,9 +73,9 @@ public class TreeTypeEnvironmentTest {
             assertTrue(subtypesOfRoot.contains(type));
         }
 
-        Set<KType> subtypesOfNumber = env.subtypesOf(new KType("Number"));
+        Set<KType> subtypesOfNumber = env.subtypesOf(new KClassType("Number", true, false));
         Set<KType> expectedSubtypes = Arrays.stream(new String[]{"Number", "Byte", "Short", "Int", "Long"})
-                .map(KType::new)
+                .map(name -> new KClassType(name, true, false))
                 .collect(Collectors.toSet());
 
         assertEquals(expectedSubtypes, subtypesOfNumber);
@@ -91,14 +93,14 @@ public class TreeTypeEnvironmentTest {
     void supertypesOf() {
         Set<KType> supertypesOfRoot = env.supertypesOf(typeList.get(0));
         Set<KType> expectedSupertypesOfRoot = new HashSet<>();
-        expectedSupertypesOfRoot.add(new KType("Any"));
+        expectedSupertypesOfRoot.add(new KClassType("Any", true, false));
 
         assertEquals(expectedSupertypesOfRoot, supertypesOfRoot);
 
         Set<KType> expectedSubtypesOfInt = Arrays.stream(new String[]{"Int", "Number", "Any"})
-                .map(KType::new)
+                .map(name -> new KClassType(name, true, false))
                 .collect(Collectors.toSet());
-        Set<KType> supertypesOfInt = env.supertypesOf(new KType("Int"));
+        Set<KType> supertypesOfInt = env.supertypesOf(new KClassType("Int", true, false));
 
         assertEquals(expectedSubtypesOfInt, supertypesOfInt);
     }
@@ -113,9 +115,9 @@ public class TreeTypeEnvironmentTest {
 
     @Test
     void addType() {
-        KType intType = new KType("Int");
-        KType subInt = new KType("SubInt");
-        KType subSubInt = new KType("SubSubInt");
+        KType intType = new KClassType("Int", true, false);
+        KType subInt = new KClassType("SubInt", true, false);
+        KType subSubInt = new KClassType("SubSubInt", true, false);
 
         env.addType(intType, subInt);
         env.addType(subInt, subSubInt);
@@ -138,8 +140,8 @@ public class TreeTypeEnvironmentTest {
 
     @Test
     void addTypeException() {
-        KType subInt = new KType("SubInt");
-        KType subSubInt = new KType("SubSubInt");
+        KType subInt = new KClassType("SubInt", true, false);
+        KType subSubInt = new KClassType("SubSubInt", true, false);
 
         assertThrows(IllegalArgumentException.class,
                 () -> {
@@ -148,7 +150,7 @@ public class TreeTypeEnvironmentTest {
 
         assertThrows(IllegalArgumentException.class,
                 () -> {
-                    env.addType(new KType("Any"), new KType("Number"));
+                    env.addType(new KClassType("Any", true, false), new KClassType("Number", true, false));
                 });
     }
 

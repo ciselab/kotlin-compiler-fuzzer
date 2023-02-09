@@ -2,7 +2,7 @@ package org.fuzzer.grammar.ast;
 
 import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.Constraint;
-import org.fuzzer.grammar.Context;
+import org.fuzzer.representations.context.Context;
 
 import java.util.List;
 

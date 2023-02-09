@@ -1,19 +1,20 @@
 package org.fuzzer.representations.callables;
 
-import org.fuzzer.grammar.Context;
+import org.fuzzer.representations.context.Context;
 import org.fuzzer.representations.types.KType;
 
 import java.util.List;
+import java.util.Optional;
 
 public class KIdentifierCallable extends KCallable {
-    public KIdentifierCallable(String id, KType type) {
-        super(id, type);
+
+
+    public KIdentifierCallable(String id, KType returnType) {
+        super(id, returnType);
     }
 
     @Override
-    public String call(Context ctx, List<KCallable> input) {
-        verifyInput(ctx, input);
-        // No need to save input, as it would alwasy be empty.
-        return getName();
+    public String call(Context ctx, Optional<KCallable> owner, List<KCallable> input) {
+        return null;
     }
 }

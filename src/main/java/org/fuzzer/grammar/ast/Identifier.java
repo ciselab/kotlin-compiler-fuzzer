@@ -3,7 +3,7 @@ package org.fuzzer.grammar.ast;
 import org.antlr.v4.tool.ast.GrammarAST;
 import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.Constraint;
-import org.fuzzer.grammar.Context;
+import org.fuzzer.representations.context.Context;
 import org.fuzzer.utils.StringUtilities;
 
 import java.util.List;

@@ -1,5 +1,7 @@
 package org.fuzzer.representations.types;
 
+import org.jetbrains.kotlin.spec.grammar.tools.KotlinParseTree;
+
 import java.util.Set;
 
 public interface TypeEnvironment {
@@ -14,6 +16,10 @@ public interface TypeEnvironment {
     Set<KType> supertypesOf(KType type);
 
     void addType(KType parent, KType newType);
+
+    void addType(Set<KType> parents, KType newType);
+
+    KType getTypeByName(String typeName);
 
     KType randomType();
 }

@@ -1,5 +1,6 @@
 package org.fuzzer.representations.types;
 
+import kotlin.NotImplementedError;
 import org.fuzzer.utils.RandomNumberGenerator;
 import org.fuzzer.utils.Tree;
 
@@ -7,9 +8,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class TreeTypeEnvironment implements TypeEnvironment {
-    Tree<KType> typeTree;
+    private Tree<KType> typeTree;
 
-    List<KType> listOfTypes;
+    private List<KType> listOfTypes;
 
     private final RandomNumberGenerator rng;
 
@@ -29,15 +30,7 @@ public class TreeTypeEnvironment implements TypeEnvironment {
      */
     @Override
     public void populateEnvironment() {
-        Tree<KType> root = new Tree<>(new KType("Any"));
-        root.addChildren(Arrays.stream(new String[]{"Number", "String", "Char", "Boolean"}).map(KType::new).toList());
-
-        Optional<Tree<KType>> numberType = root.find(new KType("Number"));
-
-        assert numberType.isPresent();
-
-        numberType.get().addChildren(Arrays.stream(new String[]{"Byte", "Short", "Int", "Long"}).map(KType::new).toList());
-        this.typeTree = root;
+        return;
     }
 
     @Override
@@ -88,6 +81,28 @@ public class TreeTypeEnvironment implements TypeEnvironment {
 
         typeTree.find(parent).get().addChild(newType);
         listOfTypes.add(newType);
+    }
+
+    @Override
+    public void addType(Set<KType> parents, KType newType) {
+        throw new NotImplementedError("Tree type environment does not support multiple parents.");
+    }
+
+    @Override
+    public KType getTypeByName(String typeName) {
+        List<KType> matchingTypes = subtypesOf(typeTree.getValue()).stream()
+                .filter(type -> type.name().equals(typeName))
+                .toList();
+
+        if (matchingTypes.isEmpty()) {
+            throw new IllegalArgumentException("Could not find type named: " + typeName + ".");
+        }
+
+        if (matchingTypes.size() > 1) {
+            throw new IllegalArgumentException("Multiple types names " + typeName + " found: " + matchingTypes + ".");
+        }
+
+        return matchingTypes.get(0);
     }
 
     @Override

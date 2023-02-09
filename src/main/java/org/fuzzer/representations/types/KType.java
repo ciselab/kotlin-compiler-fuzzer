@@ -1,56 +1,21 @@
 package org.fuzzer.representations.types;
 
-import java.util.Objects;
+import java.util.List;
 import java.util.Optional;
 
-public class KType {
-    private final String name;
+public interface KType {
 
-    private final Optional<KType> genericType;
+    String name();
 
-    public KType(String name) {
-        this.name = name;
-        this.genericType = Optional.empty();
-    }
+    List<KGenericType> getGenerics();
 
-    public KType(String name, KType genericType) {
-        this.name = name;
-        this.genericType = Optional.of(genericType);
-    }
+    public List<KType> getInputTypes();
 
-    public static KType getNull() {
-        return new KType("null");
-    }
+    public Optional<KType> getReturnType();
 
-    public String getName() {
-        return name;
-    }
+    boolean canBeInherited();
 
-    public Optional<KType> getGenericType() {
-        return genericType;
-    }
+    boolean canBeInstantiated();
 
-    public Boolean hasGeneric() {
-        return !genericType.isEmpty();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof KType that)) return false;
-
-        return Objects.equals(name, that.name) && Objects.equals(this.genericType, that.genericType);
-    }
-
-    @Override
-    public int hashCode() {
-        int result = name.hashCode();
-        result = 31 * result + genericType.hashCode();
-        return result;
-    }
-
-    @Override
-    public String toString() {
-        return "[" + name + (genericType.isPresent() ? ("<" + genericType.get() + ">") : "") + "]";
-    }
+    boolean canBeDeclared();
 }
