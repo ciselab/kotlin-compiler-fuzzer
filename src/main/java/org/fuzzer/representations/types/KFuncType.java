@@ -34,6 +34,16 @@ public class KFuncType implements KType {
     }
 
     @Override
+    public List<KType> getInputTypes() {
+        return inputTypes;
+    }
+
+    @Override
+    public Optional<KType> getReturnType() {
+        return returnType;
+    }
+
+    @Override
     public List<KGenericType> getGenerics() {
         return new ArrayList<>();
     }

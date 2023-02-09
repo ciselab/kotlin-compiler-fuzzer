@@ -53,6 +53,9 @@ public abstract class KCallable implements Cloneable {
         return call(ctx, owner, this.lastInput);
     }
 
+    public String call(Context ctx) {
+        return call(ctx, Optional.empty());
+    }
     protected void updateLastInput(List<KCallable> lastInput) {
         this.lastInput = lastInput;
     }
@@ -60,7 +63,6 @@ public abstract class KCallable implements Cloneable {
     public void verifyInput(Context ctx, List<KCallable> input) {
         if (!inputMatchesTypes(ctx, input))
             throw new IllegalArgumentException("Input object list for callable <" + getName() + ">: <" + input + "> does not match input types <" + this.inputTypes.toString() + ">");
-
     }
     private Boolean inputMatchesTypes(Context ctx, List<KCallable> input) {
         if (input.size() != inputTypes.size())

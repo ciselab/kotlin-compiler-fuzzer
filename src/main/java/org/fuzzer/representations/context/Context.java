@@ -21,13 +21,17 @@ import static org.jetbrains.kotlin.spec.grammar.tools.KotlinGrammarToolsKt.token
 public class Context {
     private final IdentifierStore idStore;
 
-    private final Set<KCallable> callables;
+
+    private final HashMap<KType, Set<KCallable>> callablesByOwner;
+
+    private final HashMap<KType, Set<KCallable>> callablesByReturnType;
     private final TypeEnvironment typeHierarchy;
 
     private final RandomNumberGenerator rng;
 
     public Context(RandomNumberGenerator rng) {
-        this.callables = new HashSet<>();
+        this.callablesByOwner = new HashMap<>();
+        this.callablesByReturnType = new HashMap<>();
 
         this.typeHierarchy = new DAGTypeEnvironment(rng);
         this.idStore = new MapIdentifierStore(typeHierarchy, rng);
@@ -56,7 +60,16 @@ public class Context {
 
     public Optional<KCallable> randomCallableOfType(KType type, Predicate<KCallable> condition) throws CloneNotSupportedException {
         Set<KType> subtypes = typeHierarchy.subtypesOf(type);
-        List<KCallable> alternatives = new ArrayList<>(callables.stream().filter(kCallable -> subtypes.contains(kCallable.getReturnType())).filter(condition).toList());
+        List<KCallable> alternatives = new ArrayList<>(callablesByReturnType
+                .entrySet().stream()
+                .filter(entry -> subtypes.contains(entry.getKey()))
+                .map(Map.Entry::getValue)
+                .reduce(new HashSet<>(), (acc, newSet) -> {
+                    acc.addAll(newSet);
+                    return acc;
+                })
+                .stream()
+                .filter(condition).toList());
 
         alternatives.addAll(identifiersOfType(type));
 
@@ -97,6 +110,7 @@ public class Context {
         HashMap<String, KClassifierType> classes = new HashMap<>();
         HashMap<String, List<KType>> extractedTypes = new HashMap<>();
         HashMap<String, List<KTypeWrapper>> parents = new HashMap<>();
+
         for (String fileName : fileNames) {
             KotlinParseTree parseTree = null;
             try {
@@ -149,6 +163,49 @@ public class Context {
 
             classesToAdd.remove(nextAddition.name());
             addedClasses.add(nextAddition.name());
+        }
+
+        System.out.println("test");
+
+        // Add callables
+        // TODO use type wrappers instead
+        for (Map.Entry<String, List<KType>> entry : extractedTypes.entrySet()) {
+
+            // TODO make sure owners are classifiers.
+            KClassifierType ownerType = (KClassifierType) getTypeByName(entry.getKey());
+
+            if (ownerType instanceof KInterfaceType) {
+                // TODO handle interfaces.
+                continue;
+            }
+
+            KClassType classOwnerType = (KClassType) ownerType;
+
+            for (KType type : entry.getValue()) {
+                KCallable extractedCallable;
+
+                if (type instanceof KFuncType) {
+
+                    // ...
+                    if ("constructor".equals(type.name())) {
+                        extractedCallable = new KConstructor(classOwnerType, type.getInputTypes());
+                    } else {
+                        extractedCallable = new KMethod(ownerType, type.name(),
+                                type.getInputTypes(),
+                                type.getReturnType().isPresent() ? type.getReturnType().get() : new KVoid());
+                    }
+                } else {
+                    // TODO: handle other class properties
+                    continue;
+                }
+
+                // Store the callables
+                callablesByOwner.putIfAbsent(classOwnerType, new HashSet<>());
+                callablesByReturnType.putIfAbsent(extractedCallable.getReturnType(), new HashSet<>());
+
+                callablesByOwner.get(classOwnerType).add(extractedCallable);
+                callablesByReturnType.get(extractedCallable.getReturnType()).add(extractedCallable);
+            }
         }
     }
 
@@ -263,20 +320,20 @@ public class Context {
                     new KInterfaceType(name, genericTypes);
         } else {
             return isClass ?
-                    new KClassType(name, genericTypes,true, false) :
+                    new KClassType(name, genericTypes, true, false) :
                     new KInterfaceType(name, genericTypes);
         }
     }
 
     /**
      * delegationSpecifiers
-     *     : annotatedDelegationSpecifier (NL* COMMA NL* annotatedDelegationSpecifier)*
-     *     ;
+     * : annotatedDelegationSpecifier (NL* COMMA NL* annotatedDelegationSpecifier)*
+     * ;
      */
     private List<KTypeWrapper> getDelegationSpecifiers(KotlinParseTree delegationSpecifierNode) {
         if (!(KGrammarVocabulary.delegationSpecifiers.equals(delegationSpecifierNode.getName()) ||
                 KGrammarVocabulary.delegationSpecifier.equals(delegationSpecifierNode.getName()) ||
-                KGrammarVocabulary.annotatedDelegationSpecifier.equals(delegationSpecifierNode.getName())))  {
+                KGrammarVocabulary.annotatedDelegationSpecifier.equals(delegationSpecifierNode.getName()))) {
             throw new IllegalArgumentException("Parse tree " + delegationSpecifierNode.getName() + " does not is not a class declaration.");
         }
 
@@ -353,8 +410,8 @@ public class Context {
 
     /**
      * typeParameters
-     *     : LANGLE NL* typeParameter (NL* COMMA NL* typeParameter)* NL* RANGLE
-     *     ;
+     * : LANGLE NL* typeParameter (NL* COMMA NL* typeParameter)* NL* RANGLE
+     * ;
      */
     public List<KGenericType> getTypeParams(KotlinParseTree typeParamsNode) {
         if (!KGrammarVocabulary.typeParameters.equals(typeParamsNode.getName())) {
@@ -377,8 +434,8 @@ public class Context {
 
     /**
      * typeParameter
-     *     : typeParameterModifiers? NL* simpleIdentifier (NL* COLON NL* type)?
-     *     ;
+     * : typeParameterModifiers? NL* simpleIdentifier (NL* COLON NL* type)?
+     * ;
      */
     public String getTypeParam(KotlinParseTree typeParamNode) {
         if (!KGrammarVocabulary.typeParameter.equals(typeParamNode.getName())) {
@@ -551,8 +608,8 @@ public class Context {
         // Handle declaration(s)
         KotlinParseTree varDeclNode = propertyDecl.getChildren().stream()
                 .filter(n ->
-                    KGrammarVocabulary.varDecl.equals(n.getName()) ||
-                            KGrammarVocabulary.multiVarDecl.equals(n.getName()))
+                        KGrammarVocabulary.varDecl.equals(n.getName()) ||
+                                KGrammarVocabulary.multiVarDecl.equals(n.getName()))
                 .toList()
                 .get(0);
 
@@ -573,8 +630,8 @@ public class Context {
 
     /**
      * multiVariableDeclaration
-     *     : LPAREN NL* variableDeclaration (NL* COMMA NL* variableDeclaration)* NL* RPAREN
-     *     ;
+     * : LPAREN NL* variableDeclaration (NL* COMMA NL* variableDeclaration)* NL* RPAREN
+     * ;
      */
     private List<KTypeWrapper> getMultiVarDecl(KotlinParseTree multiVarDeclNode) {
         if (!KGrammarVocabulary.propertyDecl.equals(multiVarDeclNode.getName())) {
@@ -590,8 +647,8 @@ public class Context {
 
     /**
      * variableDeclaration
-     *     : annotation* NL* simpleIdentifier (NL* COLON NL* type)?
-     *     ;
+     * : annotation* NL* simpleIdentifier (NL* COLON NL* type)?
+     * ;
      */
     private KTypeWrapper getVarDecl(KotlinParseTree varDeclNode) {
         if (!KGrammarVocabulary.varDecl.equals(varDeclNode.getName())) {
@@ -837,7 +894,8 @@ public class Context {
                     KTypeWrapper extractedType = switch (typeOrParam.getName()) {
                         case KGrammarVocabulary.parameter -> getParameter(typeOrParam);
                         case KGrammarVocabulary.type -> getType(typeOrParam);
-                        default -> throw new IllegalArgumentException("Unexpected input of type: " + typeOrParam.getName());
+                        default ->
+                                throw new IllegalArgumentException("Unexpected input of type: " + typeOrParam.getName());
                     };
                     inputTypes.add(extractedType);
                 }

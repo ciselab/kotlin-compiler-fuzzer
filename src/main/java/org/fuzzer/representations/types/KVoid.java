@@ -4,7 +4,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public record KGenericType(String name) implements KType {
+public class KVoid implements KType {
+
+    public KVoid() {
+
+    }
+
+    @Override
+    public String name() {
+        return "void";
+    }
 
     @Override
     public List<KGenericType> getGenerics() {
