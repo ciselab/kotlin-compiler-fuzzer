@@ -37,3 +37,5 @@ outTmp/
 /test.output
 /kotlin-native/dist
 kotlin-ide/
+# Output of experiments
+src/main/java/output
