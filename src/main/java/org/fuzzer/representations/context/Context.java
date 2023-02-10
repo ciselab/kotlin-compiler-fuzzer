@@ -15,19 +15,19 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static org.fuzzer.utils.StringUtilities.removeGeneric;
 import static org.jetbrains.kotlin.spec.grammar.tools.KotlinGrammarToolsKt.parseKotlinCode;
 import static org.jetbrains.kotlin.spec.grammar.tools.KotlinGrammarToolsKt.tokenizeKotlinCode;
 
-public class Context {
-    private final IdentifierStore idStore;
+public class Context implements Cloneable {
+    private IdentifierStore idStore;
 
+    private HashMap<KType, Set<KCallable>> callablesByOwner;
 
-    private final HashMap<KType, Set<KCallable>> callablesByOwner;
+    private HashMap<KType, Set<KCallable>> callablesByReturnType;
+    private TypeEnvironment typeHierarchy;
 
-    private final HashMap<KType, Set<KCallable>> callablesByReturnType;
-    private final TypeEnvironment typeHierarchy;
-
-    private final RandomNumberGenerator rng;
+    private RandomNumberGenerator rng;
 
     public Context(RandomNumberGenerator rng) {
         this.callablesByOwner = new HashMap<>();
@@ -59,23 +59,29 @@ public class Context {
     }
 
     public Optional<KCallable> randomCallableOfType(KType type, Predicate<KCallable> condition) throws CloneNotSupportedException {
-        Set<KType> subtypes = typeHierarchy.subtypesOf(type);
-        List<KCallable> alternatives = new ArrayList<>(callablesByReturnType
-                .entrySet().stream()
-                .filter(entry -> subtypes.contains(entry.getKey()))
-                .map(Map.Entry::getValue)
-                .reduce(new HashSet<>(), (acc, newSet) -> {
-                    acc.addAll(newSet);
-                    return acc;
-                })
-                .stream()
-                .filter(condition).toList());
+        if (type instanceof KClassifierType) {
+            Set<KType> subtypes = typeHierarchy.subtypesOf(type);
+            List<KCallable> alternatives = new ArrayList<>(callablesByReturnType
+                    .entrySet().stream()
+                    .filter(entry -> subtypes.contains(entry.getKey()))
+                    .map(Map.Entry::getValue)
+                    .reduce(new HashSet<>(), (acc, newSet) -> {
+                        acc.addAll(newSet);
+                        return acc;
+                    })
+                    .stream()
+                    .filter(condition).toList());
+            // callablesByReturnType.entrySet().stream().filter(entry -> subtypes.contains(entry.getKey())).map(Map.Entry::getValue).reduce(new HashSet<>(), (acc, newSet) -> {acc.addAll(newSet); return acc;}).stream().filter(condition).toList()
 
-        alternatives.addAll(identifiersOfType(type));
+            alternatives.addAll(identifiersOfType(type));
 
-        if (alternatives.isEmpty()) return Optional.empty();
-        KCallable selected = alternatives.get(rng.fromUniformDiscrete(0, alternatives.size() - 1));
-        return Optional.of((KCallable) selected.clone());
+            if (alternatives.isEmpty()) return Optional.empty();
+            KCallable selected = alternatives.get(rng.fromUniformDiscrete(0, alternatives.size() - 1));
+            return Optional.of((KCallable) selected.clone());
+        } else {
+            // TODO handle function types
+            throw new UnsupportedOperationException("Cannot yet sample function subtypes.");
+        }
     }
 
     public Optional<KCallable> randomTerminalCallableOfType(KType type) throws CloneNotSupportedException {
@@ -83,11 +89,21 @@ public class Context {
     }
 
     public Optional<KCallable> randomConsumerCallable(KType type) throws CloneNotSupportedException {
-        return randomCallableOfType(type, kCallable -> !kCallable.getInputTypes().isEmpty());
+        // TODO handle function inputs
+        Predicate<KCallable> noFunctionInputs = kCallable -> kCallable.getInputTypes().stream().noneMatch(input -> input instanceof KFuncType);
+        return randomCallableOfType(type, kCallable -> !kCallable.getInputTypes().isEmpty() && noFunctionInputs.test(kCallable));
     }
 
     public boolean containsIdentifier(String identifier) {
         return idStore.hasIdentifier(identifier);
+    }
+
+    public void addDefaultValue(KType type, String representation) {
+        callablesByReturnType.putIfAbsent(type, new HashSet<>());
+        callablesByReturnType.get(type).add(new KAnonymousCallable(representation, type));
+
+        callablesByOwner.putIfAbsent(new KVoid(), new HashSet<>());
+        callablesByOwner.get(new KVoid()).add(new KAnonymousCallable(representation, type));
     }
 
     public void addType(Set<KType> parents, KType newType) {
@@ -133,15 +149,16 @@ public class Context {
         Set<String> addedClasses = new HashSet<>();
         Set<String> classesToAdd = new HashSet<>(classes.keySet());
 
-        addType(new HashSet<>(), classes.get("Any"));
-
+//        addType(new HashSet<>(), classes.get("Any"));
+        addType(new HashSet<>(), new KClassType("Any", false, false));
         addedClasses.add("Any");
         classesToAdd.remove("Any");
 
         while (addedClasses.size() < classes.size()) {
             List<String> canAddNext = parents.entrySet().stream()
                     .filter(entry -> classesToAdd.contains(entry.getKey()))
-                    .filter(entry -> entry.getValue().stream().map(KTypeWrapper::name).allMatch(addedClasses::contains))
+                    //.filter(entry -> entry.getValue().stream().map(KTypeWrapper::name).allMatch(addedClasses::contains))
+                    .filter(entry -> entry.getValue().stream().map(kTypeWrapper -> removeGeneric(kTypeWrapper.name())).allMatch(addedClasses::contains))
                     .map(Map.Entry::getKey)
                     .toList();
 
@@ -151,7 +168,7 @@ public class Context {
 
             KClassifierType nextAddition = classes.get(canAddNext.get(0));
             Set<KType> parentsOfAddition = parents.get(nextAddition.name()).stream()
-                    .map(wrapper -> getTypeByName(wrapper.name()))
+                    .map(wrapper -> typeHierarchy.getRootTypeByName(wrapper.name()))
                     .collect(Collectors.toSet());
 
             // If there are no parents, it is a descendant of Any
@@ -162,10 +179,8 @@ public class Context {
             addType(parentsOfAddition, nextAddition);
 
             classesToAdd.remove(nextAddition.name());
-            addedClasses.add(nextAddition.name());
+            addedClasses.add(removeGeneric(nextAddition.name()));
         }
-
-        System.out.println("test");
 
         // Add callables
         // TODO use type wrappers instead
@@ -320,7 +335,7 @@ public class Context {
                     new KInterfaceType(name, genericTypes);
         } else {
             return isClass ?
-                    new KClassType(name, genericTypes, true, false) :
+                    new KClassType(name, genericTypes, false, false) :
                     new KInterfaceType(name, genericTypes);
         }
     }
@@ -708,7 +723,7 @@ public class Context {
                 }
                 case KGrammarVocabulary.type -> {
                     // TODO: nested functions
-                    returnType = getType(child).toClass(true, false);
+                    returnType = getType(child).toClass(false, false);
                 }
             }
         }
@@ -809,7 +824,8 @@ public class Context {
                         KGrammarVocabulary.simpleUserType.equals(typeNode.getName()) ||
                         KGrammarVocabulary.parenthesizedType.equals(typeNode.getName()) ||
                         KGrammarVocabulary.functionType.equals(typeNode.getName()) ||
-                        KGrammarVocabulary.nullableType.equals(typeNode.getName())
+                        KGrammarVocabulary.nullableType.equals(typeNode.getName()) ||
+                        KGrammarVocabulary.typeProjection.equals(typeNode.getName())
         )) {
             throw new IllegalArgumentException("Parse tree " + typeNode + " is not a type node.");
         }
@@ -864,7 +880,56 @@ public class Context {
             }
             case KGrammarVocabulary.simpleUserType -> {
                 // Assume classes. Should refactor.
-                return new KTypeWrapper(KTypeIndicator.CLASS, getIdentifierName(typeNode.getChildren().get(0)));
+                String id = getIdentifierName(typeNode.getChildren().get(0));
+
+                List<KotlinParseTree> typeArgumentNodes = typeNode.getChildren().stream()
+                        .filter(n -> KGrammarVocabulary.typeArguments.equals(n.getName()))
+                        .toList();
+
+                List<KGenericType> generics = new ArrayList<>();
+                for (KotlinParseTree typeArg : typeArgumentNodes) {
+
+                    // Get the projections
+                    /*
+                    typeProjection
+                        : typeProjectionModifiers? type | MULT
+                        ;
+                     */
+                    List<KotlinParseTree> typeProjections = typeArg.getChildren().stream()
+                            .filter(n -> KGrammarVocabulary.typeProjection.equals(n.getName()))
+                            .toList();
+
+                    List<KTypeWrapper> res = new ArrayList<>();
+
+                    for (KotlinParseTree child : typeProjections) {
+                        res.add(getType(child));
+                    }
+
+                    generics.addAll(res.stream()
+                            .map(wrapper -> new KGenericType(wrapper.name()))
+                            .toList());
+                }
+
+                return new KTypeWrapper(KTypeIndicator.CLASS, id, generics);
+            }
+            /*
+            typeArguments
+                : LANGLE NL* typeProjection (NL* COMMA NL* typeProjection)* NL* RANGLE
+                ;
+             */
+            /*
+            typeProjection
+                : typeProjectionModifiers? type | MULT
+                ;
+             */
+            case KGrammarVocabulary.typeProjection -> {
+                // Either a type or "*"
+                KotlinParseTree lastChild = typeNode.getChildren().get(typeNode.getChildren().size() - 1);
+                if (KGrammarVocabulary.MULT.equals(lastChild.getName())) {
+                    return new KTypeWrapper(KTypeIndicator.GENERIC, lastChild.getName());
+                }
+
+                return getType(lastChild);
             }
             /*
             functionType
@@ -909,6 +974,23 @@ public class Context {
             default -> {
                 throw new IllegalArgumentException("Cannot parse type node of type: " + typeNode);
             }
+        }
+    }
+
+
+    @Override
+    public Context clone() {
+        try {
+            Context clone = (Context) super.clone();
+            // TODO: in the future, clone type environment as well
+            clone.typeHierarchy = typeHierarchy;
+            clone.callablesByOwner = (HashMap<KType, Set<KCallable>>) callablesByOwner.clone();
+            clone.callablesByReturnType = (HashMap<KType, Set<KCallable>>) callablesByReturnType.clone();
+            clone.rng = new RandomNumberGenerator(rng.fromUniformDiscrete(0, 1000));
+            clone.idStore = new MapIdentifierStore(clone.typeHierarchy, clone.rng);
+            return clone;
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError();
         }
     }
 }

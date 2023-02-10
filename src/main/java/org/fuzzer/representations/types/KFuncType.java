@@ -82,4 +82,9 @@ public class KFuncType implements KType {
         result = 31 * result + returnType.hashCode();
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "[func]: " + name() + inputTypes + "->" + (returnType.isPresent() ? returnType.get() : "void");
+    }
 }

@@ -6,11 +6,10 @@ import org.fuzzer.representations.types.KType;
 import java.util.List;
 import java.util.Optional;
 
-public class KIdentifierCallable extends KCallable {
+public class KAnonymousCallable extends KCallable {
 
-
-    public KIdentifierCallable(String id, KType returnType) {
-        super(id, returnType);
+    public KAnonymousCallable(String representation, KType returnType) {
+        super(representation, returnType);
     }
 
     @Override

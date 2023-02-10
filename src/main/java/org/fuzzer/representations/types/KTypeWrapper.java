@@ -15,6 +15,10 @@ public record KTypeWrapper(List<KTypeWrapper> parent,
         this(new ArrayList<>(), indicator, name, new ArrayList<>(), new ArrayList<>(), Optional.empty());
     }
 
+    public KTypeWrapper(KTypeIndicator indicator, String name, List<KGenericType> generics) {
+        this(new ArrayList<>(), indicator, name, generics, new ArrayList<>(), Optional.empty());
+    }
+
     public KClassType toClass(boolean open, boolean abs) {
         return new KClassType(name, open, abs);
     }
@@ -36,7 +40,7 @@ public record KTypeWrapper(List<KTypeWrapper> parent,
                 // TODO: handle this in parsing. For now, assume dummy values.
                 if (!(open.isPresent() && abs.isPresent())) {
 //                    throw new IllegalArgumentException("Cannot instantiate class without modifiers.");
-                    return toClass(true, false);
+                    return toClass(false, false);
                 }
                 return toClass(open.get(), abs.get());
             }

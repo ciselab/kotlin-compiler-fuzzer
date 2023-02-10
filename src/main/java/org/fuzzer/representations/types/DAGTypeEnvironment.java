@@ -5,6 +5,8 @@ import org.fuzzer.utils.RandomNumberGenerator;
 
 import java.util.*;
 
+import static org.fuzzer.utils.StringUtilities.removeGeneric;
+
 public class DAGTypeEnvironment implements TypeEnvironment {
 
     private ConstrainedDAG<KType> dag;
@@ -74,6 +76,25 @@ public class DAGTypeEnvironment implements TypeEnvironment {
     public KType getTypeByName(String typeName) {
         List<KType> matchingTypes = dag.allEntries().stream()
                 .filter(type -> type.name().equals(typeName))
+                .toList();
+
+        if (matchingTypes.isEmpty()) {
+            throw new IllegalArgumentException("Could not find type named: " + typeName + ".");
+        }
+
+        if (matchingTypes.size() > 1) {
+            throw new IllegalArgumentException("Multiple types names " + typeName + " found: " + matchingTypes + ".");
+        }
+
+        return matchingTypes.get(0);
+    }
+
+    // Shortcut for now
+    public KType getRootTypeByName(String typeName) {
+        String rootTypeName = removeGeneric(typeName);
+
+        List<KType> matchingTypes = dag.allEntries().stream()
+                .filter(type -> removeGeneric(type.name()).equals(rootTypeName))
                 .toList();
 
         if (matchingTypes.isEmpty()) {

@@ -44,4 +44,14 @@ public class KVoid implements KType {
     public boolean canBeDeclared() {
         return false;
     }
+
+    @Override
+    public int hashCode() {
+        return Integer.MAX_VALUE / 2;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof KVoid;
+    }
 }

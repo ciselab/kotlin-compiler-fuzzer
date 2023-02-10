@@ -52,4 +52,9 @@ public class KClassType extends KClassifierType {
         result = 31 * result + (abs ? 1 : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "[class]: " + name() + (getGenerics().isEmpty() ? "" : "<" + getGenerics() + ">");
+    }
 }

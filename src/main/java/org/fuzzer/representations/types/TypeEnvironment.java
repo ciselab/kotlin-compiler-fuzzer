@@ -21,5 +21,6 @@ public interface TypeEnvironment {
 
     KType getTypeByName(String typeName);
 
+    KType getRootTypeByName(String typeName);
     KType randomType();
 }
