@@ -1,22 +1,29 @@
 package org.fuzzer.utils;
-
-import org.antlr.runtime.RecognitionException;
-import org.antlr.v4.runtime.CharStream;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.TokenSource;
-import org.antlr.v4.tool.LexerGrammar;
-import org.antlr.v4.tool.ast.GrammarAST;
-import org.jetbrains.kotlin.spec.grammar.tools.KotlinParseTree;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 
-import static org.antlr.v4.runtime.CharStreams.fromFileName;
-
 public class FileUtilities {
+
+    public static long compareByByte(File f1, File f2) throws IOException {
+        try (BufferedInputStream fis1 = new BufferedInputStream(new FileInputStream(f1));
+             BufferedInputStream fis2 = new BufferedInputStream(new FileInputStream(f1))) {
+
+            int ch = 0;
+            long pos = 1;
+            while ((ch = fis1.read()) != -1) {
+                if (ch != fis2.read()) {
+                    return pos;
+                }
+                pos++;
+            }
+            if (fis2.read() == -1) {
+                return -1;
+            }
+            else {
+                return pos;
+            }
+        }
+    }
     public static String fileContentToString(File file) throws IOException {
         try (BufferedReader br = new BufferedReader(new FileReader(file, StandardCharsets.UTF_8))) {
             StringBuilder sb = new StringBuilder();
