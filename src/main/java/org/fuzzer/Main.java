@@ -14,8 +14,8 @@ public class Main {
         List<String> fileNames = classes.stream().map(x -> classPath + x).toList();
 
         List<String> compilerArgs = new ArrayList<>();
-        compilerArgs.add("-d src/main/java/output/v1 > out1.txt");
-        compilerArgs.add("-d src/main/java/output/v2 -Xuse-k2 > out2.txt");
+        compilerArgs.add("");
+        compilerArgs.add("-Xuse-k2");
 
         DTRunner runner = new DTRunner(1, 10,
                 fileNames, "src/main/java/output/",

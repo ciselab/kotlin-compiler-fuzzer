@@ -11,10 +11,7 @@ import org.fuzzer.representations.context.Context;
 import org.fuzzer.utils.FileUtilities;
 import org.fuzzer.utils.RandomNumberGenerator;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -70,7 +67,7 @@ public class DTRunner {
         rootContext.fromFileNames(inputFileNames);
 
         // Add some dummy values to the context
-        rootContext.addDefaultValue(rootContext.getTypeByName("Byte"), "(0x48 as Byte)");
+        rootContext.addDefaultValue(rootContext.getTypeByName("Byte"), "(0x48.toByte())");
         rootContext.addDefaultValue(rootContext.getTypeByName("Float"), "1.0f");
         rootContext.addDefaultValue(rootContext.getTypeByName("Double"), "2.0");
         rootContext.addDefaultValue(rootContext.getTypeByName("Int"), "3");
@@ -102,14 +99,14 @@ public class DTRunner {
                 CodeFragment newCode = generator.sampleAssignment();
                 code.extend(newCode);
             }
-
-            String randomFilename = directoryOutput + UUID.randomUUID();
+            String randomFileName = UUID.randomUUID().toString();
+            String outputFileName = directoryOutput + randomFileName;
 
             String text = "fun main(args: Array<String>) {\n";
             text += code.getText();
             text += "\n}";
 
-            String kotlinFile = randomFilename + ".kt";
+            String kotlinFile = outputFileName + ".kt";
 
             BufferedWriter writer = new BufferedWriter(new FileWriter(kotlinFile));
             writer.write(text);
@@ -118,21 +115,40 @@ public class DTRunner {
 
             List<Process> procs = new ArrayList<>();
 
+            int argNum = 0;
             for (String compilerArgs : args) {
-                System.out.println(kotlinCompilerPath + " " + kotlinFile + " " + compilerArgs);
-                ProcessBuilder pb = new ProcessBuilder(kotlinCompilerPath, kotlinFile, compilerArgs);
-                pb.directory(new File("/home/user/Master/thesis/kotlin-compiler-fuzzer/"));
+                List<String> command = new ArrayList<>();
+
+                command.add(kotlinCompilerPath);
+                command.add(kotlinFile);
+
+                List<String> inputArgs = compilerArgs.isEmpty() ? new ArrayList<>() : new ArrayList<>(List.of(compilerArgs.split(" ")));
+                inputArgs.add("-d");
+
+                // Manually define the jar output
+                inputArgs.add(directoryOutput + "v" + ++argNum + "/" + randomFileName + ".jar");
+
+                command.addAll(inputArgs);
+                System.out.println(command);
+
+                ProcessBuilder pb = new ProcessBuilder(command);
+                pb.directory(new File(System.getProperty("user.dir")));
+
                 Process p = pb.start();
                 procs.add(p);
             }
 
             for (Process p : procs) {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                }
                 p.waitFor();
                 System.out.println(p.toString());
             }
 
-            File compiled1 = new File(directoryOutput + "v1/" + kotlinFile);
-            File compiled2 = new File(directoryOutput + "v2/" + kotlinFile);
+            File compiled1 = new File(directoryOutput + "v1/" + randomFileName + ".jar");
+            File compiled2 = new File(directoryOutput + "v2/" + randomFileName + ".jar");
             if (compareByByte(compiled1, compiled2) != -1) {
                 System.out.println("Discrepancy detected!");
             }
