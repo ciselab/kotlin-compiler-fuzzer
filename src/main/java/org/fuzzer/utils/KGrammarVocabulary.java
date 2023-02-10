@@ -94,4 +94,10 @@ public final class KGrammarVocabulary {
     public static final String annotatedDelegationSpecifier = "annotatedDelegationSpecifier";
 
     public static final String constructorInvocation = "constructorInvocation";
+
+    public static final String typeArguments = "typeArguments";
+
+    public static final String typeProjection = "typeProjection";
+
+    public static final String MULT = "MULT";
 }

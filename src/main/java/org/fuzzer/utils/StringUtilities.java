@@ -31,4 +31,13 @@ public class StringUtilities {
     public static String randomChar() {
         return "'" + sampleRegex("[a-zA-Z0-9]") + "'";
     }
+
+    public static String removeGeneric(String typeName) {
+        if (typeName.contains("<")) {
+            int genericBegin = typeName.indexOf('<');
+            typeName = typeName.substring(0, genericBegin);
+        }
+
+        return typeName;
+    }
 }

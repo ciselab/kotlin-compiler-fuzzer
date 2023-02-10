@@ -10,6 +10,7 @@ import java.util.Optional;
 
 public class KMethod extends KCallable {
 
+    // TODO convert this to a type
     KClassifierType ownerType;
 
     public KMethod(KClassifierType ownerType,
@@ -20,12 +21,17 @@ public class KMethod extends KCallable {
         this.ownerType = ownerType;
     }
 
+    public KClassifierType getOwnerType() {
+        return ownerType;
+    }
+
     @Override
     public String call(Context ctx, Optional<KCallable> owner, List<KCallable> input) {
         super.verifyInput(ctx, input);
         verifyOwner(ctx, owner);
 
         updateLastInput(input);
+        updateOwner(owner);
 
         // Call the owner without any parameters
         String ownerRepr = owner.get().call(ctx);
@@ -53,5 +59,10 @@ public class KMethod extends KCallable {
 
         if (!ctx.isSubtypeOf(owner.get().getReturnType(), this.ownerType))
             throw new IllegalArgumentException("Owner " + owner.get() + " is not a subtype of " + this.ownerType);
+    }
+
+    @Override
+    public boolean requiresOwner() {
+        return true;
     }
 }

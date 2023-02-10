@@ -124,13 +124,13 @@ public class ConstrainedDAG<T> implements Graph<T> {
 
     private <S extends T> void verifyExists(S node) {
         if (!(parentList.containsKey(node) && childrenList.containsKey(node))) {
-            throw new IllegalArgumentException("Node " + node + "does not exist in the graph.");
+            throw new IllegalArgumentException("Node " + node + " does not exist in the graph.");
         }
     }
 
     private <S extends T> void verifyNotExists(S node) {
         if (parentList.containsKey(node) || childrenList.containsKey(node)) {
-            throw new IllegalArgumentException("Node " + node + "does already exists in the graph.");
+            throw new IllegalArgumentException("Node " + node + " does already exists in the graph.");
         }
     }
 

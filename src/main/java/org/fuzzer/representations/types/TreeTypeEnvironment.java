@@ -106,6 +106,11 @@ public class TreeTypeEnvironment implements TypeEnvironment {
     }
 
     @Override
+    public KType getRootTypeByName(String typeName) {
+        throw new UnsupportedOperationException("Unused operation.");
+    }
+
+    @Override
     public KType randomType() {
         return listOfTypes.get(rng.fromUniformDiscrete(0, listOfTypes.size() - 1));
     }

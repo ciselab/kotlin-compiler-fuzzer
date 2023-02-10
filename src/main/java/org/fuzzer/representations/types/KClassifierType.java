@@ -4,6 +4,7 @@ import kotlin.contracts.Returns;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Optional;
 
 public abstract class KClassifierType implements KType {
@@ -23,7 +24,26 @@ public abstract class KClassifierType implements KType {
 
     @Override
     public String name() {
-        return name;
+        if (generics.isEmpty()) {
+            return name;
+        }
+
+        StringBuilder genericRepr = new StringBuilder();
+        genericRepr.append("<");
+
+        ListIterator<KGenericType> genericIterator = generics.listIterator();
+
+        while(genericIterator.hasNext()) {
+            genericRepr.append(genericIterator.next());
+
+            if (genericIterator.hasNext()) {
+                genericRepr.append(",");
+            }
+        }
+
+        genericRepr.append(">");
+
+        return name + genericRepr;
     }
 
     @Override

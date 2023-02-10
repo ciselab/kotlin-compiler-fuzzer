@@ -12,7 +12,7 @@ public abstract class KCallable implements Cloneable {
     private final List<KType> inputTypes;
     private final KType returnType;
 
-    private final Optional<KCallable> owner;
+    private Optional<KCallable> owner;
     private List<KCallable> lastInput = new ArrayList<>();
 
     public KCallable(String name, KType output) {
@@ -49,17 +49,20 @@ public abstract class KCallable implements Cloneable {
 
     public abstract String call(Context ctx, Optional<KCallable> owner, List<KCallable> input);
 
-    public String call(Context ctx, Optional<KCallable> owner) {
+    public String  call(Context ctx, Optional<KCallable> owner) {
         return call(ctx, owner, this.lastInput);
     }
 
     public String call(Context ctx) {
-        return call(ctx, Optional.empty());
+        return call(ctx, owner);
     }
     protected void updateLastInput(List<KCallable> lastInput) {
         this.lastInput = lastInput;
     }
 
+    protected void updateOwner(Optional<KCallable> owner) {
+        this.owner = owner;
+    }
     public void verifyInput(Context ctx, List<KCallable> input) {
         if (!inputMatchesTypes(ctx, input))
             throw new IllegalArgumentException("Input object list for callable <" + getName() + ">: <" + input + "> does not match input types <" + this.inputTypes.toString() + ">");
@@ -130,7 +133,5 @@ public abstract class KCallable implements Cloneable {
         return newCallable;
     }
 
-    public boolean isUniversalOwner() {
-        return false;
-    }
+    public abstract boolean requiresOwner();
 }
