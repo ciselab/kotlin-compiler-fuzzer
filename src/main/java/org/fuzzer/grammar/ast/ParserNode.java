@@ -1,7 +1,6 @@
 package org.fuzzer.grammar.ast;
 
 import org.antlr.v4.tool.ast.GrammarAST;
-import org.fuzzer.grammar.Constraint;
 
 import java.util.List;
 
@@ -33,8 +32,6 @@ public abstract class ParserNode implements ASTNode {
     public List<ASTNode> getChildren() {
         return children;
     }
-
-    public abstract List<Constraint> getConstraints();
 
     @Override
     public boolean invariant() {
