@@ -1,9 +1,5 @@
 package org.fuzzer.grammar;
 
-import org.stringtemplate.v4.ST;
-
-import javax.swing.plaf.synth.SynthRadioButtonMenuItemUI;
-import java.util.Collections;
 import java.util.Map;
 
 public class RuleName {
@@ -18,6 +14,16 @@ public class RuleName {
     public static final String BLOCK = "BLOCK";
 
     private static final String shebangLine = "shebangLine";
+
+    public static final String SEMIS = "semis";
+
+    public static final String SEMI = "semi";
+
+    public static final String DECLARATION = "declaration";
+
+    public static final String TOP_LEVEL_OBJ = "topLevelObject";
+
+    public static final String FUNC_DECL = "functionDeclaration";
 
     static final Map<String, String> parserVocabulary = Map.ofEntries(
             Map.entry("", "!1")

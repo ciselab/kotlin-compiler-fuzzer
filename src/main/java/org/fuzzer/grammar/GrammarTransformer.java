@@ -67,6 +67,11 @@ public class GrammarTransformer {
             case RuleName.ALT -> {
                 List<ASTNode> altNodes = new ArrayList<>();
 
+                // If only one option, skip the ALT node
+                if (ast.getChildren().size() == 1) {
+                    return transformGrammar((GrammarAST) ast.getChild(0));
+                }
+
                 for (Object child : ast.getChildren()) {
 
                     GrammarAST childNode = (GrammarAST) child;
@@ -100,8 +105,51 @@ public class GrammarTransformer {
             }
 
             case RuleName.BLOCK -> {
-                // Ignore the block
-                return transformGrammar((GrammarAST) ast.getChild(0));
+                if (ast.getChildren().size() == 1) {
+                    // Skip block if single instruciton
+                    return transformGrammar((GrammarAST) ast.getChild(0));
+                }
+
+                List<ASTNode> children = new ArrayList<>();
+
+                for (Object child : ast.getChildren()) {
+                    GrammarAST childNode = (GrammarAST) child;
+
+                    children.add(transformGrammar(childNode));
+                }
+
+                return new BlockNode(ast, children);
+            }
+
+            case RuleName.SEMIS, RuleName.SEMI ->  {
+                return new TextNode(ast, System.lineSeparator());
+            }
+
+            // RuleRefAST have to be retrieved from by `getRule()`
+            case RuleName.TOP_LEVEL_OBJ -> {
+                Rule topLevelRule = parserGrammar.getRule(ast.getText());
+
+                // Children: topLevelObject, BLOCK
+                GrammarAST topLevelAST = topLevelRule.ast;
+                return transformGrammar((GrammarAST) topLevelAST.getChild(1));
+            }
+
+            case  RuleName.DECLARATION -> {
+                Rule topLevelRule = parserGrammar.getRule(ast.getText());
+
+                // Children: declaration (empty), BLOCK -> 5x ALT
+                GrammarAST declAST = topLevelRule.ast;
+                List<ASTNode> declOptions = new ArrayList<>();
+
+                for (Object declType : ((GrammarAST) declAST.getChild(1)).getChildren()) {
+                    declOptions.add(transformGrammar((GrammarAST) declType));
+                }
+
+                return new AltNode(ast, declOptions);
+            }
+
+            case RuleName.FUNC_DECL -> {
+
             }
 
             // Placeholder
