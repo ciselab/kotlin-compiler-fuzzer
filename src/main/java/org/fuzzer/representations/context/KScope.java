@@ -1,6 +1,8 @@
 package org.fuzzer.representations.context;
 
-public enum KScope {
+import java.io.Serializable;
+
+public enum KScope implements Serializable {
     GLOBAL_SCOPE,
     CLASS_SCOPE,
     FUNCTION_SCOPE

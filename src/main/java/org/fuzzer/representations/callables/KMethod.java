@@ -10,7 +10,6 @@ import java.util.Optional;
 
 public class KMethod extends KCallable {
 
-    // TODO convert this to a type
     KClassifierType ownerType;
 
     public KMethod(KClassifierType ownerType,

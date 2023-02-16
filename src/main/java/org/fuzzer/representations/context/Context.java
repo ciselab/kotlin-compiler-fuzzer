@@ -998,7 +998,7 @@ public class Context implements Cloneable, Serializable {
 
                 KTypeWrapper returnType = getType(returnTypeNode);
 
-                return new KTypeWrapper(new ArrayList<>(), KTypeIndicator.FUNCTION, "", new ArrayList<>(), inputTypes, Optional.of(returnType));
+                return new KTypeWrapper(new ArrayList<>(), KTypeIndicator.FUNCTION, "", new ArrayList<>(), inputTypes, returnType);
             }
             default -> {
                 throw new IllegalArgumentException("Cannot parse type node of type: " + typeNode);

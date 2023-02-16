@@ -149,7 +149,7 @@ public class GrammarTransformer {
             }
 
             case RuleName.FUNC_DECL -> {
-
+                return new FunctionDecl(ast, new ArrayList<>());
             }
 
             // Placeholder
@@ -157,6 +157,5 @@ public class GrammarTransformer {
                 return new TextNode(ast, ast.token.toString());
             }
         }
-        return null;
     }
 }

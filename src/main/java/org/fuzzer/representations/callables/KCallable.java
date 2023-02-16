@@ -3,11 +3,12 @@ package org.fuzzer.representations.callables;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.representations.types.KType;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public abstract class KCallable implements Cloneable {
+public abstract class KCallable implements Cloneable, Serializable {
     private final String name;
     private final List<KType> inputTypes;
     private final KType returnType;

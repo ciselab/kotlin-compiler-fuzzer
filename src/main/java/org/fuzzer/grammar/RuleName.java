@@ -25,6 +25,8 @@ public class RuleName {
 
     public static final String FUNC_DECL = "functionDeclaration";
 
+    public static final String fun = "fun";
+
     static final Map<String, String> parserVocabulary = Map.ofEntries(
             Map.entry("", "!1")
     );

@@ -12,8 +12,30 @@ import java.util.List;
 
 public class ParameterNode extends ASTNode {
 
+    private String sampledId;
+
+    private KType sampledType;
+
     public ParameterNode(GrammarAST antlrNode) {
         super(antlrNode, new ArrayList<>());
+        sampledId = null;
+        sampledType = null;
+    }
+
+    public String getSampledId() {
+        if (sampledId == null) {
+            throw new IllegalStateException("Sampled id queried before sampling");
+        }
+
+        return sampledId;
+    }
+
+    public KType getSampledType() {
+        if (sampledType == null) {
+            throw new IllegalStateException("Sampled type queried before sampling");
+        }
+
+        return sampledType;
     }
 
     // TODO inline functions
@@ -23,6 +45,14 @@ public class ParameterNode extends ASTNode {
 
         String id = StringUtilities.randomString();
         KType type = ctx.getRandomType();
+
+        // TODO fix symbolics ASAP
+        while (type.name().contains("Comparable")) {
+            type = ctx.getRandomType();
+        }
+
+        this.sampledId = id;
+        this.sampledType = type;
 
         // Kotlin allows for trailing commas
         return new CodeFragment(id + ": " + type.toString() + ",");

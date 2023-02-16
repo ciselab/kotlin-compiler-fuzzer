@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Main {
-    public static void main(String[] args) throws IOException, RecognitionException, CloneNotSupportedException, InterruptedException {
+    public static void main(String[] args) throws IOException, RecognitionException, InterruptedException, ClassNotFoundException {
         String classPath = "src/test/resources/kotlin/";
         List<String> classes = new ArrayList<>(List.of(new String[]{"Any.kt", "Comparable.kt",
                 "Char.kt", "CharSequence.kt", "Number.kt", "Primitives.kt", "Boolean.kt", "String.kt"}));

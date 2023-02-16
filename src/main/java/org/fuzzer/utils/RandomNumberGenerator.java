@@ -1,8 +1,9 @@
 package org.fuzzer.utils;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Random;
-public class RandomNumberGenerator {
+public class RandomNumberGenerator implements Serializable {
     private final Random random;
     private final long seed;
 
