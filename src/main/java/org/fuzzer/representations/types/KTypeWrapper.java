@@ -2,21 +2,24 @@ package org.fuzzer.representations.types;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public record KTypeWrapper(List<KTypeWrapper> parent,
                            KTypeIndicator indicator,
                            String name,
                            List<KGenericType> generics,
                            List<KTypeWrapper> inputTypes,
-                           Optional<KTypeWrapper> returnType) {
+                           KTypeWrapper returnType) {
 
     public KTypeWrapper(KTypeIndicator indicator, String name) {
-        this(new ArrayList<>(), indicator, name, new ArrayList<>(), new ArrayList<>(), Optional.empty());
+        this(new ArrayList<>(), indicator, name, new ArrayList<>(), new ArrayList<>(), KTypeWrapper.getVoidWrapper());
     }
 
     public KTypeWrapper(KTypeIndicator indicator, String name, List<KGenericType> generics) {
-        this(new ArrayList<>(), indicator, name, generics, new ArrayList<>(), Optional.empty());
+        this(new ArrayList<>(), indicator, name, generics, new ArrayList<>(), KTypeWrapper.getVoidWrapper());
+    }
+
+    public static KTypeWrapper getVoidWrapper() {
+        return new KTypeWrapper(new ArrayList<>(), KTypeIndicator.CLASS, "void", new ArrayList<>(), new ArrayList<>(), null);
     }
 
     public KClassType toClass(boolean open, boolean abs) {
@@ -27,22 +30,14 @@ public record KTypeWrapper(List<KTypeWrapper> parent,
         return new KInterfaceType(name);
     }
 
-    public KFuncType toFunction(List<KType> inputTypes, Optional<KType> returnType) {
-        return returnType.isPresent() ?
-                new KFuncType(name, generics, inputTypes, returnType.get()) :
-                new KFuncType(name, generics, inputTypes);
+    public KFuncType toFunction(List<KType> inputTypes, KType returnType) {
+        return new KFuncType(name, generics, inputTypes);
     }
 
-    public KType toType(Optional<Boolean> open, Optional<Boolean> abs) {
+    public KType toType(boolean open, boolean abs) {
         switch (indicator) {
             case CLASS -> {
-
-                // TODO: handle this in parsing. For now, assume dummy values.
-                if (!(open.isPresent() && abs.isPresent())) {
-//                    throw new IllegalArgumentException("Cannot instantiate class without modifiers.");
-                    return toClass(false, false);
-                }
-                return toClass(open.get(), abs.get());
+                return toClass(open, abs);
             }
             case INTERFACE -> {
                 return toInterface();
@@ -52,11 +47,10 @@ public record KTypeWrapper(List<KTypeWrapper> parent,
                         .map(typeWrapper -> typeWrapper.toType(open, abs))
                         .toList();
 
-                Optional<KType> returnType = this.returnType.isPresent() ?
-                        Optional.of(this.returnType.get().toType(open, abs)) :
-                        Optional.empty();
-
-                return toFunction(inputTypes, returnType);
+                return toFunction(inputTypes, this.returnType.toType(open, abs));
+            }
+            case VOID -> {
+                return new KVoid();
             }
             default -> {
                 throw new IllegalArgumentException("Cannot handle indicator of type: " + indicator);
@@ -65,10 +59,10 @@ public record KTypeWrapper(List<KTypeWrapper> parent,
     }
 
     public KType toType() {
-        return toType(Optional.empty(), Optional.empty());
+        return toType(false, false);
     }
 
     public KType toType(KTypeModifiers modifiers) {
-        return toType(Optional.of(modifiers.isOpen()), Optional.of(modifiers.isAbstract()));
+        return toType(modifiers.isOpen(), modifiers.isAbstract());
     }
 }
