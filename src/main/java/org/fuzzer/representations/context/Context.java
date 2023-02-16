@@ -74,23 +74,28 @@ public class Context implements Cloneable, Serializable {
             Set<KType> subtypes = typeHierarchy.subtypesOf(type);
             List<KCallable> alternatives = new ArrayList<>(callablesByReturnType
                     .entrySet().stream()
+                    // Get callables that match the return type
                     .filter(entry -> subtypes.contains(entry.getKey()))
+                    // Keep only the callables
                     .map(Map.Entry::getValue)
+                    // Add all the sets together
                     .reduce(new HashSet<>(), (acc, newSet) -> {
                         acc.addAll(newSet);
                         return acc;
                     })
                     .stream()
+                    // Filter on the condition
                     .filter(condition).toList());
             // callablesByReturnType.entrySet().stream().filter(entry -> subtypes.contains(entry.getKey())).map(Map.Entry::getValue).reduce(new HashSet<>(), (acc, newSet) -> {acc.addAll(newSet); return acc;}).stream().filter(condition).toList()
 
-            alternatives.addAll(identifiersOfType(type));
+            alternatives.addAll(identifiersOfType(type).stream().filter(condition).toList());
 
             if (alternatives.isEmpty()) {
                 throw new IllegalArgumentException("Cannot sample callable of type " + type + " under condition " + condition);
             }
             KCallable selected = alternatives.get(rng.fromUniformDiscrete(0, alternatives.size() - 1));
-            return (KCallable) selected.clone();
+            KCallable clone = (KCallable) selected.clone();
+            return clone;
         } else {
             // TODO handle function types
             throw new UnsupportedOperationException("Cannot yet sample function subtypes.");
@@ -98,7 +103,8 @@ public class Context implements Cloneable, Serializable {
     }
 
     public KCallable randomTerminalCallableOfType(KType type) throws CloneNotSupportedException {
-        return randomCallableOfType(type, kCallable -> kCallable.getInputTypes().isEmpty());
+        KCallable callable = randomCallableOfType(type, KCallable::isTerminal);
+        return callable;
     }
 
     public KCallable randomConsumerCallable(KType type) throws CloneNotSupportedException {

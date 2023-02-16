@@ -18,8 +18,8 @@ public class Main {
         compilerArgs.add("");
         compilerArgs.add("-Xuse-k2");
 
-        DTRunner runner = new DTRunner(1, 10,
-                fileNames, "src/main/java/output/",
+        DTRunner runner = new DTRunner(1, 1000,
+                fileNames, "output/",
                 "src/main/resources/kotlinc/bin/kotlinc", compilerArgs,
                 0, 3, ctxFileName);
         runner.run();

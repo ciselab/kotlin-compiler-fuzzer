@@ -9,9 +9,9 @@ import java.util.List;
 import java.util.Optional;
 
 public abstract class KCallable implements Cloneable, Serializable {
-    private final String name;
-    private final List<KType> inputTypes;
-    private final KType returnType;
+    private String name;
+    private List<KType> inputTypes;
+    private KType returnType;
     private KCallable owner;
     private List<KCallable> lastInput = new ArrayList<>();
 
@@ -136,6 +136,10 @@ public abstract class KCallable implements Cloneable, Serializable {
         Object clone = super.clone();
         KCallable newCallable = (KCallable) clone;
         newCallable.lastInput = List.copyOf(lastInput);
+        newCallable.inputTypes = List.copyOf(inputTypes);
+        newCallable.name = name;
+        newCallable.owner = owner == null ? null : (KCallable) owner.clone();
+        newCallable.returnType = returnType;
 
         return newCallable;
     }

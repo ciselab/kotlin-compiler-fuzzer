@@ -43,7 +43,7 @@ public class ParameterNode extends ASTNode {
     public CodeFragment getSample(RandomNumberGenerator rng, Context ctx) {
         invariant();
 
-        String id = StringUtilities.randomString();
+        String id = ctx.getNewIdentifier();
         KType type = ctx.getRandomType();
 
         // TODO fix symbolics ASAP
@@ -55,7 +55,7 @@ public class ParameterNode extends ASTNode {
         this.sampledType = type;
 
         // Kotlin allows for trailing commas
-        return new CodeFragment(id + ": " + type.toString() + ",");
+        return new CodeFragment(id.replaceAll("\"", "") + ": " + type.name() + ",");
     }
 
     @Override
