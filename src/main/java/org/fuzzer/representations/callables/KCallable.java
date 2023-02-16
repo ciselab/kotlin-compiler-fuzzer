@@ -12,29 +12,28 @@ public abstract class KCallable implements Cloneable, Serializable {
     private final String name;
     private final List<KType> inputTypes;
     private final KType returnType;
-
-    private Optional<KCallable> owner;
+    private KCallable owner;
     private List<KCallable> lastInput = new ArrayList<>();
 
     public KCallable(String name, KType output) {
         this.name = name;
         this.inputTypes = new ArrayList<>();
         this.returnType = output;
-        this.owner = Optional.empty();
+        this.owner = null;
     }
 
     public KCallable(String name, List<KType> input, KType output) {
         this.name = name;
         this.inputTypes = input;
         this.returnType = output;
-        this.owner = Optional.empty();
+        this.owner = null;
     }
 
     public KCallable(String name, List<KType> input, KType output, KCallable owner) {
         this.name = name;
         this.inputTypes = input;
         this.returnType = output;
-        this.owner = Optional.of(owner);
+        this.owner = owner;
     }
 
     public String getName() {
@@ -48,9 +47,9 @@ public abstract class KCallable implements Cloneable, Serializable {
         return returnType;
     }
 
-    public abstract String call(Context ctx, Optional<KCallable> owner, List<KCallable> input);
+    public abstract String call(Context ctx, KCallable owner, List<KCallable> input);
 
-    public String  call(Context ctx, Optional<KCallable> owner) {
+    public String  call(Context ctx, KCallable owner) {
         return call(ctx, owner, this.lastInput);
     }
 
@@ -61,7 +60,7 @@ public abstract class KCallable implements Cloneable, Serializable {
         this.lastInput = lastInput;
     }
 
-    protected void updateOwner(Optional<KCallable> owner) {
+    protected void updateOwner(KCallable owner) {
         this.owner = owner;
     }
     public void verifyInput(Context ctx, List<KCallable> input) {
@@ -80,19 +79,19 @@ public abstract class KCallable implements Cloneable, Serializable {
         return true;
     }
 
-    public void verifyOwner(Context ctx, Optional<KCallable> owner) {
-        if(this.owner.isPresent() != owner.isPresent()) {
-            String thisOwnerPresent = (this.owner.isPresent() ? "" : "not") + " present ";
-            String ownerPresent = (owner.isPresent() ? "" : "not") + " present ";
+    public void verifyOwner(Context ctx, KCallable owner) {
+        if((owner == null) != (this.owner == null)) {
+            String thisOwnerPresent = (this.owner == null ? "" : "not") + " present ";
+            String ownerPresent = (owner == null ? "" : "not") + " present ";
             throw new IllegalArgumentException("Owner mismatch: callable owner is " + thisOwnerPresent + " and argument owner is " + ownerPresent);
         }
 
-        if (owner.isEmpty()) {
+        if (owner == null) {
             return;
         }
 
-        if (!ctx.isSubtypeOf(owner.get().getReturnType(), this.owner.get().getReturnType()))
-            throw new IllegalArgumentException("Owner " + owner.get() + " is not a subtype of " + this.owner.get());
+        if (!ctx.isSubtypeOf(owner.getReturnType(), this.owner.getReturnType()))
+            throw new IllegalArgumentException("Owner " + owner + " is not a subtype of " + this.owner);
     }
 
     public boolean isTerminal() {

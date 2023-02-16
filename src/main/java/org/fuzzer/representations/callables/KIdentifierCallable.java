@@ -14,7 +14,7 @@ public class KIdentifierCallable extends KCallable {
     }
 
     @Override
-    public String call(Context ctx, Optional<KCallable> owner, List<KCallable> input) {
+    public String call(Context ctx, KCallable owner, List<KCallable> input) {
         return getName();
     }
 
