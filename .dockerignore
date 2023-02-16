@@ -41,3 +41,5 @@ kotlin-ide/
 README.md
 .gitignore
 .github/
+output/*
+context.ser
