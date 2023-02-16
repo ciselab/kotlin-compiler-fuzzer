@@ -2,7 +2,6 @@ package org.fuzzer.representations.types;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public record KGenericType(String name) implements KType {
 

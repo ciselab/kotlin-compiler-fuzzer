@@ -2,7 +2,6 @@ package org.fuzzer.representations.types;
 
 import java.io.Serializable;
 import java.util.List;
-import java.util.Optional;
 
 public interface KType extends Serializable {
 
