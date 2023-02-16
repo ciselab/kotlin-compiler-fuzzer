@@ -6,6 +6,7 @@ import org.antlr.v4.tool.Grammar;
 import org.antlr.v4.tool.LexerGrammar;
 import org.fuzzer.grammar.ast.ASTNode;
 import org.fuzzer.utils.FileUtilities;
+import org.fuzzer.utils.RandomNumberGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
