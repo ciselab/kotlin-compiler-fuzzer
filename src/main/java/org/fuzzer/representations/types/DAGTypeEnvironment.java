@@ -3,17 +3,19 @@ package org.fuzzer.representations.types;
 import org.fuzzer.utils.ConstrainedDAG;
 import org.fuzzer.utils.RandomNumberGenerator;
 
+import java.io.Serializable;
 import java.util.*;
+import java.util.function.Predicate;
 
 import static org.fuzzer.utils.StringUtilities.removeGeneric;
 
-public class DAGTypeEnvironment implements TypeEnvironment {
+public class DAGTypeEnvironment implements TypeEnvironment, Serializable {
 
-    private ConstrainedDAG<KType> dag;
+    private final ConstrainedDAG<KType> dag;
 
-    private RandomNumberGenerator rng;
+    private final RandomNumberGenerator rng;
 
-    public DAGTypeEnvironment(RandomNumberGenerator rng, ConstrainedDAG dag) {
+    public DAGTypeEnvironment(RandomNumberGenerator rng, ConstrainedDAG<KType> dag) {
         this.rng = rng;
         this.dag = dag;
     }
@@ -21,8 +23,8 @@ public class DAGTypeEnvironment implements TypeEnvironment {
     public DAGTypeEnvironment(RandomNumberGenerator rng) {
         this.rng = rng;
         dag = new ConstrainedDAG<>(
-                t -> t instanceof KClassifierType,
-                parents -> {
+                (Predicate<KType> & Serializable) t -> t instanceof KClassifierType,
+                (Predicate<Set<KType>> & Serializable) parents -> {
                     boolean allClassifiers = parents.stream().allMatch(t -> t instanceof KClassifierType);
 
                     if (!allClassifiers)

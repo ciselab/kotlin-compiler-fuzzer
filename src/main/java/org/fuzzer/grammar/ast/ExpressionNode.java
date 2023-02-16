@@ -124,9 +124,9 @@ public class ExpressionNode extends ASTNode {
             KMethod methodCallable = (KMethod) callable;
             KType ownerType = ctx.getTypeByName(methodCallable.getOwnerType().name());
             KCallable owner = sampleOwnerCallableOfType(ownerType, ctx);
-            callable.call(ctx, Optional.of(owner), childrenCallables);
+            callable.call(ctx, owner, childrenCallables);
         } else {
-            callable.call(ctx, Optional.empty(), childrenCallables);
+            callable.call(ctx, null, childrenCallables);
         }
 
 
@@ -151,7 +151,7 @@ public class ExpressionNode extends ASTNode {
             sampledOwnerInput.add(sampleOwnerCallableOfType(inputType, ctx));
         }
 
-        sampledOwner.call(ctx, Optional.empty(), sampledOwnerInput);
+        sampledOwner.call(ctx, null, sampledOwnerInput);
         return sampledOwner;
     }
 }

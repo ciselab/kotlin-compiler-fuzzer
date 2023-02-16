@@ -106,7 +106,14 @@ public abstract class KCallable implements Cloneable, Serializable {
         if (!name.equals(kCallable.name)) return false;
         if (!inputTypes.equals(kCallable.inputTypes)) return false;
         if (!returnType.equals(kCallable.returnType)) return false;
-        if (!owner.equals(kCallable.owner)) return false;
+
+        if ((owner == null) != (kCallable.owner == null)) {
+            return false;
+        }
+
+        if (owner != null) {
+            if (!owner.equals(kCallable.owner)) return false;
+        }
         return lastInput.equals(kCallable.lastInput);
     }
 
@@ -115,7 +122,7 @@ public abstract class KCallable implements Cloneable, Serializable {
         int result = name.hashCode();
         result = 31 * result + inputTypes.hashCode();
         result = 31 * result + returnType.hashCode();
-        result = 31 * result + owner.hashCode();
+        result = 31 * result + (owner == null ? 0 : owner.hashCode());
         result = 31 * result + lastInput.hashCode();
         return result;
     }

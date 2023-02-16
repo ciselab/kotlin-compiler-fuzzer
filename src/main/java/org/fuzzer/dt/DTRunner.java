@@ -48,7 +48,7 @@ public class DTRunner {
     public DTRunner(int numberOfFiles, int numberOfStatements,
                     List<String> inputFileNames, String directoryOutput,
                     String kotlinCompilerPath, List<String> commandLineArgs,
-                    int seed, int maxDepth) throws IOException, RecognitionException {
+                    int seed, int maxDepth, String contextFileName) throws IOException, RecognitionException, ClassNotFoundException {
         this.numberOfFiles = numberOfFiles;
         this.numberOfStatements = numberOfStatements;
         this.directoryOutput = directoryOutput;
@@ -65,20 +65,47 @@ public class DTRunner {
         ruleHandler = new RuleHandler(lexerGrammar, parserGrammar);
         rng = new RandomNumberGenerator(seed);
 
-        rootContext = new Context(rng);
-        rootContext.fromFileNames(inputFileNames);
+        File ctxFile = new File(contextFileName);
 
-        // Add some dummy values to the context
-        rootContext.addDefaultValue(rootContext.getTypeByName("Byte"), "(0x48.toByte())");
-        rootContext.addDefaultValue(rootContext.getTypeByName("Float"), "1.0f");
-        rootContext.addDefaultValue(rootContext.getTypeByName("Double"), "2.0");
-        rootContext.addDefaultValue(rootContext.getTypeByName("Int"), "3");
-        rootContext.addDefaultValue(rootContext.getTypeByName("Short"), "(4.toShort())");
-        rootContext.addDefaultValue(rootContext.getTypeByName("Long"), "(5.toLong())");
-        rootContext.addDefaultValue(rootContext.getTypeByName("Boolean"), "true");
-        rootContext.addDefaultValue(rootContext.getTypeByName("Boolean"), "false");
-        rootContext.addDefaultValue(rootContext.getTypeByName("String"), "\"fooBar\"");
-        rootContext.addDefaultValue(rootContext.getTypeByName("Char"), "'w'");
+        if (!ctxFile.exists()) {
+
+            // Create context and serialize
+            rootContext = new Context(rng);
+            rootContext.fromFileNames(inputFileNames);
+
+            // Add some dummy values to the context
+            rootContext.addDefaultValue(rootContext.getTypeByName("Byte"), "(0x48.toByte())");
+            rootContext.addDefaultValue(rootContext.getTypeByName("Float"), "1.0f");
+            rootContext.addDefaultValue(rootContext.getTypeByName("Double"), "2.0");
+            rootContext.addDefaultValue(rootContext.getTypeByName("Int"), "3");
+            rootContext.addDefaultValue(rootContext.getTypeByName("Short"), "(4.toShort())");
+            rootContext.addDefaultValue(rootContext.getTypeByName("Long"), "(5.toLong())");
+            rootContext.addDefaultValue(rootContext.getTypeByName("Boolean"), "true");
+            rootContext.addDefaultValue(rootContext.getTypeByName("Boolean"), "false");
+            rootContext.addDefaultValue(rootContext.getTypeByName("String"), "\"fooBar\"");
+            rootContext.addDefaultValue(rootContext.getTypeByName("Char"), "'w'");
+
+            FileOutputStream f = new FileOutputStream(contextFileName);
+            ObjectOutputStream o = new ObjectOutputStream(f);
+
+            // Serialize file
+            o.writeObject(rootContext);
+
+            o.close();
+            f.close();
+
+        } else {
+
+            // Deserialize
+            FileInputStream fi = new FileInputStream(contextFileName);
+            ObjectInputStream oi = new ObjectInputStream(fi);
+
+            // Read objects
+            rootContext = (Context) oi.readObject();
+
+            oi.close();
+            fi.close();
+        }
 
     }
 
@@ -92,93 +119,73 @@ public class DTRunner {
         return ctxs;
     }
 
-    public void run() throws IOException, ClassNotFoundException {
-        FileOutputStream f = new FileOutputStream(new File("myObjects.txt"));
-        ObjectOutputStream o = new ObjectOutputStream(f);
+    public void run() throws IOException, ClassNotFoundException, InterruptedException {
+        List<Context> contexts = createContexts();
 
-        // Write objects to file
-        o.writeObject(rootContext);
+        ASTNode grammarRoot = new GrammarTransformer(lexerGrammar, parserGrammar).transformGrammar();
 
-        o.close();
-        f.close();
+        for (int i = 0; i < numberOfFiles; i++) {
+            CodeFragment code = new CodeFragment();
+            for (int j = 0; j < numberOfStatements; j++) {
+                // Function declarations.
+                ASTNode nodeToSample = grammarRoot.getChildren().get(0).getChildren().get(5).getChildren().get(0).getChildren().get(0).getChildren().get(2);
 
-        FileInputStream fi = new FileInputStream(new File("myObjects.txt"));
-        ObjectInputStream oi = new ObjectInputStream(fi);
+                CodeFragment newCode = nodeToSample.getSample(rng, contexts.get(i));
+                code.extend(newCode);
+            }
+            String randomFileName = UUID.randomUUID().toString();
+            String outputFileName = directoryOutput + randomFileName;
 
-        // Read objects
-        Context ctx = (Context) oi.readObject();
+            String text = "fun main(args: Array<String>) {\n";
+            text += code.getText();
+            text += "\n}";
 
-        System.out.println(ctx);
+            String kotlinFile = outputFileName + ".kt";
 
-        oi.close();
-        fi.close();
+            BufferedWriter writer = new BufferedWriter(new FileWriter(kotlinFile));
+            writer.write(text);
 
-//        List<Context> contexts = createContexts();
-//
-//        ASTNode grammarRoot = new GrammarTransformer(lexerGrammar, parserGrammar).transformGrammar();
-//
-//        for (int i = 0; i < numberOfFiles; i++) {
-//            CodeFragment code = new CodeFragment();
-//            for (int j = 0; j < numberOfStatements; j++) {
-//                // Function declarations.
-//                ASTNode nodeToSample = grammarRoot.getChildren().get(0).getChildren().get(5).getChildren().get(0).getChildren().get(0).getChildren().get(2);
-//
-//                CodeFragment newCode = nodeToSample.getSample(rng, contexts.get(i));
-//                code.extend(newCode);
-//            }
-//            String randomFileName = UUID.randomUUID().toString();
-//            String outputFileName = directoryOutput + randomFileName;
-//
-//            String text = "fun main(args: Array<String>) {\n";
-//            text += code.getText();
-//            text += "\n}";
-//
-//            String kotlinFile = outputFileName + ".kt";
-//
-//            BufferedWriter writer = new BufferedWriter(new FileWriter(kotlinFile));
-//            writer.write(text);
-//
-//            writer.close();
-//
-//            List<Process> procs = new ArrayList<>();
-//
-//            int argNum = 0;
-//            for (String compilerArgs : args) {
-//                List<String> command = new ArrayList<>();
-//
-//                command.add(kotlinCompilerPath);
-//                command.add(kotlinFile);
-//
-//                List<String> inputArgs = compilerArgs.isEmpty() ? new ArrayList<>() : new ArrayList<>(List.of(compilerArgs.split(" ")));
-//                inputArgs.add("-d");
-//
-//                // Manually define the jar output
-//                inputArgs.add(directoryOutput + "v" + ++argNum + "/" + randomFileName + ".jar");
-//
-//                command.addAll(inputArgs);
-//                System.out.println(command);
-//
-//                ProcessBuilder pb = new ProcessBuilder(command);
-//                pb.directory(new File(System.getProperty("user.dir")));
-//
-//                Process p = pb.start();
-//                procs.add(p);
-//            }
-//
-//            for (Process p : procs) {
-//                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-//                String line;
-//                while ((line = reader.readLine()) != null) {
-//                }
-//                p.waitFor();
-//                System.out.println(p.toString());
-//            }
-//
-//            File compiled1 = new File(directoryOutput + "v1/" + randomFileName + ".jar");
-//            File compiled2 = new File(directoryOutput + "v2/" + randomFileName + ".jar");
-//            if (compareByByte(compiled1, compiled2) != -1) {
-//                System.out.println("Discrepancy detected!");
-//            }
-//        }
+            writer.close();
+
+            List<Process> procs = new ArrayList<>();
+
+            int argNum = 0;
+            for (String compilerArgs : args) {
+                List<String> command = new ArrayList<>();
+
+                command.add(kotlinCompilerPath);
+                command.add(kotlinFile);
+
+                List<String> inputArgs = compilerArgs.isEmpty() ? new ArrayList<>() : new ArrayList<>(List.of(compilerArgs.split(" ")));
+                inputArgs.add("-d");
+
+                // Manually define the jar output
+                inputArgs.add(directoryOutput + "v" + ++argNum + "/" + randomFileName + ".jar");
+
+                command.addAll(inputArgs);
+                System.out.println(command);
+
+                ProcessBuilder pb = new ProcessBuilder(command);
+                pb.directory(new File(System.getProperty("user.dir")));
+
+                Process p = pb.start();
+                procs.add(p);
+            }
+
+            for (Process p : procs) {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                }
+                p.waitFor();
+                System.out.println(p.toString());
+            }
+
+            File compiled1 = new File(directoryOutput + "v1/" + randomFileName + ".jar");
+            File compiled2 = new File(directoryOutput + "v2/" + randomFileName + ".jar");
+            if (compareByByte(compiled1, compiled2) != -1) {
+                System.out.println("Discrepancy detected!");
+            }
+        }
     }
 }
