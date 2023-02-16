@@ -12,20 +12,20 @@ public class KFuncType implements KType {
 
     private final List<KType> inputTypes;
 
-    private final Optional<KType> returnType;
+    private final KType returnType;
 
-    public KFuncType(String name, List<KGenericType> generics, List<KType> inputTypes, KType outputTypes) {
+    public KFuncType(String name, List<KGenericType> generics, List<KType> inputTypes, KType outputType) {
         this.name = name;
         this.generics = generics;
         this.inputTypes = inputTypes;
-        this.returnType = Optional.of(outputTypes);
+        this.returnType = outputType;
     }
 
     public KFuncType(String name, List<KGenericType> generics, List<KType> inputTypes) {
         this.name = name;
         this.generics = generics;
         this.inputTypes = inputTypes;
-        this.returnType = Optional.empty();
+        this.returnType = new KVoid();
     }
 
     @Override
@@ -39,7 +39,7 @@ public class KFuncType implements KType {
     }
 
     @Override
-    public Optional<KType> getReturnType() {
+    public KType getReturnType() {
         return returnType;
     }
 
@@ -85,6 +85,6 @@ public class KFuncType implements KType {
 
     @Override
     public String toString() {
-        return "[func]: " + name() + inputTypes + "->" + (returnType.isPresent() ? returnType.get() : "void");
+        return "[func]: " + name() + inputTypes + "->" + returnType;
     }
 }

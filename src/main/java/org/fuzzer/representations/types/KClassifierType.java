@@ -51,8 +51,8 @@ public abstract class KClassifierType implements KType {
         return new ArrayList<>();
     }
 
-    public Optional<KType> getReturnType() {
-        return Optional.empty();
+    public KType getReturnType() {
+        return new KVoid();
     }
 
     @Override

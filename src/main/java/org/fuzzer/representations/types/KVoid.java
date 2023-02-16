@@ -26,8 +26,8 @@ public class KVoid implements KType {
     }
 
     @Override
-    public Optional<KType> getReturnType() {
-        return Optional.empty();
+    public KType getReturnType() {
+        return this;
     }
 
     @Override

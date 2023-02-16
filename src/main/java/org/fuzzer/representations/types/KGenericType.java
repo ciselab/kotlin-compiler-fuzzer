@@ -17,8 +17,8 @@ public record KGenericType(String name) implements KType {
     }
 
     @Override
-    public Optional<KType> getReturnType() {
-        return Optional.empty();
+    public KType getReturnType() {
+        return new KVoid();
     }
 
     @Override
