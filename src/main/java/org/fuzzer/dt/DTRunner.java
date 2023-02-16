@@ -6,7 +6,9 @@ import org.antlr.v4.tool.Grammar;
 import org.antlr.v4.tool.LexerGrammar;
 import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.generator.CodeGenerator;
+import org.fuzzer.grammar.GrammarTransformer;
 import org.fuzzer.grammar.RuleHandler;
+import org.fuzzer.grammar.ast.ASTNode;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.utils.FileUtilities;
 import org.fuzzer.utils.RandomNumberGenerator;
@@ -89,14 +91,15 @@ public class DTRunner {
         return ctxs;
     }
 
-    public void run() throws IOException, RecognitionException, CloneNotSupportedException, InterruptedException {
+    public void run() throws IOException, RecognitionException, InterruptedException {
         List<Context> contexts = createContexts();
+
+        ASTNode grammarRoot = new GrammarTransformer(lexerGrammar, parserGrammar).transformGrammar();
 
         for (int i = 0; i < numberOfFiles; i++) {
             CodeFragment code = new CodeFragment();
-            CodeGenerator generator = new CodeGenerator(ruleHandler, rng, maxDepth, contexts.get(i));
             for (int j = 0; j < numberOfStatements; j++) {
-                CodeFragment newCode = generator.sampleAssignment();
+                CodeFragment newCode = grammarRoot.getSample(rng, contexts.get(i));
                 code.extend(newCode);
             }
             String randomFileName = UUID.randomUUID().toString();

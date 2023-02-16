@@ -121,7 +121,7 @@ public class GrammarTransformer {
                 return new BlockNode(ast, children);
             }
 
-            case RuleName.SEMIS, RuleName.SEMI ->  {
+            case RuleName.SEMIS, RuleName.SEMI -> {
                 return new TextNode(ast, System.lineSeparator());
             }
 
@@ -134,7 +134,7 @@ public class GrammarTransformer {
                 return transformGrammar((GrammarAST) topLevelAST.getChild(1));
             }
 
-            case  RuleName.DECLARATION -> {
+            case RuleName.DECLARATION -> {
                 Rule topLevelRule = parserGrammar.getRule(ast.getText());
 
                 // Children: declaration (empty), BLOCK -> 5x ALT
@@ -157,5 +157,6 @@ public class GrammarTransformer {
                 return new TextNode(ast, ast.token.toString());
             }
         }
+        return null;
     }
 }
