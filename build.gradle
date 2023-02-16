@@ -10,6 +10,7 @@ buildscript {
 }
 plugins {
     id 'java'
+    id 'application'
 }
 
 group 'org.example'
@@ -29,7 +30,6 @@ repositories {
 dependencies {
     // Regex generator
     implementation 'com.github.mifmif:generex:1.0.1'
-//    implementation files('kotlin-grammar-parser-0.1.jar', 'kotlin-grammar-tools-0.1.jar')
     implementation 'org.jetbrains.kotlin.spec.grammar.tools:kotlin-grammar-tools:0.1'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
     testImplementation "org.mockito:mockito-core:3.+"
@@ -52,3 +52,10 @@ compileTestKotlin {
         jvmTarget = "17"
     }
 }
+
+jar {
+    archiveBaseName = 'kotlin-compiler-fuzzer'
+    archiveVersion =  '0.1.0'
+}
+
+mainClassName = 'org.fuzzer.Main'

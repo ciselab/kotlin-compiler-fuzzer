@@ -6,7 +6,9 @@ import org.antlr.v4.tool.Grammar;
 import org.antlr.v4.tool.LexerGrammar;
 import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.generator.CodeGenerator;
+import org.fuzzer.grammar.GrammarTransformer;
 import org.fuzzer.grammar.RuleHandler;
+import org.fuzzer.grammar.ast.ASTNode;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.utils.FileUtilities;
 import org.fuzzer.utils.RandomNumberGenerator;
@@ -46,7 +48,7 @@ public class DTRunner {
     public DTRunner(int numberOfFiles, int numberOfStatements,
                     List<String> inputFileNames, String directoryOutput,
                     String kotlinCompilerPath, List<String> commandLineArgs,
-                    int seed, int maxDepth) throws IOException, RecognitionException {
+                    int seed, int maxDepth, String contextFileName) throws IOException, RecognitionException, ClassNotFoundException {
         this.numberOfFiles = numberOfFiles;
         this.numberOfStatements = numberOfStatements;
         this.directoryOutput = directoryOutput;
@@ -63,20 +65,48 @@ public class DTRunner {
         ruleHandler = new RuleHandler(lexerGrammar, parserGrammar);
         rng = new RandomNumberGenerator(seed);
 
-        rootContext = new Context(rng);
-        rootContext.fromFileNames(inputFileNames);
+        File ctxFile = new File(contextFileName);
 
-        // Add some dummy values to the context
-        rootContext.addDefaultValue(rootContext.getTypeByName("Byte"), "(0x48.toByte())");
-        rootContext.addDefaultValue(rootContext.getTypeByName("Float"), "1.0f");
-        rootContext.addDefaultValue(rootContext.getTypeByName("Double"), "2.0");
-        rootContext.addDefaultValue(rootContext.getTypeByName("Int"), "3");
-        rootContext.addDefaultValue(rootContext.getTypeByName("Short"), "(4.toShort())");
-        rootContext.addDefaultValue(rootContext.getTypeByName("Long"), "(5.toLong())");
-        rootContext.addDefaultValue(rootContext.getTypeByName("Boolean"), "true");
-        rootContext.addDefaultValue(rootContext.getTypeByName("Boolean"), "false");
-        rootContext.addDefaultValue(rootContext.getTypeByName("String"), "\"fooBar\"");
-        rootContext.addDefaultValue(rootContext.getTypeByName("Char"), "'w'");
+        if (!ctxFile.exists()) {
+
+            // Create context and serialize
+            rootContext = new Context(rng);
+            rootContext.fromFileNames(inputFileNames);
+
+            // Add some dummy values to the context
+            rootContext.addDefaultValue(rootContext.getTypeByName("Byte"), "(0x48.toByte())");
+            rootContext.addDefaultValue(rootContext.getTypeByName("Float"), "1.0f");
+            rootContext.addDefaultValue(rootContext.getTypeByName("Double"), "2.0");
+            rootContext.addDefaultValue(rootContext.getTypeByName("Int"), "3");
+            rootContext.addDefaultValue(rootContext.getTypeByName("Short"), "(4.toShort())");
+            rootContext.addDefaultValue(rootContext.getTypeByName("Long"), "(5.toLong())");
+            rootContext.addDefaultValue(rootContext.getTypeByName("Boolean"), "true");
+            rootContext.addDefaultValue(rootContext.getTypeByName("Boolean"), "false");
+            rootContext.addDefaultValue(rootContext.getTypeByName("String"), "\"fooBar\"");
+            rootContext.addDefaultValue(rootContext.getTypeByName("Char"), "'w'");
+
+            FileOutputStream f = new FileOutputStream(contextFileName);
+            ObjectOutputStream o = new ObjectOutputStream(f);
+
+            // Serialize file
+            o.writeObject(rootContext);
+
+            o.close();
+            f.close();
+
+        } else {
+
+            // Deserialize
+            FileInputStream fi = new FileInputStream(contextFileName);
+            ObjectInputStream oi = new ObjectInputStream(fi);
+
+            // Read objects
+            rootContext = (Context) oi.readObject();
+
+            oi.close();
+            fi.close();
+        }
+
     }
 
     private List<Context> createContexts() {
@@ -89,14 +119,18 @@ public class DTRunner {
         return ctxs;
     }
 
-    public void run() throws IOException, RecognitionException, CloneNotSupportedException, InterruptedException {
+    public void run() throws IOException, ClassNotFoundException, InterruptedException {
         List<Context> contexts = createContexts();
+
+        ASTNode grammarRoot = new GrammarTransformer(lexerGrammar, parserGrammar).transformGrammar();
 
         for (int i = 0; i < numberOfFiles; i++) {
             CodeFragment code = new CodeFragment();
-            CodeGenerator generator = new CodeGenerator(ruleHandler, rng, maxDepth, contexts.get(i));
             for (int j = 0; j < numberOfStatements; j++) {
-                CodeFragment newCode = generator.sampleAssignment();
+                // Function declarations.
+                ASTNode nodeToSample = grammarRoot.getChildren().get(0).getChildren().get(5).getChildren().get(0).getChildren().get(0).getChildren().get(2);
+
+                CodeFragment newCode = nodeToSample.getSample(rng, contexts.get(i));
                 code.extend(newCode);
             }
             String randomFileName = UUID.randomUUID().toString();

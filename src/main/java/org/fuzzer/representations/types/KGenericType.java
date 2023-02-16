@@ -2,7 +2,6 @@ package org.fuzzer.representations.types;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public record KGenericType(String name) implements KType {
 
@@ -17,8 +16,8 @@ public record KGenericType(String name) implements KType {
     }
 
     @Override
-    public Optional<KType> getReturnType() {
-        return Optional.empty();
+    public KType getReturnType() {
+        return new KVoid();
     }
 
     @Override

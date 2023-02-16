@@ -2,30 +2,27 @@ package org.fuzzer.utils;
 
 import org.antlr.v4.runtime.misc.OrderedHashSet;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Tree<T> {
 
     private final T value;
 
-    private final Set<Tree<T>> children;
+    private final List<Tree<T>> children;
 
     private Optional<Tree<T>> parent;
 
     public Tree(T value, Tree<T> parent) {
         this.value = value;
         this.parent = Optional.of(parent);
-        this.children = new OrderedHashSet<>();
+        this.children = new ArrayList<>();
     }
 
     public Tree(T value) {
         this.value = value;
         this.parent = Optional.empty();
-        this.children = new OrderedHashSet<>();
+        this.children = new ArrayList<>();
     }
 
     public T getValue() {
@@ -36,12 +33,12 @@ public class Tree<T> {
         return parent;
     }
 
-    public Set<Tree<T>> getChildren() {
+    public List<Tree<T>> getChildren() {
         return children;
     }
 
-    public Set<T> getChildrenValues() {
-        return children.stream().map(Tree::getValue).collect(Collectors.toSet());
+    public List<T> getChildrenValues() {
+        return children.stream().map(Tree::getValue).toList();
     }
 
     public void addChild(Tree<T> child) {

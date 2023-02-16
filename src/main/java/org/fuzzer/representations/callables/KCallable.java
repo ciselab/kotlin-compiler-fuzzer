@@ -3,37 +3,37 @@ package org.fuzzer.representations.callables;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.representations.types.KType;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public abstract class KCallable implements Cloneable {
-    private final String name;
-    private final List<KType> inputTypes;
-    private final KType returnType;
-
-    private Optional<KCallable> owner;
+public abstract class KCallable implements Cloneable, Serializable {
+    private String name;
+    private List<KType> inputTypes;
+    private KType returnType;
+    private KCallable owner;
     private List<KCallable> lastInput = new ArrayList<>();
 
     public KCallable(String name, KType output) {
         this.name = name;
         this.inputTypes = new ArrayList<>();
         this.returnType = output;
-        this.owner = Optional.empty();
+        this.owner = null;
     }
 
     public KCallable(String name, List<KType> input, KType output) {
         this.name = name;
         this.inputTypes = input;
         this.returnType = output;
-        this.owner = Optional.empty();
+        this.owner = null;
     }
 
     public KCallable(String name, List<KType> input, KType output, KCallable owner) {
         this.name = name;
         this.inputTypes = input;
         this.returnType = output;
-        this.owner = Optional.of(owner);
+        this.owner = owner;
     }
 
     public String getName() {
@@ -47,9 +47,9 @@ public abstract class KCallable implements Cloneable {
         return returnType;
     }
 
-    public abstract String call(Context ctx, Optional<KCallable> owner, List<KCallable> input);
+    public abstract String call(Context ctx, KCallable owner, List<KCallable> input);
 
-    public String  call(Context ctx, Optional<KCallable> owner) {
+    public String  call(Context ctx, KCallable owner) {
         return call(ctx, owner, this.lastInput);
     }
 
@@ -60,7 +60,7 @@ public abstract class KCallable implements Cloneable {
         this.lastInput = lastInput;
     }
 
-    protected void updateOwner(Optional<KCallable> owner) {
+    protected void updateOwner(KCallable owner) {
         this.owner = owner;
     }
     public void verifyInput(Context ctx, List<KCallable> input) {
@@ -79,19 +79,19 @@ public abstract class KCallable implements Cloneable {
         return true;
     }
 
-    public void verifyOwner(Context ctx, Optional<KCallable> owner) {
-        if(this.owner.isPresent() != owner.isPresent()) {
-            String thisOwnerPresent = (this.owner.isPresent() ? "" : "not") + " present ";
-            String ownerPresent = (owner.isPresent() ? "" : "not") + " present ";
+    public void verifyOwner(Context ctx, KCallable owner) {
+        if((owner == null) != (this.owner == null)) {
+            String thisOwnerPresent = (this.owner == null ? "" : "not") + " present ";
+            String ownerPresent = (owner == null ? "" : "not") + " present ";
             throw new IllegalArgumentException("Owner mismatch: callable owner is " + thisOwnerPresent + " and argument owner is " + ownerPresent);
         }
 
-        if (owner.isEmpty()) {
+        if (owner == null) {
             return;
         }
 
-        if (!ctx.isSubtypeOf(owner.get().getReturnType(), this.owner.get().getReturnType()))
-            throw new IllegalArgumentException("Owner " + owner.get() + " is not a subtype of " + this.owner.get());
+        if (!ctx.isSubtypeOf(owner.getReturnType(), this.owner.getReturnType()))
+            throw new IllegalArgumentException("Owner " + owner + " is not a subtype of " + this.owner);
     }
 
     public boolean isTerminal() {
@@ -106,7 +106,14 @@ public abstract class KCallable implements Cloneable {
         if (!name.equals(kCallable.name)) return false;
         if (!inputTypes.equals(kCallable.inputTypes)) return false;
         if (!returnType.equals(kCallable.returnType)) return false;
-        if (!owner.equals(kCallable.owner)) return false;
+
+        if ((owner == null) != (kCallable.owner == null)) {
+            return false;
+        }
+
+        if (owner != null) {
+            if (!owner.equals(kCallable.owner)) return false;
+        }
         return lastInput.equals(kCallable.lastInput);
     }
 
@@ -115,7 +122,7 @@ public abstract class KCallable implements Cloneable {
         int result = name.hashCode();
         result = 31 * result + inputTypes.hashCode();
         result = 31 * result + returnType.hashCode();
-        result = 31 * result + owner.hashCode();
+        result = 31 * result + (owner == null ? 0 : owner.hashCode());
         result = 31 * result + lastInput.hashCode();
         return result;
     }
@@ -129,6 +136,10 @@ public abstract class KCallable implements Cloneable {
         Object clone = super.clone();
         KCallable newCallable = (KCallable) clone;
         newCallable.lastInput = List.copyOf(lastInput);
+        newCallable.inputTypes = List.copyOf(inputTypes);
+        newCallable.name = name;
+        newCallable.owner = owner == null ? null : (KCallable) owner.clone();
+        newCallable.returnType = returnType;
 
         return newCallable;
     }

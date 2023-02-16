@@ -1,9 +1,9 @@
 package org.fuzzer.representations.types;
 
+import java.io.Serializable;
 import java.util.List;
-import java.util.Optional;
 
-public interface KType {
+public interface KType extends Serializable {
 
     String name();
 
@@ -11,7 +11,7 @@ public interface KType {
 
     public List<KType> getInputTypes();
 
-    public Optional<KType> getReturnType();
+    public KType getReturnType();
 
     boolean canBeInherited();
 

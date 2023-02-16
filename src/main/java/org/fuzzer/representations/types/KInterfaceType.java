@@ -26,4 +26,9 @@ public class KInterfaceType extends KClassifierType {
     public boolean canBeDeclared() {
         return true;
     }
+
+    @Override
+    public String toString() {
+        return "[interface]: " + name() + (getGenerics().isEmpty() ? "" : "<" + getGenerics() + ">");
+    }
 }

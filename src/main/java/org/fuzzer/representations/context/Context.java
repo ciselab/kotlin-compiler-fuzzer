@@ -1,16 +1,17 @@
 package org.fuzzer.representations.context;
 
-import org.antlr.v4.codegen.model.SrcOp;
 import org.fuzzer.representations.callables.*;
 import org.fuzzer.representations.types.*;
 import org.fuzzer.utils.KGrammarVocabulary;
 import org.fuzzer.utils.RandomNumberGenerator;
 import org.fuzzer.utils.FileUtilities;
+import org.fuzzer.utils.StringUtilities;
 import org.jetbrains.kotlin.spec.grammar.tools.*;
 
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -19,7 +20,7 @@ import static org.fuzzer.utils.StringUtilities.removeGeneric;
 import static org.jetbrains.kotlin.spec.grammar.tools.KotlinGrammarToolsKt.parseKotlinCode;
 import static org.jetbrains.kotlin.spec.grammar.tools.KotlinGrammarToolsKt.tokenizeKotlinCode;
 
-public class Context implements Cloneable {
+public class Context implements Cloneable, Serializable {
     private IdentifierStore idStore;
 
     private HashMap<KType, Set<KCallable>> callablesByOwner;
@@ -29,6 +30,8 @@ public class Context implements Cloneable {
 
     private RandomNumberGenerator rng;
 
+    private KScope scope;
+
     public Context(RandomNumberGenerator rng) {
         this.callablesByOwner = new HashMap<>();
         this.callablesByReturnType = new HashMap<>();
@@ -36,8 +39,16 @@ public class Context implements Cloneable {
         this.typeHierarchy = new DAGTypeEnvironment(rng);
         this.idStore = new MapIdentifierStore(typeHierarchy, rng);
         this.rng = rng;
+        this.scope = KScope.GLOBAL_SCOPE;
     }
 
+    public KScope getScope() {
+        return scope;
+    }
+
+    public void updateScope(KScope scope) {
+        this.scope = scope;
+    }
     public Boolean hasAnyVariables() {
         return !idStore.isEmpty();
     }
@@ -58,37 +69,45 @@ public class Context implements Cloneable {
         return typeHierarchy.isSubtypeOf(subtype, supertype);
     }
 
-    public Optional<KCallable> randomCallableOfType(KType type, Predicate<KCallable> condition) throws CloneNotSupportedException {
+    public KCallable randomCallableOfType(KType type, Predicate<KCallable> condition) throws CloneNotSupportedException {
         if (type instanceof KClassifierType) {
             Set<KType> subtypes = typeHierarchy.subtypesOf(type);
             List<KCallable> alternatives = new ArrayList<>(callablesByReturnType
                     .entrySet().stream()
+                    // Get callables that match the return type
                     .filter(entry -> subtypes.contains(entry.getKey()))
+                    // Keep only the callables
                     .map(Map.Entry::getValue)
+                    // Add all the sets together
                     .reduce(new HashSet<>(), (acc, newSet) -> {
                         acc.addAll(newSet);
                         return acc;
                     })
                     .stream()
+                    // Filter on the condition
                     .filter(condition).toList());
             // callablesByReturnType.entrySet().stream().filter(entry -> subtypes.contains(entry.getKey())).map(Map.Entry::getValue).reduce(new HashSet<>(), (acc, newSet) -> {acc.addAll(newSet); return acc;}).stream().filter(condition).toList()
 
-            alternatives.addAll(identifiersOfType(type));
+            alternatives.addAll(identifiersOfType(type).stream().filter(condition).toList());
 
-            if (alternatives.isEmpty()) return Optional.empty();
+            if (alternatives.isEmpty()) {
+                throw new IllegalArgumentException("Cannot sample callable of type " + type + " under condition " + condition);
+            }
             KCallable selected = alternatives.get(rng.fromUniformDiscrete(0, alternatives.size() - 1));
-            return Optional.of((KCallable) selected.clone());
+            KCallable clone = (KCallable) selected.clone();
+            return clone;
         } else {
             // TODO handle function types
             throw new UnsupportedOperationException("Cannot yet sample function subtypes.");
         }
     }
 
-    public Optional<KCallable> randomTerminalCallableOfType(KType type) throws CloneNotSupportedException {
-        return randomCallableOfType(type, kCallable -> kCallable.getInputTypes().isEmpty());
+    public KCallable randomTerminalCallableOfType(KType type) throws CloneNotSupportedException {
+        KCallable callable = randomCallableOfType(type, KCallable::isTerminal);
+        return callable;
     }
 
-    public Optional<KCallable> randomConsumerCallable(KType type) throws CloneNotSupportedException {
+    public KCallable randomConsumerCallable(KType type) throws CloneNotSupportedException {
         // TODO handle function inputs
         Predicate<KCallable> noFunctionInputs = kCallable -> kCallable.getInputTypes().stream().noneMatch(input -> input instanceof KFuncType);
         return randomCallableOfType(type, kCallable -> !kCallable.getInputTypes().isEmpty() && noFunctionInputs.test(kCallable));
@@ -120,6 +139,22 @@ public class Context implements Cloneable {
 
     public KType getRandomType() {
         return typeHierarchy.randomType();
+    }
+
+    public String getNewIdentifier() {
+        String newId;
+
+        do {
+            newId = StringUtilities.randomIdentifier();
+        } while (containsIdentifier(newId));
+
+        return newId;
+    }
+
+    public void addIdentifier(String identifier, KCallable callable, KCallable owner) {
+        addIdentifier(identifier, callable);
+        callablesByOwner.get(owner.getReturnType()).add(callable);
+        callablesByReturnType.get(callable.getReturnType()).add(callable);
     }
 
     public void fromFileNames(List<String> fileNames) {
@@ -207,7 +242,7 @@ public class Context implements Cloneable {
                     } else {
                         extractedCallable = new KMethod(ownerType, type.name(),
                                 type.getInputTypes(),
-                                type.getReturnType().isPresent() ? type.getReturnType().get() : new KVoid());
+                                type.getReturnType());
                     }
                 } else {
                     // TODO: handle other class properties
@@ -969,7 +1004,7 @@ public class Context implements Cloneable {
 
                 KTypeWrapper returnType = getType(returnTypeNode);
 
-                return new KTypeWrapper(new ArrayList<>(), KTypeIndicator.FUNCTION, "", new ArrayList<>(), inputTypes, Optional.of(returnType));
+                return new KTypeWrapper(new ArrayList<>(), KTypeIndicator.FUNCTION, "", new ArrayList<>(), inputTypes, returnType);
             }
             default -> {
                 throw new IllegalArgumentException("Cannot parse type node of type: " + typeNode);
@@ -988,6 +1023,7 @@ public class Context implements Cloneable {
             clone.callablesByReturnType = (HashMap<KType, Set<KCallable>>) callablesByReturnType.clone();
             clone.rng = new RandomNumberGenerator(rng.fromUniformDiscrete(0, 1000));
             clone.idStore = new MapIdentifierStore(clone.typeHierarchy, clone.rng);
+            clone.scope = scope;
             return clone;
         } catch (CloneNotSupportedException e) {
             throw new AssertionError();

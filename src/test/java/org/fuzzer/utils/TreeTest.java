@@ -101,7 +101,7 @@ class TreeTest {
 
     @Test
     void getChildrenValues() {
-        Set<String> values = twoDeepTree.getChildrenValues();
+        List<String> values = twoDeepTree.getChildrenValues();
 
         assertEquals(2, values.size());
 
@@ -115,7 +115,7 @@ class TreeTest {
         List<String> toAdd = nodeNames.subList(1, nodeNames.size() - 1);
         simpleTree.addChildren(toAdd);
 
-        Set<Tree<String>> children = simpleTree.getChildren();
+        List<Tree<String>> children = simpleTree.getChildren();
 
         assertEquals(toAdd.size(), children.size());
         for (Tree<String> c : children) {

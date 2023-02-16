@@ -3,9 +3,10 @@ package org.fuzzer.representations.context;
 import org.fuzzer.representations.callables.KCallable;
 import org.fuzzer.representations.types.KType;
 
+import java.io.Serializable;
 import java.util.List;
 
-public interface IdentifierStore {
+public interface IdentifierStore extends Serializable {
 
     boolean isEmpty();
     List<KCallable> identifiersOfType(KType type);

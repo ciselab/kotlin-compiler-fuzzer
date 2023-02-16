@@ -6,5 +6,6 @@ public enum KTypeIndicator {
     CLASS,
     FUNCTION,
     UNKNOWN,
-    GENERIC
+    GENERIC,
+    VOID
 }

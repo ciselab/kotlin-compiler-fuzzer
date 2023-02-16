@@ -1,9 +1,10 @@
 package org.fuzzer.utils;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Set;
 
-public interface Graph<T> {
+public interface Graph<T> extends Serializable {
 
     boolean isEmpty();
     <S extends T> Set<T> childrenOf(S node);

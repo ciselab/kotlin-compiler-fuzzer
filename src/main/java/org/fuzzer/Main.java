@@ -7,7 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Main {
-    public static void main(String[] args) throws IOException, RecognitionException, CloneNotSupportedException, InterruptedException {
+    public static void main(String[] args) throws IOException, RecognitionException, InterruptedException, ClassNotFoundException {
+        String ctxFileName = "context.ser";
         String classPath = "src/test/resources/kotlin/";
         List<String> classes = new ArrayList<>(List.of(new String[]{"Any.kt", "Comparable.kt",
                 "Char.kt", "CharSequence.kt", "Number.kt", "Primitives.kt", "Boolean.kt", "String.kt"}));
@@ -17,10 +18,10 @@ public class Main {
         compilerArgs.add("");
         compilerArgs.add("-Xuse-k2");
 
-        DTRunner runner = new DTRunner(1, 10,
-                fileNames, "src/main/java/output/",
+        DTRunner runner = new DTRunner(1, 1000,
+                fileNames, "output/",
                 "src/main/resources/kotlinc/bin/kotlinc", compilerArgs,
-                0, 3);
+                0, 3, ctxFileName);
         runner.run();
     }
 }

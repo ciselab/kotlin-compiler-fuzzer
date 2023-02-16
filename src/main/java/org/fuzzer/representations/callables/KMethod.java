@@ -10,7 +10,6 @@ import java.util.Optional;
 
 public class KMethod extends KCallable {
 
-    // TODO convert this to a type
     KClassifierType ownerType;
 
     public KMethod(KClassifierType ownerType,
@@ -26,7 +25,7 @@ public class KMethod extends KCallable {
     }
 
     @Override
-    public String call(Context ctx, Optional<KCallable> owner, List<KCallable> input) {
+    public String call(Context ctx, KCallable owner, List<KCallable> input) {
         super.verifyInput(ctx, input);
         verifyOwner(ctx, owner);
 
@@ -34,7 +33,7 @@ public class KMethod extends KCallable {
         updateOwner(owner);
 
         // Call the owner without any parameters
-        String ownerRepr = owner.get().call(ctx);
+        String ownerRepr = owner.call(ctx);
         StringBuilder argList = new StringBuilder();
 
         ListIterator<KCallable> iter = input.listIterator();
@@ -52,13 +51,13 @@ public class KMethod extends KCallable {
     }
 
     @Override
-    public void verifyOwner(Context ctx, Optional<KCallable> owner) {
-        if (owner.isEmpty()) {
+    public void verifyOwner(Context ctx, KCallable owner) {
+        if (owner == null) {
             throw new IllegalArgumentException("Cannot call a method without specifying its owner.");
         }
 
-        if (!ctx.isSubtypeOf(owner.get().getReturnType(), this.ownerType))
-            throw new IllegalArgumentException("Owner " + owner.get() + " is not a subtype of " + this.ownerType);
+        if (!ctx.isSubtypeOf(owner.getReturnType(), this.ownerType))
+            throw new IllegalArgumentException("Owner " + owner + " is not a subtype of " + this.ownerType);
     }
 
     @Override

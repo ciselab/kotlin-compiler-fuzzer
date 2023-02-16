@@ -15,13 +15,21 @@ public class CodeFragment {
         return this.text;
     }
 
+    public void appendToText(CodeFragment code) {
+        appendToText(code.getText());
+    }
+
     public void appendToText(String snippet) {
         this.text += snippet;
     }
 
     public void extend(CodeFragment code) {
-        appendToText("\n");
-        appendToText(code.getText());
+        extend(code.getText());
+    }
+
+    public void extend(String text) {
+        appendToText(System.lineSeparator());
+        appendToText(text);
     }
 
     @Override

@@ -1,11 +1,8 @@
 package org.fuzzer.representations.types;
 
-import kotlin.contracts.Returns;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Optional;
 
 public abstract class KClassifierType implements KType {
     private final String name;
@@ -51,8 +48,8 @@ public abstract class KClassifierType implements KType {
         return new ArrayList<>();
     }
 
-    public Optional<KType> getReturnType() {
-        return Optional.empty();
+    public KType getReturnType() {
+        return new KVoid();
     }
 
     @Override
