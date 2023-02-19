@@ -5,7 +5,6 @@ import org.antlr.runtime.RecognitionException;
 import org.antlr.v4.tool.Grammar;
 import org.antlr.v4.tool.LexerGrammar;
 import org.fuzzer.generator.CodeFragment;
-import org.fuzzer.generator.CodeGenerator;
 import org.fuzzer.grammar.GrammarTransformer;
 import org.fuzzer.grammar.RuleHandler;
 import org.fuzzer.grammar.ast.ASTNode;
@@ -16,7 +15,6 @@ import org.fuzzer.utils.RandomNumberGenerator;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import static org.fuzzer.utils.FileUtilities.compareByByte;
