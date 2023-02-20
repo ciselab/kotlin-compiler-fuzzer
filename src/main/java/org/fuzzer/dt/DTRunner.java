@@ -46,7 +46,8 @@ public class DTRunner {
     public DTRunner(int numberOfFiles, int numberOfStatements,
                     List<String> inputFileNames, String directoryOutput,
                     String kotlinCompilerPath, List<String> commandLineArgs,
-                    int seed, int maxDepth, String contextFileName) throws IOException, RecognitionException, ClassNotFoundException {
+                    int seed, int maxDepth, String contextFileName,
+                    String lexerFileName, String grammarFileName) throws IOException, RecognitionException, ClassNotFoundException {
         this.numberOfFiles = numberOfFiles;
         this.numberOfStatements = numberOfStatements;
         this.directoryOutput = directoryOutput;
@@ -54,8 +55,8 @@ public class DTRunner {
         this.args = commandLineArgs;
         this.maxDepth = maxDepth;
 
-        File lexerFile = new File("./src/main/resources/KotlinLexer.g4");
-        File parserFile = new File("./src/main/resources/KotlinParser.g4");
+        File lexerFile = new File(lexerFileName);
+        File parserFile = new File(grammarFileName);
 
         lexerGrammar = new LexerGrammar(FileUtilities.fileContentToString(lexerFile));
         parserGrammar = new Grammar(FileUtilities.fileContentToString(parserFile));
