@@ -58,8 +58,6 @@ public class FunctionDecl extends ASTNode {
                     code.appendToText(sampledParam);
                 }
 
-                clone.addIdentifier(funcName, new KFunction(funcName, sampledTypes, returnType));
-
                 // Change the scope to a function
                 clone.updateScope(KScope.FUNCTION_SCOPE);
 
