@@ -10,8 +10,6 @@ public class Main {
     public static void main(String[] args) throws IOException, RecognitionException, InterruptedException, ClassNotFoundException {
         String ctxFileName = "context.ser";
 
-        System.out.println(System.getProperty("lexerFile"));
-
         String lexerGrammarFile = System.getProperty("lexerFile"); // "./src/main/resources/KotlinLexer.g4"
         String grammarFile = System.getProperty("grammarFile"); // "./src/main/resources/KotlinParser.g4"
         String compilerPath = System.getProperty("kotlinc"); // "src/main/resources/kotlinc/bin/kotlinc"

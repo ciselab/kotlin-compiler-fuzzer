@@ -57,21 +57,6 @@ compileTestKotlin {
     }
 }
 
-jar {
-
-
-//    classifier = 'all'
-
-    manifest {
-        attributes 'Main-Class': 'org.fuzzer.Main',
-                'Implementation-Version': project.version
-    }
-
-
-from(configurations.compile.collect { it.isDirectory() || it.name.endsWith('jar') ? it : zipTree(it) }) {}
-
-}
-
 task uberJar(type: Jar) {
     archiveBaseName = 'kotlin-compiler-fuzzer'
     archiveVersion =  '0.1.0'
@@ -87,8 +72,9 @@ task uberJar(type: Jar) {
 
     dependsOn configurations.runtimeClasspath
     from {
-        configurations.runtimeClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) }
-    }}
+        configurations.runtimeClasspath.findAll { it.name.endsWith('jar') || it.isDirectory() }.collect { zipTree(it) }
+    }
+}
 
 run {
     mainClassName = 'org.fuzzer.Main'
