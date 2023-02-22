@@ -3,6 +3,7 @@ package org.fuzzer.grammar.ast;
 import org.antlr.v4.tool.ast.GrammarAST;
 import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.RuleName;
+import org.fuzzer.grammar.SampleStructure;
 import org.fuzzer.representations.callables.KFunction;
 import org.fuzzer.representations.callables.KIdentifierCallable;
 import org.fuzzer.representations.context.Context;
@@ -67,6 +68,7 @@ public class FunctionDecl extends ASTNode {
                 int numberOfStatements = rng.fromGeometric();
 
                 ExpressionNode expr = new ExpressionNode(antlrNode, 3);
+                expr.recordStatistics(this.stats);
 
                 for (int i = 0; i < numberOfStatements; i++) {
                     CodeFragment sampleExpr = expr.getSample(rng, ctx);
@@ -78,6 +80,11 @@ public class FunctionDecl extends ASTNode {
                 code.extend("return " + returnStatement);
 
                 code.extend(new CodeFragment("}"));
+
+                // Record this sample
+                if (this.stats != null) {
+                    stats.increment(SampleStructure.FUNCTION);
+                }
 
                 return code;
             }

@@ -11,13 +11,18 @@ import org.fuzzer.grammar.ast.ASTNode;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.utils.FileUtilities;
 import org.fuzzer.utils.RandomNumberGenerator;
+import org.jetbrains.kotlin.spec.grammar.tools.KotlinGrammarToolsKt;
+import org.jetbrains.kotlin.spec.grammar.tools.KotlinParseTree;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
 import static org.fuzzer.utils.FileUtilities.compareByByte;
+import static org.jetbrains.kotlin.spec.grammar.tools.KotlinGrammarToolsKt.parseKotlinCode;
+import static org.jetbrains.kotlin.spec.grammar.tools.KotlinGrammarToolsKt.tokenizeKotlinCode;
 
 public class DTRunner {
 
@@ -118,13 +123,17 @@ public class DTRunner {
         return ctxs;
     }
 
-    public void run() throws IOException, ClassNotFoundException, InterruptedException {
+    public void run() throws IOException, InterruptedException {
         List<Context> contexts = createContexts();
 
         ASTNode grammarRoot = new GrammarTransformer(lexerGrammar, parserGrammar).transformGrammar();
+        FuzzerStatistics stats = new FuzzerStatistics();
+
+        grammarRoot.recordStatistics(stats);
 
         for (int i = 0; i < numberOfFiles; i++) {
             CodeFragment code = new CodeFragment();
+
             for (int j = 0; j < numberOfStatements; j++) {
                 // Function declarations.
                 ASTNode nodeToSample = grammarRoot.getChildren().get(0).getChildren().get(5).getChildren().get(0).getChildren().get(0).getChildren().get(2);
@@ -141,14 +150,19 @@ public class DTRunner {
 
             String kotlinFile = outputFileName + ".kt";
 
+            KotlinParseTree parseTree = parseKotlinCode(tokenizeKotlinCode(text));
+
+            stats.record(parseTree);
+
             BufferedWriter writer = new BufferedWriter(new FileWriter(kotlinFile));
             writer.write(text);
 
             writer.close();
 
-            List<Process> procs = new ArrayList<>();
-
             int argNum = 0;
+            List<Long> compilertimes = new LinkedList<>();
+
+            // Run each of the compilers in series
             for (String compilerArgs : args) {
                 List<String> command = new ArrayList<>();
 
@@ -167,24 +181,26 @@ public class DTRunner {
                 ProcessBuilder pb = new ProcessBuilder(command);
                 pb.directory(new File(System.getProperty("user.dir")));
 
-                Process p = pb.start();
-                procs.add(p);
-            }
+                compilertimes.add(System.currentTimeMillis());
 
-            for (Process p : procs) {
+                Process p = pb.start();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                String line;
-                while ((line = reader.readLine()) != null) {
+                while (reader.readLine() != null) {
                 }
                 p.waitFor();
-                System.out.println(p.toString());
+
+                compilertimes.set(compilertimes.size() - 1, System.currentTimeMillis() - compilertimes.get(compilertimes.size() - 1));
             }
 
-            File compiled1 = new File(directoryOutput + "v1/" + randomFileName + ".jar");
-            File compiled2 = new File(directoryOutput + "v2/" + randomFileName + ".jar");
-            if (compareByByte(compiled1, compiled2) != -1) {
-                System.out.println("Discrepancy detected!");
-            }
+            stats.record(compilertimes.get(0), compilertimes.get(1));
+
+            System.out.println(stats.toJson());
+
+//            File compiled1 = new File(directoryOutput + "v1/" + randomFileName + ".jar");
+//            File compiled2 = new File(directoryOutput + "v2/" + randomFileName + ".jar");
+//            if (compareByByte(compiled1, compiled2) != -1) {
+//                System.out.println("Discrepancy detected!");
+//            }
         }
     }
 }

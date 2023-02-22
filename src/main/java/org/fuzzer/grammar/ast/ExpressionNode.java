@@ -2,6 +2,7 @@ package org.fuzzer.grammar.ast;
 
 import org.antlr.v4.tool.ast.GrammarAST;
 import org.fuzzer.generator.CodeFragment;
+import org.fuzzer.grammar.SampleStructure;
 import org.fuzzer.representations.callables.*;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.representations.types.KType;
@@ -25,7 +26,9 @@ public class ExpressionNode extends ASTNode {
     @Override
     public CodeFragment getSample(RandomNumberGenerator rng, Context ctx) {
         KType sampledType = ctx.getRandomType();
-        return getSampleOfType(rng, ctx, sampledType);
+        CodeFragment code = getSampleOfType(rng, ctx, sampledType);
+
+        return code;
     }
 
     public CodeFragment getSampleOfType(RandomNumberGenerator rng, Context ctx, KType type) {
@@ -38,6 +41,11 @@ public class ExpressionNode extends ASTNode {
             rootNode = sampleTypedCallables(rootNode, depth, ctx, rng);
             verifyCallableCompatibility(rootNode, ctx);
             String expression = rootNode.getValue().call(ctx);
+
+            if (this.stats != null) {
+                stats.increment(SampleStructure.STATEMENT);
+            }
+
             return new CodeFragment(expression);
         } catch (CloneNotSupportedException e) {
             throw new RuntimeException(e.getMessage());

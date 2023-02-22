@@ -1021,7 +1021,7 @@ public class Context implements Cloneable, Serializable {
             clone.typeHierarchy = typeHierarchy;
             clone.callablesByOwner = (HashMap<KType, Set<KCallable>>) callablesByOwner.clone();
             clone.callablesByReturnType = (HashMap<KType, Set<KCallable>>) callablesByReturnType.clone();
-            clone.rng = new RandomNumberGenerator(rng.fromUniformDiscrete(0, 1000));
+            clone.rng = rng;
             clone.idStore = new MapIdentifierStore(clone.typeHierarchy, clone.rng);
             clone.scope = scope;
             return clone;
