@@ -3,23 +3,29 @@ package org.fuzzer.representations.types;
 import java.util.ArrayList;
 import java.util.List;
 
-public record KTypeWrapper(List<KTypeWrapper> parent,
+public record KTypeWrapper(KTypeModifiers modifiers,
+                           KTypeWrapper upperBound,
+                           List<KTypeWrapper> parent,
                            KTypeIndicator indicator,
                            String name,
-                           List<KGenericType> generics,
+                           List<KTypeWrapper> generics,
                            List<KTypeWrapper> inputTypes,
                            KTypeWrapper returnType) {
 
-    public KTypeWrapper(KTypeIndicator indicator, String name) {
-        this(new ArrayList<>(), indicator, name, new ArrayList<>(), new ArrayList<>(), KTypeWrapper.getVoidWrapper());
+    public KTypeWrapper(KTypeWrapper upperBound, KTypeIndicator indicator, String name) {
+        this(null, upperBound, new ArrayList<>(), indicator, name, new ArrayList<>(), new ArrayList<>(), KTypeWrapper.getVoidWrapper());
     }
 
-    public KTypeWrapper(KTypeIndicator indicator, String name, List<KGenericType> generics) {
-        this(new ArrayList<>(), indicator, name, generics, new ArrayList<>(), KTypeWrapper.getVoidWrapper());
+    public KTypeWrapper(KTypeIndicator indicator, String name) {
+        this(null, null, new ArrayList<>(), indicator, name, new ArrayList<>(), new ArrayList<>(), KTypeWrapper.getVoidWrapper());
+    }
+
+    public KTypeWrapper(KTypeIndicator indicator, String name, List<KTypeWrapper> generics) {
+        this(null, null, new ArrayList<>(), indicator, name, generics, new ArrayList<>(), KTypeWrapper.getVoidWrapper());
     }
 
     public static KTypeWrapper getVoidWrapper() {
-        return new KTypeWrapper(new ArrayList<>(), KTypeIndicator.CLASS, "void", new ArrayList<>(), new ArrayList<>(), null);
+        return new KTypeWrapper(null, null, new ArrayList<>(), KTypeIndicator.CLASS, "void", new ArrayList<>(), new ArrayList<>(), null);
     }
 
     public KClassType toClass(boolean open, boolean abs) {
@@ -31,23 +37,39 @@ public record KTypeWrapper(List<KTypeWrapper> parent,
     }
 
     public KFuncType toFunction(List<KType> inputTypes, KType returnType) {
-        return new KFuncType(name, generics, inputTypes);
+        return new KFuncType(name, generics.stream().map(wrapper -> (KGenericType) wrapper.toType()).toList(), inputTypes);
     }
 
-    public KType toType(boolean open, boolean abs) {
+    public boolean isOpen() {
+        if (modifiers != null) {
+            return modifiers.isOpen();
+        }
+
+        return true;
+    }
+
+    public boolean isAbstract() {
+        if (modifiers != null) {
+            return modifiers.isAbstract();
+        }
+
+        return false;
+    }
+
+    public KType toType() {
         switch (indicator) {
             case CLASS -> {
-                return toClass(open, abs);
+                return toClass(isOpen(), isAbstract());
             }
             case INTERFACE -> {
                 return toInterface();
             }
             case FUNCTION -> {
                 List<KType> inputTypes = inputTypes().stream()
-                        .map(typeWrapper -> typeWrapper.toType(open, abs))
+                        .map(KTypeWrapper::toType)
                         .toList();
 
-                return toFunction(inputTypes, this.returnType.toType(open, abs));
+                return toFunction(inputTypes, this.returnType.toType());
             }
             case VOID -> {
                 return new KVoid();
@@ -56,13 +78,5 @@ public record KTypeWrapper(List<KTypeWrapper> parent,
                 throw new IllegalArgumentException("Cannot handle indicator of type: " + indicator);
             }
         }
-    }
-
-    public KType toType() {
-        return toType(false, false);
-    }
-
-    public KType toType(KTypeModifiers modifiers) {
-        return toType(modifiers.isOpen(), modifiers.isAbstract());
     }
 }

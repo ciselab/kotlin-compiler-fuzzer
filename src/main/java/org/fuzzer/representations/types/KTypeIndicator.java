@@ -5,7 +5,9 @@ public enum KTypeIndicator {
     INTERFACE,
     CLASS,
     FUNCTION,
+    CONSTRUCTOR,
     UNKNOWN,
-    GENERIC,
+    SYMBOLIC_GENERIC,
+    CONCRETE_GENERIC,
     VOID
 }

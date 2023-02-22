@@ -103,5 +103,7 @@ public final class KGrammarVocabulary {
 
     public static final String statement = "statement";
 
+    public static final String constructor = "constructor";
+
     public static final String MULT = "MULT";
 }

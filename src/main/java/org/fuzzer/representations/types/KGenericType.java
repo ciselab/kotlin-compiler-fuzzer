@@ -3,7 +3,7 @@ package org.fuzzer.representations.types;
 import java.util.ArrayList;
 import java.util.List;
 
-public record KGenericType(String name) implements KType {
+public record KGenericType(String name, KTypeIndicator genericKind) implements KType {
 
     @Override
     public List<KGenericType> getGenerics() {
@@ -33,5 +33,14 @@ public record KGenericType(String name) implements KType {
     @Override
     public boolean canBeDeclared() {
         return false;
+    }
+
+    public boolean isSymbolic() {
+        if (!(KTypeIndicator.SYMBOLIC_GENERIC.equals(genericKind) ||
+                KTypeIndicator.CONCRETE_GENERIC.equals(genericKind))) {
+            throw new IllegalStateException("Ill-formed generic type of kind: " + genericKind);
+        }
+
+        return genericKind.equals(KTypeIndicator.SYMBOLIC_GENERIC);
     }
 }

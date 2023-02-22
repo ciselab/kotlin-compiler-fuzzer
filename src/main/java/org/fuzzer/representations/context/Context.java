@@ -288,13 +288,13 @@ public class Context implements Cloneable, Serializable {
             if (!KGrammarVocabulary.classDecl.equals(decl.getName())) {
                 continue;
             }
-            List<KType> types = new ArrayList<>();
+            List<KTypeWrapper> types = new ArrayList<>();
             List<KTypeWrapper> parentList = new ArrayList<>();
 
-            KClassifierType classType = getClassAndMembers(decl, types, parentList);
+            KTypeWrapper classType = getClassAndMembers(decl, types, parentList);
 
-            classNames.put(classType.name(), classType);
-            extractedTypes.put(classType.name(), types);
+            classNames.put(classType.name(), (KClassifierType) classType.toType());
+            extractedTypes.put(classType.name(), types.stream().map(KTypeWrapper::toType).toList());
             parents.put(classType.name(), parentList);
         }
     }
@@ -308,7 +308,7 @@ public class Context implements Cloneable, Serializable {
      * (NL* classBody | NL* enumClassBody)?
      * ;
      */
-    public KClassifierType getClassAndMembers(KotlinParseTree classDeclNode, List<KType> members, List<KTypeWrapper> parents) {
+    public KTypeWrapper getClassAndMembers(KotlinParseTree classDeclNode, List<KTypeWrapper> members, List<KTypeWrapper> parents) {
         if (!KGrammarVocabulary.classDecl.equals(classDeclNode.getName())) {
             throw new IllegalArgumentException("Parse tree " + classDeclNode.getName() + " does not is not a class declaration.");
         }
@@ -345,11 +345,11 @@ public class Context implements Cloneable, Serializable {
                 .filter(x -> KGrammarVocabulary.typeParameters.equals(x.getName()))
                 .toList();
 
-        List<KGenericType> genericTypes = new ArrayList<>();
+        List<KTypeWrapper> genericTypes = new ArrayList<>();
 
 
         if (!classTypeParamsNodeList.isEmpty()) {
-            genericTypes = getTypeParams(classTypeParamsNodeList.get(0));
+            genericTypes = getClassTypeParameters(classTypeParamsNodeList.get(0), false, new ArrayList<>());
         }
 
         // Handle inheritance
@@ -364,15 +364,55 @@ public class Context implements Cloneable, Serializable {
         boolean isClass = classDeclNode.getChildren().stream()
                 .anyMatch(x -> KGrammarVocabulary.className.equals(x.getName()));
 
-        if (classModifiers != null) {
-            return isClass ?
-                    new KClassType(name, genericTypes, classModifiers.isOpen(), classModifiers.isAbstract()) :
-                    new KInterfaceType(name, genericTypes);
-        } else {
-            return isClass ?
-                    new KClassType(name, genericTypes, false, false) :
-                    new KInterfaceType(name, genericTypes);
+        return new KTypeWrapper(classModifiers, KTypeWrapper.getVoidWrapper(), parents,
+                isClass ? KTypeIndicator.CLASS : KTypeIndicator.INTERFACE,
+                name, genericTypes, new ArrayList<>(), KTypeWrapper.getVoidWrapper());
+    }
+
+    /**
+     * typeParameters
+     *     : LANGLE NL* typeParameter (NL* COMMA NL* typeParameter)* NL* RANGLE
+     *     ;
+     *
+     * typeParameter
+     *     : typeParameterModifiers? NL* simpleIdentifier (NL* COLON NL* type)?
+     *     ;
+     */
+    List<KTypeWrapper> getClassTypeParameters(KotlinParseTree typeParamsNode, boolean allowNewSymbols, List<KTypeWrapper> visibleSymbols) {
+        if (!KGrammarVocabulary.typeParameters.equals(typeParamsNode.getName())) {
+            throw new IllegalArgumentException("Parse tree " + typeParamsNode.getName() + " is not a type params node.");
         }
+
+        List<KotlinParseTree> typeParamNodeList = typeParamsNode.getChildren().stream()
+                .filter(n -> KGrammarVocabulary.typeParameter.equals(n.getName()))
+                .toList();
+
+        List<KTypeWrapper> extractedTypes = new ArrayList<>();
+
+        for (KotlinParseTree typeParamNode : typeParamNodeList) {
+            KotlinParseTree idNode = typeParamNode.getChildren().stream()
+                    .filter(n -> KGrammarVocabulary.simpleId.equals(n.getName()))
+                    .toList().get(0);
+            String id = getIdentifierName(idNode);
+
+            List<KotlinParseTree> upperBoundType = typeParamNode.getChildren().stream()
+                    .filter(n -> KGrammarVocabulary.type.equals(n.getName()))
+                    .toList();
+
+            // No upper bound, just fill in the type
+            if (upperBoundType.isEmpty()) {
+                extractedTypes.add(new KTypeWrapper(KTypeIndicator.SYMBOLIC_GENERIC, id));
+            } else {
+                // An upper bound must be concrete
+                KTypeWrapper upperBound = getType(upperBoundType.get(0));
+                upperBound = new KTypeWrapper(KTypeIndicator.CONCRETE_GENERIC, upperBound.name());
+
+                // Record the upper bound
+                extractedTypes.add(new KTypeWrapper(upperBound, KTypeIndicator.SYMBOLIC_GENERIC, id));
+            }
+        }
+
+        return extractedTypes;
     }
 
     /**
@@ -459,30 +499,6 @@ public class Context implements Cloneable, Serializable {
     }
 
     /**
-     * typeParameters
-     * : LANGLE NL* typeParameter (NL* COMMA NL* typeParameter)* NL* RANGLE
-     * ;
-     */
-    public List<KGenericType> getTypeParams(KotlinParseTree typeParamsNode) {
-        if (!KGrammarVocabulary.typeParameters.equals(typeParamsNode.getName())) {
-            throw new IllegalArgumentException("Parse tree" + typeParamsNode.getName() + " is not a type parameter node.");
-        }
-
-        // Select "typeParameter" nodes and skip syntax
-        List<KotlinParseTree> typeParamChildren = typeParamsNode.getChildren().stream()
-                .filter(n -> KGrammarVocabulary.typeParameter.equals(n.getName()))
-                .toList();
-
-        List<KGenericType> types = new ArrayList<>();
-
-        for (KotlinParseTree child : typeParamChildren) {
-            types.add(new KGenericType(getTypeParam(child)));
-        }
-
-        return types;
-    }
-
-    /**
      * typeParameter
      * : typeParameterModifiers? NL* simpleIdentifier (NL* COLON NL* type)?
      * ;
@@ -544,12 +560,12 @@ public class Context implements Cloneable, Serializable {
         return identifierNode.getChildren().get(0).getText();
     }
 
-    public List<KType> getClassMembers(KotlinParseTree classBodyNode) {
+    public List<KTypeWrapper> getClassMembers(KotlinParseTree classBodyNode) {
         if (!classBodyNode.getName().equals(KGrammarVocabulary.classBody)) {
             throw new IllegalArgumentException("Parse tree " + classBodyNode + " is not a class body.");
         }
 
-        List<KType> memberTypes = new ArrayList<>();
+        List<KTypeWrapper> memberTypes = new ArrayList<>();
 
         // Get the declarations
         KotlinParseTree declarationsNode = classBodyNode.getChildren().stream()
@@ -569,7 +585,7 @@ public class Context implements Cloneable, Serializable {
         return memberTypes;
     }
 
-    public List<KType> getClassMemberDecl(KotlinParseTree memberDeclNode) {
+    public List<KTypeWrapper> getClassMemberDecl(KotlinParseTree memberDeclNode) {
         if (!KGrammarVocabulary.classMemberDeclaration.equals(memberDeclNode.getName())) {
             throw new IllegalArgumentException("Parse tree " + memberDeclNode + " is not a class member declaration.");
         }
@@ -587,7 +603,7 @@ public class Context implements Cloneable, Serializable {
 
                 switch (nestedDecl.getName()) {
                     case KGrammarVocabulary.funcDecl -> {
-                        List<KType> res = new ArrayList<>();
+                        List<KTypeWrapper> res = new ArrayList<>();
                         res.add(getFuncDeclaration(nestedDecl));
                         return res;
                     }
@@ -629,8 +645,11 @@ public class Context implements Cloneable, Serializable {
                 List<KTypeWrapper> parameterTypes = getFuncValueParams(funcValParams);
 
                 // TODO handle constructor
-                KFuncType func = new KFuncType("constructor", new ArrayList<>(), parameterTypes.stream().map(KTypeWrapper::toType).toList());
-                List<KType> res = new ArrayList<>();
+                KTypeWrapper func = new KTypeWrapper(null, KTypeWrapper.getVoidWrapper(),
+                        new ArrayList<>(), KTypeIndicator.CONSTRUCTOR,
+                        KGrammarVocabulary.constructor, new ArrayList<>(),
+                        parameterTypes, KTypeWrapper.getVoidWrapper());
+                List<KTypeWrapper> res = new ArrayList<>();
                 res.add(func);
 
                 return res;
@@ -642,7 +661,7 @@ public class Context implements Cloneable, Serializable {
         }
     }
 
-    private List<KType> getPropertyDeclaration(KotlinParseTree propertyDecl) {
+    private List<KTypeWrapper> getPropertyDeclaration(KotlinParseTree propertyDecl) {
         if (!KGrammarVocabulary.propertyDecl.equals(propertyDecl.getName())) {
             throw new IllegalArgumentException("Parse tree " + propertyDecl + " is not a property declaraiton.");
         }
@@ -673,9 +692,7 @@ public class Context implements Cloneable, Serializable {
             }
         }
 
-        return varTypes.stream()
-                .map(wrapper -> modifiers.isEmpty() ? wrapper.toType() : wrapper.toType(modifiers.get()))
-                .toList();
+        return varTypes;
     }
 
     /**
@@ -735,7 +752,7 @@ public class Context implements Cloneable, Serializable {
      * (NL* functionBody)?
      * ;
      */
-    private KFuncType getFuncDeclaration(KotlinParseTree funcDeclNode) {
+    private KTypeWrapper getFuncDeclaration(KotlinParseTree funcDeclNode) {
         if (!KGrammarVocabulary.funcDecl.equals(funcDeclNode.getName())) {
             throw new IllegalArgumentException("Parse tree " + funcDeclNode + " is not a function declaration.");
         }
@@ -743,7 +760,7 @@ public class Context implements Cloneable, Serializable {
         KTypeModifiers modifiers = null;
         String funcName = null;
         List<KTypeWrapper> parameterTypes = null;
-        KType returnType = null;
+        KTypeWrapper returnType = KTypeWrapper.getVoidWrapper();
 
         for (KotlinParseTree child : funcDeclNode.getChildren()) {
             switch (child.getName()) {
@@ -758,16 +775,11 @@ public class Context implements Cloneable, Serializable {
                 }
                 case KGrammarVocabulary.type -> {
                     // TODO: nested functions
-                    returnType = getType(child).toClass(false, false);
+                    returnType = getType(child);
                 }
             }
         }
-
-        if (returnType == null) {
-            return new KFuncType(funcName, new ArrayList<>(), parameterTypes.stream().map(KTypeWrapper::toType).toList());
-        } else {
-            return new KFuncType(funcName, new ArrayList<>(), parameterTypes.stream().map(KTypeWrapper::toType).toList(), returnType);
-        }
+        return new KTypeWrapper(modifiers, KTypeWrapper.getVoidWrapper(), new ArrayList<>(), KTypeIndicator.FUNCTION, funcName, new ArrayList<>(), parameterTypes, returnType);
     }
 
     private List<KTypeWrapper> getFuncValueParams(KotlinParseTree funcParamsNode) {
@@ -921,7 +933,7 @@ public class Context implements Cloneable, Serializable {
                         .filter(n -> KGrammarVocabulary.typeArguments.equals(n.getName()))
                         .toList();
 
-                List<KGenericType> generics = new ArrayList<>();
+                List<KTypeWrapper> generics = new ArrayList<>();
                 for (KotlinParseTree typeArg : typeArgumentNodes) {
 
                     // Get the projections
@@ -934,15 +946,9 @@ public class Context implements Cloneable, Serializable {
                             .filter(n -> KGrammarVocabulary.typeProjection.equals(n.getName()))
                             .toList();
 
-                    List<KTypeWrapper> res = new ArrayList<>();
-
                     for (KotlinParseTree child : typeProjections) {
-                        res.add(getType(child));
+                        generics.add(getType(child));
                     }
-
-                    generics.addAll(res.stream()
-                            .map(wrapper -> new KGenericType(wrapper.name()))
-                            .toList());
                 }
 
                 return new KTypeWrapper(KTypeIndicator.CLASS, id, generics);
@@ -961,7 +967,7 @@ public class Context implements Cloneable, Serializable {
                 // Either a type or "*"
                 KotlinParseTree lastChild = typeNode.getChildren().get(typeNode.getChildren().size() - 1);
                 if (KGrammarVocabulary.MULT.equals(lastChild.getName())) {
-                    return new KTypeWrapper(KTypeIndicator.GENERIC, lastChild.getName());
+                    return new KTypeWrapper(KTypeIndicator.CONCRETE_GENERIC, lastChild.getName());
                 }
 
                 return getType(lastChild);
@@ -1004,7 +1010,7 @@ public class Context implements Cloneable, Serializable {
 
                 KTypeWrapper returnType = getType(returnTypeNode);
 
-                return new KTypeWrapper(new ArrayList<>(), KTypeIndicator.FUNCTION, "", new ArrayList<>(), inputTypes, returnType);
+                return new KTypeWrapper(null, KTypeWrapper.getVoidWrapper(), new ArrayList<>(), KTypeIndicator.FUNCTION, "", new ArrayList<>(), inputTypes, returnType);
             }
             default -> {
                 throw new IllegalArgumentException("Cannot parse type node of type: " + typeNode);
