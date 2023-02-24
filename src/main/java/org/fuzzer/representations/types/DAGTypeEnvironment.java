@@ -50,6 +50,77 @@ public class DAGTypeEnvironment implements TypeEnvironment, Serializable {
     }
 
     @Override
+    public boolean hasParameterizedType(KType type) {
+        return false;
+    }
+
+    @Override
+    public KType getTypeFromGeneric(KGenericType type, KClassifierType ownerType, List<KClassifierType> additionalVisibleTypes) {
+        List<KType> parameterTypes = new ArrayList<>();
+
+        for (KGenericType gen : type.getGenerics()) {
+            parameterTypes.add(getTypeFromGeneric(gen, ownerType, additionalVisibleTypes));
+        }
+
+        List<String> additionalVisibleTypeNames = additionalVisibleTypes.stream().map(KClassifierType::name).toList();
+
+        KClassifierType res;
+        if (additionalVisibleTypeNames.contains(type.name())) {
+           res = additionalVisibleTypes.get(additionalVisibleTypeNames.indexOf(type.name()));
+        } else {
+            res = (KClassifierType) getTypeByName(type.name());
+        }
+
+        if (res instanceof KClassType) {
+            return new KClassType(res.name(), res.getGenerics(), parameterTypes, res.canBeInherited(), res.canBeInstantiated());
+        } else {
+            return new KInterfaceType(res.name(), res.getGenerics(), parameterTypes);
+        }
+    }
+
+    private KType getGenericTypeByName(String name) {
+
+    }
+
+    public boolean isInstanceOfType(KType unfilledParameterizedType, KType filledParameterizedType) {
+        if (!(unfilledParameterizedType instanceof KClassifierType t1
+                && filledParameterizedType instanceof KClassifierType t2)) return false;
+
+        List<KGenericType> symbolicGenerics = t1.getGenerics();
+
+        if (!symbolicGenerics.stream().allMatch(KGenericType::isSymbolic)) {
+            throw new IllegalArgumentException("Type " + unfilledParameterizedType + " has non-symbolic generics: " + symbolicGenerics);
+        }
+
+        List<KGenericType> instantiatedGenerics = t2.getGenerics();
+
+        if (instantiatedGenerics.stream().anyMatch(KGenericType::isSymbolic)) {
+            throw new IllegalArgumentException("Type " + filledParameterizedType + " has symbolic generics: " + symbolicGenerics);
+        }
+
+        if (symbolicGenerics.size() != instantiatedGenerics.size()) {
+            return false;
+        }
+
+        for (int i = 0; i < symbolicGenerics.size(); i++) {
+            KType genericUpperBound = symbolicGenerics.get(i).upperBound();
+
+            if (genericUpperBound == null) {
+                continue;
+            }
+
+            KType genericInstance = getTypeFromGeneric(instantiatedGenerics.get(i));
+
+            if (!isSubtypeOf(genericInstance, genericUpperBound)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+
+    @Override
     public boolean isSubtypeOf(KType subtype, KType supertype) {
         return dag.hasAncestor(subtype, supertype);
     }

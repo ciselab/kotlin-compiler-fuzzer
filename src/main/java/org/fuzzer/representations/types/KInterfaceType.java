@@ -12,6 +12,10 @@ public class KInterfaceType extends KClassifierType {
         super(name);
     }
 
+    public KInterfaceType(String name, List<KGenericType> generics, List<KType> genericInstances) {
+        super(name, generics, genericInstances);
+    }
+
     @Override
     public boolean canBeInherited() {
         return false;
@@ -24,7 +28,7 @@ public class KInterfaceType extends KClassifierType {
 
     @Override
     public boolean canBeDeclared() {
-        return true;
+        return getGenerics().stream().noneMatch(KGenericType::isSymbolic);
     }
 
     @Override

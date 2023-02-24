@@ -59,10 +59,12 @@ public record KTypeWrapper(KTypeModifiers modifiers,
     public KType toType() {
         switch (indicator) {
             case CLASS -> {
-                return toClass(isOpen(), isAbstract());
+                List<KGenericType> genericTypes = generics.stream().map(wrapper -> (KGenericType) wrapper.toType()).toList();
+                return new KClassType(name, genericTypes, isOpen(), isAbstract());
             }
             case INTERFACE -> {
-                return toInterface();
+                List<KGenericType> genericTypes = generics.stream().map(wrapper -> (KGenericType) wrapper.toType()).toList();
+                return new KInterfaceType(name, genericTypes);
             }
             case FUNCTION -> {
                 List<KType> inputTypes = inputTypes().stream()
@@ -73,6 +75,14 @@ public record KTypeWrapper(KTypeModifiers modifiers,
             }
             case VOID -> {
                 return new KVoid();
+            }
+            case CONCRETE_GENERIC -> {
+                KGenericType upperType = new KGenericType(upperBound.name, KTypeIndicator.CONCRETE_GENERIC, null);
+                return new KGenericType(name, KTypeIndicator.CONCRETE_GENERIC, upperType);
+            }
+            case SYMBOLIC_GENERIC -> {
+                KGenericType upperType = new KGenericType(upperBound.name, KTypeIndicator.CONCRETE_GENERIC, null);
+                return new KGenericType(name, KTypeIndicator.SYMBOLIC_GENERIC, upperType);
             }
             default -> {
                 throw new IllegalArgumentException("Cannot handle indicator of type: " + indicator);

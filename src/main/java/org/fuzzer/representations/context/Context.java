@@ -128,7 +128,6 @@ public class Context implements Cloneable, Serializable {
     public void addType(Set<KType> parents, KType newType) {
         typeHierarchy.addType(parents, newType);
     }
-
     public KType getTypeByName(String typeName) {
         return typeHierarchy.getTypeByName(typeName);
     }
@@ -158,9 +157,9 @@ public class Context implements Cloneable, Serializable {
     }
 
     public void fromFileNames(List<String> fileNames) {
-        HashMap<String, KClassifierType> classes = new HashMap<>();
-        HashMap<String, List<KType>> extractedTypes = new HashMap<>();
-        HashMap<String, List<KTypeWrapper>> parents = new HashMap<>();
+        Set<KClassifierType> classes = new HashSet<>();
+        HashMap<KClassifierType, List<KType>> extractedTypes = new HashMap<>();
+        HashMap<KClassifierType, List<KTypeWrapper>> parents = new HashMap<>();
 
         for (String fileName : fileNames) {
             KotlinParseTree parseTree = null;
@@ -175,25 +174,24 @@ public class Context implements Cloneable, Serializable {
             fromParseTree(parseTree, classes, extractedTypes, parents);
         }
 
-
-        if (!classes.containsKey("Any")) {
-            throw new IllegalStateException("Could not find root of type hierarchy in environment.");
-        }
-
         // Topologically add all the extracted types to the environment
-        Set<String> addedClasses = new HashSet<>();
-        Set<String> classesToAdd = new HashSet<>(classes.keySet());
+        Set<KClassifierType> addedClasses = new HashSet<>();
+        Set<KClassifierType> classesToAdd = new HashSet<>(classes);
 
-//        addType(new HashSet<>(), classes.get("Any"));
-        addType(new HashSet<>(), new KClassType("Any", false, false));
-        addedClasses.add("Any");
-        classesToAdd.remove("Any");
+        // Start by adding "Any"
+        KClassifierType any = classesToAdd.stream().filter(c -> c.name().equals("Any") && c.getGenerics().isEmpty()).toList().get(0);
+
+        addType(new HashSet<>(), any);
+        addedClasses.add(any);
+        classesToAdd.remove(any);
 
         while (addedClasses.size() < classes.size()) {
-            List<String> canAddNext = parents.entrySet().stream()
+            // Filter from the parents matrix
+            List<KClassifierType> canAddNext = parents.entrySet().stream()
+                    // Only look at those classes that should still be added
                     .filter(entry -> classesToAdd.contains(entry.getKey()))
-                    //.filter(entry -> entry.getValue().stream().map(KTypeWrapper::name).allMatch(addedClasses::contains))
-                    .filter(entry -> entry.getValue().stream().map(kTypeWrapper -> removeGeneric(kTypeWrapper.name())).allMatch(addedClasses::contains))
+                    // Select classes whose parents have been added
+                    .filter(entry -> entry.getValue().stream().map(KTypeWrapper::toType).allMatch(type -> typeHierarchy.hasType(type)))
                     .map(Map.Entry::getKey)
                     .toList();
 
@@ -201,28 +199,28 @@ public class Context implements Cloneable, Serializable {
                 throw new IllegalStateException("No new classes can be topologically added.");
             }
 
-            KClassifierType nextAddition = classes.get(canAddNext.get(0));
-            Set<KType> parentsOfAddition = parents.get(nextAddition.name()).stream()
+            KClassifierType nextAddition = canAddNext.get(0);
+            Set<KType> parentsOfAddition = parents.get(nextAddition).stream()
                     .map(wrapper -> typeHierarchy.getRootTypeByName(wrapper.name()))
                     .collect(Collectors.toSet());
 
             // If there are no parents, it is a descendant of Any
             if (parentsOfAddition.isEmpty()) {
-                parentsOfAddition.add(getTypeByName("Any"));
+                parentsOfAddition.add(any);
             }
 
             addType(parentsOfAddition, nextAddition);
 
-            classesToAdd.remove(nextAddition.name());
-            addedClasses.add(removeGeneric(nextAddition.name()));
+            classesToAdd.remove(nextAddition);
+            addedClasses.add(nextAddition);
         }
 
         // Add callables
         // TODO use type wrappers instead
-        for (Map.Entry<String, List<KType>> entry : extractedTypes.entrySet()) {
+        for (Map.Entry<KClassifierType, List<KType>> entry : extractedTypes.entrySet()) {
 
             // TODO make sure owners are classifiers.
-            KClassifierType ownerType = (KClassifierType) getTypeByName(entry.getKey());
+            KClassifierType ownerType = entry.getKey();
 
             if (ownerType instanceof KInterfaceType) {
                 // TODO handle interfaces.
@@ -260,9 +258,9 @@ public class Context implements Cloneable, Serializable {
     }
 
     public void fromParseTree(KotlinParseTree parseTree,
-                              HashMap<String, KClassifierType> classNames,
-                              HashMap<String, List<KType>> extractedTypes,
-                              HashMap<String, List<KTypeWrapper>> parents) {
+                              Set<KClassifierType> classes,
+                              HashMap<KClassifierType, List<KType>> extractedTypes,
+                              HashMap<KClassifierType, List<KTypeWrapper>> parents) {
         if (!KGrammarVocabulary.kotlinFile.equals(parseTree.getName())) {
             throw new IllegalArgumentException("Parse tree " + parseTree.getName() + " is not a file.");
         }
@@ -291,11 +289,12 @@ public class Context implements Cloneable, Serializable {
             List<KTypeWrapper> types = new ArrayList<>();
             List<KTypeWrapper> parentList = new ArrayList<>();
 
-            KTypeWrapper classType = getClassAndMembers(decl, types, parentList);
+            KTypeWrapper classTypeWrapper = getClassAndMembers(decl, types, parentList);
+            KClassifierType classType = (KClassifierType) classTypeWrapper.toType();
 
-            classNames.put(classType.name(), (KClassifierType) classType.toType());
-            extractedTypes.put(classType.name(), types.stream().map(KTypeWrapper::toType).toList());
-            parents.put(classType.name(), parentList);
+            classes.add(classType);
+            extractedTypes.put(classType, types.stream().map(KTypeWrapper::toType).toList());
+            parents.put(classType, parentList);
         }
     }
 

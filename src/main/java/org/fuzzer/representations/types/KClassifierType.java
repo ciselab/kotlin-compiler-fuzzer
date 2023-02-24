@@ -9,14 +9,24 @@ public abstract class KClassifierType implements KType {
 
     private final List<KGenericType> generics;
 
+    private final List<KType> genericInstances;
+
+    public KClassifierType(String name, List<KGenericType> generics, List<KType> genericInstances) {
+        this.name = name;
+        this.generics = generics;
+        this.genericInstances = genericInstances;
+    }
+
     protected KClassifierType(String name, List<KGenericType> generics) {
         this.name = name;
         this.generics = generics;
+        this.genericInstances = new ArrayList<>();
     }
 
     public KClassifierType(String name) {
         this.name = name;
         this.generics = new ArrayList<>();
+        this.genericInstances = new ArrayList<>();
     }
 
     @Override

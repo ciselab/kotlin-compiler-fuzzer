@@ -10,6 +10,10 @@ public interface TypeEnvironment extends Serializable {
 
     boolean hasType(KType type);
 
+    boolean hasParameterizedType(KType type);
+
+    KType getTypeFromGeneric(KGenericType type);
+
     boolean isSubtypeOf(KType subtype, KType supertype);
 
     Set<KType> subtypesOf(KType type);
@@ -23,5 +27,6 @@ public interface TypeEnvironment extends Serializable {
     KType getTypeByName(String typeName);
 
     KType getRootTypeByName(String typeName);
+
     KType randomType();
 }
