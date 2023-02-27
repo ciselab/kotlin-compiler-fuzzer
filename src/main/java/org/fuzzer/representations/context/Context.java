@@ -200,6 +200,19 @@ public class Context implements Cloneable, Serializable {
                 parents.put(tup.getKey(), updatedWrappers);
             }
 
+            // Update indicators for symbolic parameter types in inherited classes
+            // i.e., Class<E> : Super<E>
+            for (KGenericType generic : classifier.getGenerics()) {
+                String name = generic.name();
+                KTypeIndicator genericIndicator = generic.genericKind();
+                KTypeModifiers genericModifiers = new KTypeModifiers("", "", "", "");
+
+                List<KTypeWrapper> updatedWrappers = updateIndicatorOfWrappers(name, genericIndicator, genericModifiers, parents.get(classifier));
+                parents.put(classifier, updatedWrappers);
+            }
+
+
+
             // Update indicators for callables
             for (Map.Entry<KClassifierType, List<KTypeWrapper>> tup : extractedTypes.entrySet()) {
 
@@ -207,6 +220,8 @@ public class Context implements Cloneable, Serializable {
                 extractedTypes.put(tup.getKey(), updatedWrappers);
             }
         }
+
+
 
         while (addedClasses.size() < classes.size()) {
             // Filter from the parents matrix
@@ -987,10 +1002,6 @@ public class Context implements Cloneable, Serializable {
                 if (nestedTypes.size() > 1) {
                     throw new UnsupportedOperationException("Nested user types not yet supported.");
                 }
-
-//                for (KotlinParseTree simpleUserType : nestedTypes) {
-//                    getType(simpleUserType);
-//                }
                 return getType(nestedTypes.get(0));
             }
             case KGrammarVocabulary.simpleUserType -> {
