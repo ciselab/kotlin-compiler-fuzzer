@@ -64,7 +64,11 @@ public record KTypeWrapper(KTypeModifiers modifiers,
     }
 
     public boolean canConvert() {
-        return indicator != KTypeIndicator.UNKNOWN && inputTypes.stream().allMatch(KTypeWrapper::canConvert) && (upperBound == null || upperBound.canConvert());
+        return indicator != KTypeIndicator.UNKNOWN && inputTypes.stream().allMatch(KTypeWrapper::canConvert)
+                && (upperBound == null || upperBound.canConvert())
+                && generics.stream().allMatch(KTypeWrapper::canConvert)
+                && parent.stream().allMatch(KTypeWrapper::canConvert)
+                && (returnType == null || returnType().canConvert());
     }
 
     private void inferGenerics(List<KType> uncheckedGenericTypes, List<KGenericType> generics, List<KType> genericInstances) {

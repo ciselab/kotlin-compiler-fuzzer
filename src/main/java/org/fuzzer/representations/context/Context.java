@@ -193,11 +193,18 @@ public class Context implements Cloneable, Serializable {
                     classifier.canBeInstantiated() ? "" : KGrammarVocabulary.memberModifierAbstract,
                     classifier.canBeInherited() ? KGrammarVocabulary.inheritanceModifierOpen : "");
 
+            // Update the indicators of all known parents at this point
             for (Map.Entry<KClassifierType, List<KTypeWrapper>> tup : parents.entrySet()) {
-                // Update the indicators of all known parents at this point
-                List<KTypeWrapper> updatedWrappers = updateIndicatorOfWrappers(nameToUpdate, indicator, modifiers, tup.getValue());
 
+                List<KTypeWrapper> updatedWrappers = updateIndicatorOfWrappers(nameToUpdate, indicator, modifiers, tup.getValue());
                 parents.put(tup.getKey(), updatedWrappers);
+            }
+
+            // Update indicators for callables
+            for (Map.Entry<KClassifierType, List<KTypeWrapper>> tup : extractedTypes.entrySet()) {
+
+                List<KTypeWrapper> updatedWrappers = updateIndicatorOfWrappers(nameToUpdate, indicator, modifiers, tup.getValue());
+                extractedTypes.put(tup.getKey(), updatedWrappers);
             }
         }
 
@@ -250,12 +257,15 @@ public class Context implements Cloneable, Serializable {
             KClassType classOwnerType = (KClassType) ownerType;
 
             for (KTypeWrapper typeWrapper : entry.getValue()) {
+
+                if (!typeWrapper.canConvert()) {
+                    continue;
+                }
+
                 KCallable extractedCallable;
                 KType type = typeWrapper.toType();
 
                 if (type instanceof KFuncType) {
-
-                    // ...
                     if ("constructor".equals(type.name())) {
                         extractedCallable = new KConstructor(classOwnerType, type.getInputTypes());
                     } else {
