@@ -31,26 +31,7 @@ public abstract class KClassifierType implements KType {
 
     @Override
     public String name() {
-        if (generics.isEmpty()) {
-            return name;
-        }
-
-        StringBuilder genericRepr = new StringBuilder();
-        genericRepr.append("<");
-
-        ListIterator<KGenericType> genericIterator = generics.listIterator();
-
-        while(genericIterator.hasNext()) {
-            genericRepr.append(genericIterator.next());
-
-            if (genericIterator.hasNext()) {
-                genericRepr.append(",");
-            }
-        }
-
-        genericRepr.append(">");
-
-        return name + genericRepr;
+        return name;
     }
 
     @Override
@@ -81,5 +62,28 @@ public abstract class KClassifierType implements KType {
         int result = name.hashCode();
         result = 31 * result + generics.hashCode();
         return result;
+    }
+
+    public String toString() {
+        if (generics.isEmpty()) {
+            return name;
+        }
+
+        StringBuilder genericRepr = new StringBuilder();
+        genericRepr.append("<");
+
+        ListIterator<KGenericType> genericIterator = generics.listIterator();
+
+        while(genericIterator.hasNext()) {
+            genericRepr.append(genericIterator.next());
+
+            if (genericIterator.hasNext()) {
+                genericRepr.append(",");
+            }
+        }
+
+        genericRepr.append(">");
+
+        return name + genericRepr;
     }
 }

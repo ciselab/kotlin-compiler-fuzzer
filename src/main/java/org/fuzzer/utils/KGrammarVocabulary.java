@@ -105,5 +105,6 @@ public final class KGrammarVocabulary {
 
     public static final String constructor = "constructor";
 
+    public static final String Any = "Any";
     public static final String MULT = "MULT";
 }

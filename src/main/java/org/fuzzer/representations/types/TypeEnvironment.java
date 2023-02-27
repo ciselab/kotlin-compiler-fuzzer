@@ -3,6 +3,7 @@ package org.fuzzer.representations.types;
 import org.jetbrains.kotlin.spec.grammar.tools.KotlinParseTree;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Set;
 
 public interface TypeEnvironment extends Serializable {
@@ -12,7 +13,11 @@ public interface TypeEnvironment extends Serializable {
 
     boolean hasParameterizedType(KType type);
 
-    KType getTypeFromGeneric(KGenericType type);
+    KType getTypeFromGeneric(KGenericType type, KClassifierType ownerType, List<KGenericType> additionalVisibleTypes);
+
+    boolean containsType(KClassifierType type);
+
+    boolean containsGenericType(KGenericType generic, KClassifierType owner);
 
     boolean isSubtypeOf(KType subtype, KType supertype);
 

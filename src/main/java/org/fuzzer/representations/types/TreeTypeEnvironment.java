@@ -44,8 +44,18 @@ public class TreeTypeEnvironment implements TypeEnvironment {
     }
 
     @Override
-    public KType getTypeFromGeneric(KGenericType type) {
+    public KType getTypeFromGeneric(KGenericType type, KClassifierType ownerType, List<KGenericType> additionalVisibleTypes) {
         throw new UnsupportedOperationException("Unsupported for tree type env.");
+    }
+
+    @Override
+    public boolean containsType(KClassifierType type) {
+        return false;
+    }
+
+    @Override
+    public boolean containsGenericType(KGenericType generic, KClassifierType owner) {
+        return false;
     }
 
     @Override

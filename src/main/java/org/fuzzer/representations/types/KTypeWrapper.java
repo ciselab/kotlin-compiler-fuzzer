@@ -1,6 +1,9 @@
 package org.fuzzer.representations.types;
 
+import org.fuzzer.utils.KGrammarVocabulary;
+
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 public record KTypeWrapper(KTypeModifiers modifiers,
@@ -56,15 +59,42 @@ public record KTypeWrapper(KTypeModifiers modifiers,
         return false;
     }
 
+    private String genericUpperBoundName() {
+        return upperBound == null ? KGrammarVocabulary.Any : upperBound().name();
+    }
+
+    public boolean canConvert() {
+        return indicator != KTypeIndicator.UNKNOWN && inputTypes.stream().allMatch(KTypeWrapper::canConvert) && (upperBound == null || upperBound.canConvert());
+    }
+
+    private void inferGenerics(List<KType> uncheckedGenericTypes, List<KGenericType> generics, List<KType> genericInstances) {
+        for (KType uncheckedType : uncheckedGenericTypes) {
+            if (uncheckedType instanceof KClassifierType) {
+                genericInstances.add(uncheckedType);
+                generics.add(new KGenericType(uncheckedType.name(), KTypeIndicator.CONCRETE_GENERIC, null));
+            } else {
+                generics.add((KGenericType) uncheckedType);
+            }
+        }
+    }
+
     public KType toType() {
         switch (indicator) {
             case CLASS -> {
-                List<KGenericType> genericTypes = generics.stream().map(wrapper -> (KGenericType) wrapper.toType()).toList();
-                return new KClassType(name, genericTypes, isOpen(), isAbstract());
+                List<KType> uncheckedGenericTypes = generics.stream().map(KTypeWrapper::toType).toList();
+                List<KGenericType> generics = new LinkedList<>();
+                List<KType> genericInstances = new LinkedList<>();
+                inferGenerics(uncheckedGenericTypes, generics, genericInstances);
+
+                return new KClassType(name, generics, genericInstances, isOpen(), isAbstract());
             }
             case INTERFACE -> {
-                List<KGenericType> genericTypes = generics.stream().map(wrapper -> (KGenericType) wrapper.toType()).toList();
-                return new KInterfaceType(name, genericTypes);
+                List<KType> uncheckedGenericTypes = generics.stream().map(KTypeWrapper::toType).toList();
+                List<KGenericType> generics = new LinkedList<>();
+                List<KType> genericInstances = new LinkedList<>();
+
+                inferGenerics(uncheckedGenericTypes, generics, genericInstances);
+                return new KInterfaceType(name, generics, genericInstances);
             }
             case FUNCTION -> {
                 List<KType> inputTypes = inputTypes().stream()
@@ -77,11 +107,11 @@ public record KTypeWrapper(KTypeModifiers modifiers,
                 return new KVoid();
             }
             case CONCRETE_GENERIC -> {
-                KGenericType upperType = new KGenericType(upperBound.name, KTypeIndicator.CONCRETE_GENERIC, null);
+                KGenericType upperType = new KGenericType(genericUpperBoundName(), KTypeIndicator.CONCRETE_GENERIC, null);
                 return new KGenericType(name, KTypeIndicator.CONCRETE_GENERIC, upperType);
             }
             case SYMBOLIC_GENERIC -> {
-                KGenericType upperType = new KGenericType(upperBound.name, KTypeIndicator.CONCRETE_GENERIC, null);
+                KGenericType upperType = new KGenericType(genericUpperBoundName(), KTypeIndicator.CONCRETE_GENERIC, null);
                 return new KGenericType(name, KTypeIndicator.SYMBOLIC_GENERIC, upperType);
             }
             default -> {
