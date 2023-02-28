@@ -99,5 +99,12 @@ public final class KGrammarVocabulary {
 
     public static final String typeProjection = "typeProjection";
 
+    public static final String statements = "statements";
+
+    public static final String statement = "statement";
+
+    public static final String constructor = "constructor";
+
+    public static final String Any = "Any";
     public static final String MULT = "MULT";
 }

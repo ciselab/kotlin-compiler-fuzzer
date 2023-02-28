@@ -43,3 +43,5 @@ README.md
 .github/
 output/*
 context.ser
+Dockerfile
+.dockerignore

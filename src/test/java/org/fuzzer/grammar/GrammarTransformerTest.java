@@ -1,19 +1,15 @@
 package org.fuzzer.grammar;
 
-import org.antlr.runtime.Parser;
 import org.antlr.runtime.RecognitionException;
 import org.antlr.v4.tool.Grammar;
 import org.antlr.v4.tool.LexerGrammar;
 import org.fuzzer.grammar.ast.ASTNode;
 import org.fuzzer.utils.FileUtilities;
-import org.fuzzer.utils.RandomNumberGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class GrammarTransformerTest {
 

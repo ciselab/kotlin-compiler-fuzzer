@@ -1,22 +1,15 @@
 package org.fuzzer.generator;
 
-import org.antlr.runtime.RecognitionException;
-
 import java.io.*;
 import java.util.*;
-import java.util.function.Predicate;
 
+import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.tool.ast.GrammarAST;
-import org.fuzzer.representations.callables.*;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.grammar.ast.ASTNodeType;
 import org.fuzzer.grammar.RuleHandler;
-import org.fuzzer.representations.types.KType;
 import org.fuzzer.utils.RandomNumberGenerator;
 import org.fuzzer.utils.StringUtilities;
-import org.fuzzer.utils.Tree;
-
-import static org.fuzzer.utils.StringUtilities.removeGeneric;
 
 public class CodeGenerator {
     private final RandomNumberGenerator rng;
@@ -27,7 +20,7 @@ public class CodeGenerator {
 
     private int maxDepth;
 
-    public CodeGenerator(RuleHandler ruleHandler, RandomNumberGenerator rng, int maxDepth, Context ctx) throws IOException, RecognitionException {
+    public CodeGenerator(RuleHandler ruleHandler, RandomNumberGenerator rng, int maxDepth, Context ctx) throws RecognitionException {
 
         this.ruleHandler = ruleHandler;
 

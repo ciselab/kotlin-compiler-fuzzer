@@ -20,6 +20,13 @@ public class KClassType extends KClassifierType {
         this.open = open;
         this.abs = abs;
     }
+
+    public KClassType(String name, List<KGenericType> generics, List<KType> genericInstances, boolean open, boolean abs) {
+        super(name, generics, genericInstances);
+        this.open = open;
+        this.abs = abs;
+    }
+
     @Override
     public boolean canBeInherited() {
         return open;
@@ -32,7 +39,7 @@ public class KClassType extends KClassifierType {
 
     @Override
     public boolean canBeDeclared() {
-        return true;
+        return getGenerics().stream().noneMatch(KGenericType::isSymbolic);
     }
 
     @Override

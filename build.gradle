@@ -8,13 +8,8 @@ buildscript {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
-plugins {
-    id 'java'
-    id 'application'
-}
 
 group 'org.example'
-version '1.0-SNAPSHOT'
 
 apply plugin: 'java'
 apply plugin: 'kotlin'
@@ -22,8 +17,16 @@ apply plugin: 'antlr'
 
 repositories {
     mavenCentral()
+    mavenLocal()
+    // For IDE dev
     flatDir {
         dirs 'local_dependencies'
+    }
+}
+
+configurations {
+    compile {
+        extendsFrom = extendsFrom.findAll { it != configurations.antlr }
     }
 }
 
@@ -31,6 +34,7 @@ dependencies {
     // Regex generator
     implementation 'com.github.mifmif:generex:1.0.1'
     implementation 'org.jetbrains.kotlin.spec.grammar.tools:kotlin-grammar-tools:0.1'
+    implementation 'org.json:json:20220320'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
     testImplementation "org.mockito:mockito-core:3.+"
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
@@ -53,9 +57,21 @@ compileTestKotlin {
     }
 }
 
-jar {
+task uberJar(type: Jar) {
     archiveBaseName = 'kotlin-compiler-fuzzer'
     archiveVersion =  '0.1.0'
-}
+    archiveClassifier = 'uber'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
-mainClassName = 'org.fuzzer.Main'
+    from sourceSets.main.output
+
+    manifest {
+        attributes 'Main-Class': 'org.fuzzer.Main',
+                'Implementation-Version': project.version
+    }
+
+    dependsOn configurations.runtimeClasspath
+    from {
+        configurations.runtimeClasspath.findAll { it.name.endsWith('jar') || it.isDirectory() }.collect { zipTree(it) }
+    }
+}
