@@ -30,6 +30,6 @@ public class TestMain {
                 compilerPath, compilerArgs,
                 0, 3, ctxFileName,
                 lexerGrammarFile, grammarFile);
-//        runner.run();
+        runner.run();
     }
 }

@@ -26,6 +26,9 @@ public class ExpressionNode extends ASTNode {
     @Override
     public CodeFragment getSample(RandomNumberGenerator rng, Context ctx) {
         KType sampledType = ctx.getRandomType();
+
+        System.out.println("Sampling type: " + sampledType);
+
         CodeFragment code = getSampleOfType(rng, ctx, sampledType);
 
         return code;

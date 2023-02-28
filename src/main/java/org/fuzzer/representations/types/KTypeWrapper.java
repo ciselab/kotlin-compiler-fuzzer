@@ -5,6 +5,7 @@ import org.fuzzer.utils.KGrammarVocabulary;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public record KTypeWrapper(KTypeModifiers modifiers,
                            KTypeWrapper upperBound,
@@ -40,7 +41,7 @@ public record KTypeWrapper(KTypeModifiers modifiers,
     }
 
     public KFuncType toFunction(List<KType> inputTypes, KType returnType) {
-        return new KFuncType(name, generics.stream().map(wrapper -> (KGenericType) wrapper.toType()).toList(), inputTypes);
+        return new KFuncType(name, generics.stream().map(wrapper -> (KGenericType) wrapper.toType()).toList(), inputTypes, returnType);
     }
 
     public boolean isOpen() {
@@ -61,6 +62,14 @@ public record KTypeWrapper(KTypeModifiers modifiers,
 
     private String genericUpperBoundName() {
         return upperBound == null ? KGrammarVocabulary.Any : upperBound().name();
+    }
+
+    public boolean containsName(String n) {
+        return this.name.contains(n)
+                || (upperBound() != null && upperBound().containsName(n))
+                || generics.stream().anyMatch(g -> g.containsName(n))
+                || parent.stream().anyMatch(p -> p.containsName(n))
+                || (returnType != null && returnType().containsName(n));
     }
 
     public boolean canConvert() {

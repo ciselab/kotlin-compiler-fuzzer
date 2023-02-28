@@ -211,13 +211,19 @@ public class Context implements Cloneable, Serializable {
                 parents.put(classifier, updatedWrappers);
             }
 
-
-
             // Update indicators for callables
             for (Map.Entry<KClassifierType, List<KTypeWrapper>> tup : extractedTypes.entrySet()) {
-
                 List<KTypeWrapper> updatedWrappers = updateIndicatorOfWrappers(nameToUpdate, indicator, modifiers, tup.getValue());
                 extractedTypes.put(tup.getKey(), updatedWrappers);
+
+                // Also update the symbolic generic types of callables
+                for (KGenericType generic : classifier.getGenerics()) {
+                    KTypeIndicator genericIndicator = generic.genericKind();
+                    KTypeModifiers genericModifiers = new KTypeModifiers("", "", "", "");
+
+                    updatedWrappers = updateIndicatorOfWrappers(generic.name(), genericIndicator, genericModifiers, parents.get(classifier));
+                    parents.put(classifier, updatedWrappers);
+                }
             }
         }
 
@@ -257,23 +263,15 @@ public class Context implements Cloneable, Serializable {
         }
 
         // Add callables
-        // TODO use type wrappers instead
         for (Map.Entry<KClassifierType, List<KTypeWrapper>> entry : extractedTypes.entrySet()) {
-
-
-            // TODO make sure owners are classifiers.
             KClassifierType ownerType = entry.getKey();
-
-            if (ownerType instanceof KInterfaceType) {
-                // TODO handle interfaces.
-                continue;
-            }
-
-            KClassType classOwnerType = (KClassType) ownerType;
 
             for (KTypeWrapper typeWrapper : entry.getValue()) {
 
                 if (!typeWrapper.canConvert()) {
+                    if (!(typeWrapper.containsName("Range") || typeWrapper.containsName("Unit"))) {
+                        System.out.println("Cannot convert: " + typeWrapper);
+                    }
                     continue;
                 }
 
@@ -282,7 +280,7 @@ public class Context implements Cloneable, Serializable {
 
                 if (type instanceof KFuncType) {
                     if ("constructor".equals(type.name())) {
-                        extractedCallable = new KConstructor(classOwnerType, type.getInputTypes());
+                        extractedCallable = new KConstructor(ownerType, type.getInputTypes());
                     } else {
                         extractedCallable = new KMethod(ownerType, type.name(),
                                 type.getInputTypes(),
@@ -294,10 +292,10 @@ public class Context implements Cloneable, Serializable {
                 }
 
                 // Store the callables
-                callablesByOwner.putIfAbsent(classOwnerType, new HashSet<>());
+                callablesByOwner.putIfAbsent(ownerType, new HashSet<>());
                 callablesByReturnType.putIfAbsent(extractedCallable.getReturnType(), new HashSet<>());
 
-                callablesByOwner.get(classOwnerType).add(extractedCallable);
+                callablesByOwner.get(ownerType).add(extractedCallable);
                 callablesByReturnType.get(extractedCallable.getReturnType()).add(extractedCallable);
             }
         }
