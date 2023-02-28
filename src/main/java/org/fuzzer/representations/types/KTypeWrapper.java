@@ -1,5 +1,6 @@
 package org.fuzzer.representations.types;
 
+import org.fuzzer.representations.callables.*;
 import org.fuzzer.utils.KGrammarVocabulary;
 
 import java.util.ArrayList;
@@ -7,7 +8,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public record KTypeWrapper(KTypeModifiers modifiers,
+public record KTypeWrapper(String varName,
+                           KTypeModifiers modifiers,
                            KTypeWrapper upperBound,
                            List<KTypeWrapper> parent,
                            KTypeIndicator indicator,
@@ -16,20 +18,26 @@ public record KTypeWrapper(KTypeModifiers modifiers,
                            List<KTypeWrapper> inputTypes,
                            KTypeWrapper returnType) {
 
+    public KTypeWrapper(String varName, KTypeWrapper wrapper) {
+        this(varName, wrapper.modifiers, wrapper.upperBound, wrapper.parent,
+                wrapper.indicator, wrapper.name, wrapper.generics,
+                wrapper.inputTypes, wrapper.returnType);
+    }
+
     public KTypeWrapper(KTypeWrapper upperBound, KTypeIndicator indicator, String name) {
-        this(null, upperBound, new ArrayList<>(), indicator, name, new ArrayList<>(), new ArrayList<>(), KTypeWrapper.getVoidWrapper());
+        this(null, null, upperBound, new ArrayList<>(), indicator, name, new ArrayList<>(), new ArrayList<>(), KTypeWrapper.getVoidWrapper());
     }
 
     public KTypeWrapper(KTypeIndicator indicator, String name) {
-        this(null, null, new ArrayList<>(), indicator, name, new ArrayList<>(), new ArrayList<>(), KTypeWrapper.getVoidWrapper());
+        this(null, null, null, new ArrayList<>(), indicator, name, new ArrayList<>(), new ArrayList<>(), KTypeWrapper.getVoidWrapper());
     }
 
     public KTypeWrapper(KTypeIndicator indicator, String name, List<KTypeWrapper> generics) {
-        this(null, null, new ArrayList<>(), indicator, name, generics, new ArrayList<>(), KTypeWrapper.getVoidWrapper());
+        this(null, null, null, new ArrayList<>(), indicator, name, generics, new ArrayList<>(), KTypeWrapper.getVoidWrapper());
     }
 
     public static KTypeWrapper getVoidWrapper() {
-        return new KTypeWrapper(null, null, new ArrayList<>(), KTypeIndicator.CLASS, "void", new ArrayList<>(), new ArrayList<>(), null);
+        return new KTypeWrapper(null, null, null, new ArrayList<>(), KTypeIndicator.CLASS, "void", new ArrayList<>(), new ArrayList<>(), null);
     }
 
     public KClassType toClass(boolean open, boolean abs) {
@@ -129,6 +137,51 @@ public record KTypeWrapper(KTypeModifiers modifiers,
             }
             default -> {
                 throw new IllegalArgumentException("Cannot handle indicator of type: " + indicator);
+            }
+        }
+    }
+
+    public KCallable toCallable(KType ownerType) {
+        switch (indicator) {
+            case FUNCTION -> {
+                List<KType> input = inputTypes.stream().map(KTypeWrapper::toType).toList();
+                KType output = returnType.toType();
+
+                // No owner means this is a function, not a method
+                if (ownerType == null || new KVoid().equals(ownerType)) {
+                    return new KFunction(name, input, output);
+                }
+
+                if (!(ownerType instanceof KClassifierType)) {
+                    throw new IllegalArgumentException("Cannot create method callable with owner of type: " + ownerType);
+                }
+
+                return new KMethod((KClassifierType) ownerType, name, input, output);
+            }
+
+            case CONSTRUCTOR -> {
+                List<KType> input = inputTypes.stream().map(KTypeWrapper::toType).toList();
+                KType output = returnType.toType();
+
+                if (!(output instanceof KClassifierType)) {
+                    throw new IllegalArgumentException("Cannot create constructor callable with owner of type: " + output);
+                }
+
+                return new KConstructor((KClassifierType) output, input);
+            }
+
+            case CLASS -> {
+                KType varType = toType();
+
+                if (!(varType instanceof KClassifierType)) {
+                    throw new IllegalArgumentException("Indicator mismatch.");
+                }
+
+                return new KIdentifierCallable(varName, varType);
+            }
+
+            default -> {
+                throw new IllegalArgumentException("Cannot handle indicator of type: " + indicator + " in callable creation");
             }
         }
     }

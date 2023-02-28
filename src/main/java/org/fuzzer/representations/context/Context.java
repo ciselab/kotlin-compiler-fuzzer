@@ -24,7 +24,7 @@ public class Context implements Cloneable, Serializable {
 
     private HashMap<KType, Set<KCallable>> callablesByOwner;
 
-    private HashMap<KType, Set<KCallable>> callablesByReturnType;
+//    private HashMap<KType, Set<KCallable>> callablesByReturnType;
     private TypeEnvironment typeHierarchy;
 
     private RandomNumberGenerator rng;
@@ -33,7 +33,6 @@ public class Context implements Cloneable, Serializable {
 
     public Context(RandomNumberGenerator rng) {
         this.callablesByOwner = new HashMap<>();
-        this.callablesByReturnType = new HashMap<>();
 
         this.typeHierarchy = new DAGTypeEnvironment(rng);
         this.idStore = new MapIdentifierStore(typeHierarchy, rng);
@@ -72,7 +71,7 @@ public class Context implements Cloneable, Serializable {
     public KCallable randomCallableOfType(KType type, Predicate<KCallable> condition) throws CloneNotSupportedException {
         if (type instanceof KClassifierType) {
             Set<KType> subtypes = typeHierarchy.subtypesOf(type);
-            List<KCallable> alternatives = new ArrayList<>(callablesByReturnType
+            List<KCallable> alternatives = new ArrayList<>(callablesByOwner
                     .entrySet().stream()
                     // Get callables that match the return type
                     .filter(entry -> subtypes.contains(entry.getKey()))
@@ -118,9 +117,6 @@ public class Context implements Cloneable, Serializable {
     }
 
     public void addDefaultValue(KType type, String representation) {
-        callablesByReturnType.putIfAbsent(type, new HashSet<>());
-        callablesByReturnType.get(type).add(new KAnonymousCallable(representation, type));
-
         callablesByOwner.putIfAbsent(new KVoid(), new HashSet<>());
         callablesByOwner.get(new KVoid()).add(new KAnonymousCallable(representation, type));
     }
@@ -154,7 +150,6 @@ public class Context implements Cloneable, Serializable {
     public void addIdentifier(String identifier, KCallable callable, KCallable owner) {
         addIdentifier(identifier, callable);
         callablesByOwner.get(owner.getReturnType()).add(callable);
-        callablesByReturnType.get(callable.getReturnType()).add(callable);
     }
 
     public void fromFileNames(List<String> fileNames) {
@@ -195,7 +190,6 @@ public class Context implements Cloneable, Serializable {
 
             // Update the indicators of all known parents at this point
             for (Map.Entry<KClassifierType, List<KTypeWrapper>> tup : parents.entrySet()) {
-
                 List<KTypeWrapper> updatedWrappers = updateIndicatorOfWrappers(nameToUpdate, indicator, modifiers, tup.getValue());
                 parents.put(tup.getKey(), updatedWrappers);
             }
@@ -211,23 +205,21 @@ public class Context implements Cloneable, Serializable {
                 parents.put(classifier, updatedWrappers);
             }
 
-            // Update indicators for callables
+            // Update indicators for all callables
             for (Map.Entry<KClassifierType, List<KTypeWrapper>> tup : extractedTypes.entrySet()) {
                 List<KTypeWrapper> updatedWrappers = updateIndicatorOfWrappers(nameToUpdate, indicator, modifiers, tup.getValue());
                 extractedTypes.put(tup.getKey(), updatedWrappers);
+            }
 
-                // Also update the symbolic generic types of callables
-                for (KGenericType generic : classifier.getGenerics()) {
-                    KTypeIndicator genericIndicator = generic.genericKind();
-                    KTypeModifiers genericModifiers = new KTypeModifiers("", "", "", "");
+            // Update symbolic types for callables of this classifier
+            for (KGenericType generic : classifier.getGenerics()) {
+                KTypeIndicator genericIndicator = generic.genericKind();
+                KTypeModifiers genericModifiers = new KTypeModifiers("", "", "", "");
 
-                    updatedWrappers = updateIndicatorOfWrappers(generic.name(), genericIndicator, genericModifiers, parents.get(classifier));
-                    parents.put(classifier, updatedWrappers);
-                }
+                List<KTypeWrapper> updatedWrappers = updateIndicatorOfWrappers(generic.name(), genericIndicator, genericModifiers, extractedTypes.get(classifier));
+                extractedTypes.put(classifier, updatedWrappers);
             }
         }
-
-
 
         while (addedClasses.size() < classes.size()) {
             // Filter from the parents matrix
@@ -275,28 +267,12 @@ public class Context implements Cloneable, Serializable {
                     continue;
                 }
 
-                KCallable extractedCallable;
-                KType type = typeWrapper.toType();
-
-                if (type instanceof KFuncType) {
-                    if ("constructor".equals(type.name())) {
-                        extractedCallable = new KConstructor(ownerType, type.getInputTypes());
-                    } else {
-                        extractedCallable = new KMethod(ownerType, type.name(),
-                                type.getInputTypes(),
-                                type.getReturnType());
-                    }
-                } else {
-                    // TODO: handle other class properties
-                    continue;
-                }
+                KCallable extractedCallable = typeWrapper.toCallable(ownerType);
 
                 // Store the callables
                 callablesByOwner.putIfAbsent(ownerType, new HashSet<>());
-                callablesByReturnType.putIfAbsent(extractedCallable.getReturnType(), new HashSet<>());
 
                 callablesByOwner.get(ownerType).add(extractedCallable);
-                callablesByReturnType.get(extractedCallable.getReturnType()).add(extractedCallable);
             }
         }
     }
@@ -328,7 +304,7 @@ public class Context implements Cloneable, Serializable {
             List<KTypeWrapper> newParent = updateIndicatorOfWrappers(nameToUpdate, indicatorToUpdate, modifiersToUpdate, wrapper.parent());
             KTypeWrapper newUpperBound = updateIndicatorOfWrappers(nameToUpdate, indicatorToUpdate, modifiersToUpdate, Collections.singletonList(wrapper.upperBound())).get(0);
 
-            KTypeWrapper newWrapper = new KTypeWrapper(newModifiers, newUpperBound,
+            KTypeWrapper newWrapper = new KTypeWrapper(wrapper.varName(), newModifiers, newUpperBound,
                     newParent, newIndicator, wrapper.name(), newGenerics,
                     newInputTypes, newReturnType);
 
@@ -444,7 +420,7 @@ public class Context implements Cloneable, Serializable {
         boolean isClass = classDeclNode.getChildren().stream()
                 .anyMatch(x -> KGrammarVocabulary.className.equals(x.getName()));
 
-        return new KTypeWrapper(classModifiers, KTypeWrapper.getVoidWrapper(), parents,
+        return new KTypeWrapper(null, classModifiers, KTypeWrapper.getVoidWrapper(), parents,
                 isClass ? KTypeIndicator.CLASS : KTypeIndicator.INTERFACE,
                 name, genericTypes, new ArrayList<>(), KTypeWrapper.getVoidWrapper());
     }
@@ -726,7 +702,7 @@ public class Context implements Cloneable, Serializable {
                 List<KTypeWrapper> parameterTypes = getFuncValueParams(funcValParams);
 
                 // TODO handle constructor
-                KTypeWrapper func = new KTypeWrapper(null, KTypeWrapper.getVoidWrapper(),
+                KTypeWrapper func = new KTypeWrapper(null, null, KTypeWrapper.getVoidWrapper(),
                         new ArrayList<>(), KTypeIndicator.CONSTRUCTOR,
                         KGrammarVocabulary.constructor, new ArrayList<>(),
                         parameterTypes, KTypeWrapper.getVoidWrapper());
@@ -817,8 +793,7 @@ public class Context implements Cloneable, Serializable {
             }
         }
 
-        // Disregard variable name for now
-        return type;
+        return new KTypeWrapper(varName, type);
     }
 
 
@@ -860,7 +835,7 @@ public class Context implements Cloneable, Serializable {
                 }
             }
         }
-        return new KTypeWrapper(modifiers, KTypeWrapper.getVoidWrapper(), new ArrayList<>(), KTypeIndicator.FUNCTION, funcName, new ArrayList<>(), parameterTypes, returnType);
+        return new KTypeWrapper(null, modifiers, KTypeWrapper.getVoidWrapper(), new ArrayList<>(), KTypeIndicator.FUNCTION, funcName, new ArrayList<>(), parameterTypes, returnType);
     }
 
     private List<KTypeWrapper> getFuncValueParams(KotlinParseTree funcParamsNode) {
@@ -1087,7 +1062,7 @@ public class Context implements Cloneable, Serializable {
 
                 KTypeWrapper returnType = getType(returnTypeNode);
 
-                return new KTypeWrapper(null, KTypeWrapper.getVoidWrapper(), new ArrayList<>(), KTypeIndicator.FUNCTION, "", new ArrayList<>(), inputTypes, returnType);
+                return new KTypeWrapper(null, null, KTypeWrapper.getVoidWrapper(), new ArrayList<>(), KTypeIndicator.FUNCTION, "", new ArrayList<>(), inputTypes, returnType);
             }
             default -> {
                 throw new IllegalArgumentException("Cannot parse type node of type: " + typeNode);
@@ -1103,7 +1078,6 @@ public class Context implements Cloneable, Serializable {
             // TODO: in the future, clone type environment as well
             clone.typeHierarchy = typeHierarchy;
             clone.callablesByOwner = (HashMap<KType, Set<KCallable>>) callablesByOwner.clone();
-            clone.callablesByReturnType = (HashMap<KType, Set<KCallable>>) callablesByReturnType.clone();
             clone.rng = rng;
             clone.idStore = new MapIdentifierStore(clone.typeHierarchy, clone.rng);
             clone.scope = scope;
