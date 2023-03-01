@@ -24,7 +24,7 @@ public class Context implements Cloneable, Serializable {
 
     private HashMap<KType, Set<KCallable>> callablesByOwner;
 
-//    private HashMap<KType, Set<KCallable>> callablesByReturnType;
+    //    private HashMap<KType, Set<KCallable>> callablesByReturnType;
     private TypeEnvironment typeHierarchy;
 
     private RandomNumberGenerator rng;
@@ -282,9 +282,10 @@ public class Context implements Cloneable, Serializable {
      * At parse time, indicators are predominantly UNKNOWN, since it is unclear whether
      * they consist of symbolic generics or concrete types in the hierarchy.
      * Once determined, this method updates the indicators that match a particular name.
-     * @param nameToUpdate the name of the type wrapper to update.
+     *
+     * @param nameToUpdate      the name of the type wrapper to update.
      * @param indicatorToUpdate the new indicator (class, interface, symbolic)
-     * @param wrappersToUpdate the wrappers to consider
+     * @param wrappersToUpdate  the wrappers to consider
      * @return the updated wrappers
      */
     private List<KTypeWrapper> updateIndicatorOfWrappers(String nameToUpdate, KTypeIndicator indicatorToUpdate, KTypeModifiers modifiersToUpdate, List<KTypeWrapper> wrappersToUpdate) {
@@ -298,13 +299,14 @@ public class Context implements Cloneable, Serializable {
 
             KTypeIndicator newIndicator = nameToUpdate.equals(wrapper.name()) && wrapper.indicator().equals(KTypeIndicator.UNKNOWN) ? indicatorToUpdate : wrapper.indicator();
             KTypeModifiers newModifiers = nameToUpdate.equals(wrapper.name()) ? modifiersToUpdate : wrapper.modifiers();
+            KTypeWrapper newOwner = updateIndicatorOfWrappers(nameToUpdate, indicatorToUpdate, modifiersToUpdate, Collections.singletonList(wrapper.ownerType())).get(0);
             List<KTypeWrapper> newGenerics = updateIndicatorOfWrappers(nameToUpdate, indicatorToUpdate, modifiersToUpdate, wrapper.generics());
             List<KTypeWrapper> newInputTypes = updateIndicatorOfWrappers(nameToUpdate, indicatorToUpdate, modifiersToUpdate, wrapper.inputTypes());
             KTypeWrapper newReturnType = updateIndicatorOfWrappers(nameToUpdate, indicatorToUpdate, modifiersToUpdate, Collections.singletonList(wrapper.returnType())).get(0);
             List<KTypeWrapper> newParent = updateIndicatorOfWrappers(nameToUpdate, indicatorToUpdate, modifiersToUpdate, wrapper.parent());
             KTypeWrapper newUpperBound = updateIndicatorOfWrappers(nameToUpdate, indicatorToUpdate, modifiersToUpdate, Collections.singletonList(wrapper.upperBound())).get(0);
 
-            KTypeWrapper newWrapper = new KTypeWrapper(wrapper.varName(), newModifiers, newUpperBound,
+            KTypeWrapper newWrapper = new KTypeWrapper(newOwner, wrapper.varName(), newModifiers, newUpperBound,
                     newParent, newIndicator, wrapper.name(), newGenerics,
                     newInputTypes, newReturnType);
 
@@ -343,10 +345,11 @@ public class Context implements Cloneable, Serializable {
             if (!KGrammarVocabulary.classDecl.equals(decl.getName())) {
                 continue;
             }
-            List<KTypeWrapper> types = new ArrayList<>();
-            List<KTypeWrapper> parentList = new ArrayList<>();
+            Map<KTypeWrapper, List<KTypeWrapper>> membersByClassifier = new HashMap<>();
+            Map<KTypeWrapper, List<KTypeWrapper>> parentsByClassifier = new HashMap<>();
+            Map<KTypeWrapper, List<KTypeWrapper>> nestedByClassifier = new HashMap<>();
 
-            KTypeWrapper classTypeWrapper = getClassAndMembers(decl, types, parentList);
+            KTypeWrapper classTypeWrapper = getClassAndMembers(decl, membersByClassifier, parentsByClassifier, nestedByClassifier);
             KClassifierType classType = (KClassifierType) classTypeWrapper.toType();
 
             classes.add(classType);
@@ -364,7 +367,10 @@ public class Context implements Cloneable, Serializable {
      * (NL* classBody | NL* enumClassBody)?
      * ;
      */
-    public KTypeWrapper getClassAndMembers(KotlinParseTree classDeclNode, List<KTypeWrapper> members, List<KTypeWrapper> parents) {
+    public KTypeWrapper getClassAndMembers(KotlinParseTree classDeclNode,
+                                           Map<KTypeWrapper, List<KTypeWrapper>> members,
+                                           Map<KTypeWrapper, List<KTypeWrapper>> parents,
+                                           Map<KTypeWrapper, List<KTypeWrapper>> nestedTypes) {
         if (!KGrammarVocabulary.classDecl.equals(classDeclNode.getName())) {
             throw new IllegalArgumentException("Parse tree " + classDeclNode.getName() + " does not is not a class declaration.");
         }
@@ -383,7 +389,7 @@ public class Context implements Cloneable, Serializable {
                 .toList()
                 .get(0);
 
-        members.addAll(getClassMembers(classBody));
+        List<KTypeWrapper> theseMembers = getClassMembers(classBody);
 
         // Handle class modifiers
         KTypeModifiers classModifiers = null;
@@ -413,16 +419,60 @@ public class Context implements Cloneable, Serializable {
                 .filter(x -> KGrammarVocabulary.delegationSpecifiers.equals(x.getName()))
                 .toList();
 
+        List<KTypeWrapper> theseParents = new ArrayList<>();
+
         if (!delegationSpecifierNodes.isEmpty()) {
-            parents.addAll(getDelegationSpecifiers(delegationSpecifierNodes.get(0)));
+            theseParents = getDelegationSpecifiers(delegationSpecifierNodes.get(0));
         }
 
         boolean isClass = classDeclNode.getChildren().stream()
                 .anyMatch(x -> KGrammarVocabulary.className.equals(x.getName()));
 
-        return new KTypeWrapper(null, classModifiers, KTypeWrapper.getVoidWrapper(), parents,
+        KTypeWrapper thisType = new KTypeWrapper(null, null, classModifiers, KTypeWrapper.getVoidWrapper(), theseParents,
                 isClass ? KTypeIndicator.CLASS : KTypeIndicator.INTERFACE,
                 name, genericTypes, new ArrayList<>(), KTypeWrapper.getVoidWrapper());
+
+        // Handle nested types
+        List<KTypeWrapper> theseNestedTypes = getNestedClassifiers(classBody, members, parents, nestedTypes);
+
+        members.put(thisType, theseMembers);
+        members.put(thisType, theseParents);
+        nestedTypes.put(thisType, theseNestedTypes);
+    }
+
+    public List<KTypeWrapper> getNestedClassifiers(KotlinParseTree classBodyNode,
+                                                   Map<KTypeWrapper, List<KTypeWrapper>> members,
+                                                   Map<KTypeWrapper, List<KTypeWrapper>> parents,
+                                                   Map<KTypeWrapper, List<KTypeWrapper>> nestedTypes) {
+        if (!classBodyNode.getName().equals(KGrammarVocabulary.classBody)) {
+            throw new IllegalArgumentException("Parse tree " + classBodyNode + " is not a class body.");
+        }
+
+        List<KotlinParseTree> classMemberDeclNodes = classBodyNode.getChildren().stream()
+                .filter(n -> KGrammarVocabulary.classMemberDeclarations.equals(n.getName()))
+                .toList()
+                .get(0).getChildren().stream()
+                .filter(n -> KGrammarVocabulary.classMemberDeclaration.equals(n.getName()))
+                .toList();
+
+        List<KotlinParseTree> classDecls = classMemberDeclNodes.stream()
+                .filter(n -> KGrammarVocabulary.decl.equals(n.getName()))
+                .map(KotlinParseTree::getChildren)
+                .reduce(new ArrayList<>(), (acc, ch) -> {
+                    acc.addAll(ch);
+                    return acc;
+                }).stream()
+                .filter(n -> KGrammarVocabulary.classDecl.equals(n.getName()))
+                .toList();
+
+
+        List<KTypeWrapper> nestedClasses = new ArrayList<>();
+
+        for (KotlinParseTree classDecl : classDecls) {
+            nestedClasses.add(getClassAndMembers(classDecl, members, parents, nestedTypes));
+        }
+
+        return nestedClasses;
     }
 
     /**
@@ -667,6 +717,10 @@ public class Context implements Cloneable, Serializable {
                     case KGrammarVocabulary.propertyDecl -> {
                         return getPropertyDeclaration(nestedDecl);
                     }
+                    // Nested class declarations are handled separately
+                    case KGrammarVocabulary.classDecl -> {
+                        return new ArrayList<>();
+                    }
                     default -> {
                         throw new UnsupportedOperationException(nestedDecl.getName() + " not yet supported during parsing.");
                     }
@@ -702,7 +756,7 @@ public class Context implements Cloneable, Serializable {
                 List<KTypeWrapper> parameterTypes = getFuncValueParams(funcValParams);
 
                 // TODO handle constructor
-                KTypeWrapper func = new KTypeWrapper(null, null, KTypeWrapper.getVoidWrapper(),
+                KTypeWrapper func = new KTypeWrapper(null, null, null, KTypeWrapper.getVoidWrapper(),
                         new ArrayList<>(), KTypeIndicator.CONSTRUCTOR,
                         KGrammarVocabulary.constructor, new ArrayList<>(),
                         parameterTypes, KTypeWrapper.getVoidWrapper());
@@ -835,7 +889,7 @@ public class Context implements Cloneable, Serializable {
                 }
             }
         }
-        return new KTypeWrapper(null, modifiers, KTypeWrapper.getVoidWrapper(), new ArrayList<>(), KTypeIndicator.FUNCTION, funcName, new ArrayList<>(), parameterTypes, returnType);
+        return new KTypeWrapper(null, null, modifiers, KTypeWrapper.getVoidWrapper(), new ArrayList<>(), KTypeIndicator.FUNCTION, funcName, new ArrayList<>(), parameterTypes, returnType);
     }
 
     private List<KTypeWrapper> getFuncValueParams(KotlinParseTree funcParamsNode) {
@@ -972,10 +1026,21 @@ public class Context implements Cloneable, Serializable {
                         .filter(n -> KGrammarVocabulary.simpleUserType.equals(n.getName()))
                         .toList();
 
-                if (nestedTypes.size() > 1) {
-                    throw new UnsupportedOperationException("Nested user types not yet supported.");
+                switch (nestedTypes.size()) {
+                    case 1 -> {
+                        return getType(nestedTypes.get(0));
+                    }
+                    case 2 -> {
+                        KTypeWrapper wrapper = getType(nestedTypes.get(1));
+                        KTypeWrapper ownerType = getType(nestedTypes.get(0));
+
+                        return wrapper.addOwner(ownerType);
+                    }
+                    default -> {
+                        throw new IllegalArgumentException("Cannot yet handle deeply nested types.");
+                    }
                 }
-                return getType(nestedTypes.get(0));
+
             }
             case KGrammarVocabulary.simpleUserType -> {
                 // Assume classes. Should refactor.
@@ -1062,7 +1127,7 @@ public class Context implements Cloneable, Serializable {
 
                 KTypeWrapper returnType = getType(returnTypeNode);
 
-                return new KTypeWrapper(null, null, KTypeWrapper.getVoidWrapper(), new ArrayList<>(), KTypeIndicator.FUNCTION, "", new ArrayList<>(), inputTypes, returnType);
+                return new KTypeWrapper(null, null, null, KTypeWrapper.getVoidWrapper(), new ArrayList<>(), KTypeIndicator.FUNCTION, "", new ArrayList<>(), inputTypes, returnType);
             }
             default -> {
                 throw new IllegalArgumentException("Cannot parse type node of type: " + typeNode);

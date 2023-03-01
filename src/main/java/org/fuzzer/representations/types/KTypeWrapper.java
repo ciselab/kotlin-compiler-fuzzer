@@ -8,7 +8,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public record KTypeWrapper(String varName,
+public record KTypeWrapper(KTypeWrapper ownerType,
+                           String varName,
                            KTypeModifiers modifiers,
                            KTypeWrapper upperBound,
                            List<KTypeWrapper> parent,
@@ -19,25 +20,30 @@ public record KTypeWrapper(String varName,
                            KTypeWrapper returnType) {
 
     public KTypeWrapper(String varName, KTypeWrapper wrapper) {
-        this(varName, wrapper.modifiers, wrapper.upperBound, wrapper.parent,
+        this(wrapper.ownerType, varName, wrapper.modifiers, wrapper.upperBound, wrapper.parent,
                 wrapper.indicator, wrapper.name, wrapper.generics,
                 wrapper.inputTypes, wrapper.returnType);
     }
 
     public KTypeWrapper(KTypeWrapper upperBound, KTypeIndicator indicator, String name) {
-        this(null, null, upperBound, new ArrayList<>(), indicator, name, new ArrayList<>(), new ArrayList<>(), KTypeWrapper.getVoidWrapper());
+        this(null, null, null, upperBound, new ArrayList<>(), indicator, name, new ArrayList<>(), new ArrayList<>(), KTypeWrapper.getVoidWrapper());
     }
 
     public KTypeWrapper(KTypeIndicator indicator, String name) {
-        this(null, null, null, new ArrayList<>(), indicator, name, new ArrayList<>(), new ArrayList<>(), KTypeWrapper.getVoidWrapper());
+        this(null, null, null, null, new ArrayList<>(), indicator, name, new ArrayList<>(), new ArrayList<>(), KTypeWrapper.getVoidWrapper());
     }
 
     public KTypeWrapper(KTypeIndicator indicator, String name, List<KTypeWrapper> generics) {
-        this(null, null, null, new ArrayList<>(), indicator, name, generics, new ArrayList<>(), KTypeWrapper.getVoidWrapper());
+        this(null, null, null, null, new ArrayList<>(), indicator, name, generics, new ArrayList<>(), KTypeWrapper.getVoidWrapper());
+    }
+
+    public KTypeWrapper addOwner(KTypeWrapper owner) {
+        return new KTypeWrapper(owner, varName, modifiers, upperBound, parent,
+                indicator, name, generics, inputTypes, returnType);
     }
 
     public static KTypeWrapper getVoidWrapper() {
-        return new KTypeWrapper(null, null, null, new ArrayList<>(), KTypeIndicator.CLASS, "void", new ArrayList<>(), new ArrayList<>(), null);
+        return new KTypeWrapper(null, null, null, null, new ArrayList<>(), KTypeIndicator.CLASS, "void", new ArrayList<>(), new ArrayList<>(), null);
     }
 
     public KClassType toClass(boolean open, boolean abs) {
