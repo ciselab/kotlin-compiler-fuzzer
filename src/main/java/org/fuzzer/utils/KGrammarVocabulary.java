@@ -107,4 +107,8 @@ public final class KGrammarVocabulary {
 
     public static final String Any = "Any";
     public static final String MULT = "MULT";
+
+    public static final String object = "object";
+
+    public static final String objectDecl = "objectDeclaration";
 }

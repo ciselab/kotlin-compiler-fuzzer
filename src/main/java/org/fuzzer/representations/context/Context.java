@@ -273,7 +273,7 @@ public class Context implements Cloneable, Serializable {
             for (KTypeWrapper typeWrapper : entry.getValue()) {
 
                 if (!typeWrapper.canConvert()) {
-                    if (!(typeWrapper.containsName("Range") || typeWrapper.containsName("Unit"))) {
+                    if (!(typeWrapper.containsName("Range"))) {
                         System.out.println("Cannot convert: " + typeWrapper);
                     }
                     continue;
@@ -355,7 +355,8 @@ public class Context implements Cloneable, Serializable {
             // topLevelObject -> declaration -> classDeclaration
             KotlinParseTree decl = topLevelObject.getChildren().get(0).getChildren().get(0);
 
-            if (!KGrammarVocabulary.classDecl.equals(decl.getName())) {
+            if (!(KGrammarVocabulary.classDecl.equals(decl.getName()) ||
+                    KGrammarVocabulary.objectDecl.equals(decl.getName()))) {
                 continue;
             }
 
@@ -388,7 +389,8 @@ public class Context implements Cloneable, Serializable {
                                            Map<KTypeWrapper, List<KTypeWrapper>> members,
                                            Map<KTypeWrapper, List<KTypeWrapper>> parents,
                                            Map<KTypeWrapper, List<KTypeWrapper>> nestedTypes) {
-        if (!KGrammarVocabulary.classDecl.equals(classDeclNode.getName())) {
+        if (!(KGrammarVocabulary.classDecl.equals(classDeclNode.getName()) ||
+                KGrammarVocabulary.objectDecl.equals(classDeclNode.getName()))) {
             throw new IllegalArgumentException("Parse tree " + classDeclNode.getName() + " does not is not a class declaration.");
         }
 
@@ -443,7 +445,7 @@ public class Context implements Cloneable, Serializable {
         }
 
         boolean isClass = classDeclNode.getChildren().stream()
-                .anyMatch(x -> KGrammarVocabulary.className.equals(x.getName()));
+                .anyMatch(x -> KGrammarVocabulary.className.equals(x.getName()) || KGrammarVocabulary.object.equals(x.getName()));
 
         KTypeWrapper thisType = new KTypeWrapper(null, null, classModifiers, KTypeWrapper.getVoidWrapper(), theseParents,
                 isClass ? KTypeIndicator.CLASS : KTypeIndicator.INTERFACE,

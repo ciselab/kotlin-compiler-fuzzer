@@ -17,7 +17,7 @@ public class TestMain {
         String classPath = "src/test/resources/kotlin/";
 
         List<String> classes = new ArrayList<>(List.of("Any.kt", "Comparable.kt",
-                "Array.kt", "Enum.kt", "Iterator.kt", "Library.kt", "Collections.kt",
+                "Array.kt", "Enum.kt", "Iterator.kt", "Library.kt", "Collections.kt", "Unit.kt",
                 "Char.kt", "CharSequence.kt", "Number.kt", "Primitives.kt", "Boolean.kt", "String.kt"));
         List<String> fileNames = classes.stream().map(x -> classPath + x).toList();
 
