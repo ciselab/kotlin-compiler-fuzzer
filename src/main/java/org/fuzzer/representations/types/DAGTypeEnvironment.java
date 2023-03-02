@@ -248,4 +248,27 @@ public class DAGTypeEnvironment implements TypeEnvironment, Serializable {
         List<KType> typeList = dag.allNodes().stream().toList();
         return typeList.get(rng.fromUniformDiscrete(0, typeList.size() - 1));
     }
+
+    public boolean canSample(KType type) {
+        dag.verifyExists(type);
+
+        if (type.canBeDeclared() && type.canBeInstantiated()) {
+            return true;
+        }
+
+        Collection<KType> children = type.canBeDeclared() ? dag.childrenOf(type) : dag.labeledChildren(type);
+
+        return children.stream().anyMatch(this::canSample);
+    }
+
+    public List<KType> samplableTypes() {
+        return dag.allEntries().stream()
+                .filter(this::canSample)
+                .toList();
+    }
+
+    public KType randomSamplableType() {
+        List<KType> samplableTypes = samplableTypes();
+        return samplableTypes.get(rng.fromUniformDiscrete(0, samplableTypes.size() - 1));
+    }
 }

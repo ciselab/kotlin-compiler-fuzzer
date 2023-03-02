@@ -128,7 +128,7 @@ public class ConstrainedDAG<T> implements Graph<T> {
         return childrenList.get(node);
     }
 
-    private <S extends T> void verifyExists(S node) {
+    public <S extends T> void verifyExists(S node) {
         if (!(parentList.containsKey(node) && childrenList.containsKey(node))) {
             throw new IllegalArgumentException("Node " + node + " does not exist in the graph.");
         }
@@ -160,5 +160,12 @@ public class ConstrainedDAG<T> implements Graph<T> {
 
     public Label<T> getLabel(T from, T to) {
         return isLabeled(from, to) ? edges.get(new Tuple<>(from, to)) : null;
+    }
+
+    public List<T> labeledChildren(T from) {
+        return edges.keySet().stream()
+                .filter(tLabel -> tLabel.first().equals(from))
+                .map(Tuple::second)
+                .toList();
     }
 }
