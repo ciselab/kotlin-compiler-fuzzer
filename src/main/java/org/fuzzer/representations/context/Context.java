@@ -156,6 +156,7 @@ public class Context implements Cloneable, Serializable {
         Set<KClassifierType> classes = new HashSet<>();
         HashMap<KClassifierType, List<KTypeWrapper>> extractedTypes = new HashMap<>();
         HashMap<KClassifierType, List<KTypeWrapper>> parents = new HashMap<>();
+        HashMap<KClassifierType, List<KTypeWrapper>> nestedTypes = new HashMap<>();
 
         for (String fileName : fileNames) {
             KotlinParseTree parseTree = null;
@@ -167,7 +168,7 @@ public class Context implements Cloneable, Serializable {
                 throw new RuntimeException(e);
             }
 
-            fromParseTree(parseTree, classes, extractedTypes, parents);
+            fromParseTree(parseTree, classes, extractedTypes, parents, nestedTypes);
         }
 
         // Topologically add all the extracted types to the environment
@@ -210,6 +211,17 @@ public class Context implements Cloneable, Serializable {
                 List<KTypeWrapper> updatedWrappers = updateIndicatorOfWrappers(nameToUpdate, indicator, modifiers, tup.getValue());
                 extractedTypes.put(tup.getKey(), updatedWrappers);
             }
+
+//            // Get the parents of this type
+//            List<KClassifierType> ownersOfThisType = nestedTypes.entrySet().stream()
+//                    .filter(e -> e.getValue().stream().map(KTypeWrapper::toType).toList().contains(classifier))
+//                    .map(Map.Entry::getKey)
+//                    .toList();
+//
+//            for (KClassifierType owner : ownersOfThisType) {
+//                // Update the callabels of the owner, which may include the nested type
+//
+//            }
 
             // Update symbolic types for callables of this classifier
             for (KGenericType generic : classifier.getGenerics()) {
@@ -319,7 +331,8 @@ public class Context implements Cloneable, Serializable {
     public void fromParseTree(KotlinParseTree parseTree,
                               Set<KClassifierType> classes,
                               HashMap<KClassifierType, List<KTypeWrapper>> extractedTypes,
-                              HashMap<KClassifierType, List<KTypeWrapper>> parents) {
+                              HashMap<KClassifierType, List<KTypeWrapper>> parents,
+                              HashMap<KClassifierType, List<KTypeWrapper>> nestedTypes) {
         if (!KGrammarVocabulary.kotlinFile.equals(parseTree.getName())) {
             throw new IllegalArgumentException("Parse tree " + parseTree.getName() + " is not a file.");
         }
@@ -345,16 +358,20 @@ public class Context implements Cloneable, Serializable {
             if (!KGrammarVocabulary.classDecl.equals(decl.getName())) {
                 continue;
             }
+
             Map<KTypeWrapper, List<KTypeWrapper>> membersByClassifier = new HashMap<>();
             Map<KTypeWrapper, List<KTypeWrapper>> parentsByClassifier = new HashMap<>();
             Map<KTypeWrapper, List<KTypeWrapper>> nestedByClassifier = new HashMap<>();
 
-            KTypeWrapper classTypeWrapper = getClassAndMembers(decl, membersByClassifier, parentsByClassifier, nestedByClassifier);
-            KClassifierType classType = (KClassifierType) classTypeWrapper.toType();
+            getClassAndMembers(decl, membersByClassifier, parentsByClassifier, nestedByClassifier);
 
-            classes.add(classType);
-            extractedTypes.put(classType, types);
-            parents.put(classType, parentList);
+            for (KTypeWrapper classifier : membersByClassifier.keySet()) {
+                KClassifierType classType = (KClassifierType) classifier.toType();
+                classes.add(classType);
+                extractedTypes.put(classType, membersByClassifier.get(classifier));
+                parents.put(classType, parentsByClassifier.get(classifier));
+                nestedTypes.put(classType, nestedByClassifier.get(classifier));
+            }
         }
     }
 
@@ -436,8 +453,10 @@ public class Context implements Cloneable, Serializable {
         List<KTypeWrapper> theseNestedTypes = getNestedClassifiers(classBody, members, parents, nestedTypes);
 
         members.put(thisType, theseMembers);
-        members.put(thisType, theseParents);
+        parents.put(thisType, theseParents);
         nestedTypes.put(thisType, theseNestedTypes);
+
+        return thisType;
     }
 
     public List<KTypeWrapper> getNestedClassifiers(KotlinParseTree classBodyNode,
@@ -456,12 +475,9 @@ public class Context implements Cloneable, Serializable {
                 .toList();
 
         List<KotlinParseTree> classDecls = classMemberDeclNodes.stream()
+                .map(decl -> decl.getChildren().get(0))
                 .filter(n -> KGrammarVocabulary.decl.equals(n.getName()))
-                .map(KotlinParseTree::getChildren)
-                .reduce(new ArrayList<>(), (acc, ch) -> {
-                    acc.addAll(ch);
-                    return acc;
-                }).stream()
+                .map(decl -> decl.getChildren().get(0))
                 .filter(n -> KGrammarVocabulary.classDecl.equals(n.getName()))
                 .toList();
 

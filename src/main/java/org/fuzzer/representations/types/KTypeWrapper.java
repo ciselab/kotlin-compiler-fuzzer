@@ -176,7 +176,7 @@ public record KTypeWrapper(KTypeWrapper ownerType,
                 return new KConstructor((KClassifierType) output, input);
             }
 
-            case CLASS -> {
+            case CLASS, INTERFACE -> {
                 KType varType = toType();
 
                 if (!(varType instanceof KClassifierType)) {
@@ -185,7 +185,10 @@ public record KTypeWrapper(KTypeWrapper ownerType,
 
                 return new KIdentifierCallable(varName, varType);
             }
-
+            case CONCRETE_GENERIC, SYMBOLIC_GENERIC -> {
+                KGenericType symbolicFromOwner = ownerType.getGenerics().stream().filter(g -> g.name().equals(this.name)).toList().get(0);
+                return new KIdentifierCallable(varName, symbolicFromOwner);
+            }
             default -> {
                 throw new IllegalArgumentException("Cannot handle indicator of type: " + indicator + " in callable creation");
             }
