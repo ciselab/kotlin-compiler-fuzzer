@@ -16,7 +16,7 @@ public class ConstrainedDAG<T> implements Graph<T> {
 
     private final Predicate<Set<T>> nodeParentsInvariant;
 
-    private final Map<Tuple<T>, Label<T>> edges;
+    private final Map<Tuple<T, T>, Label<T>> edges;
 
     public ConstrainedDAG(Predicate<T> newNodeInvariant, Predicate<Set<T>> nodeParentsInvariant) {
         childrenList = new HashMap<>();
@@ -167,5 +167,29 @@ public class ConstrainedDAG<T> implements Graph<T> {
                 .filter(tLabel -> tLabel.first().equals(from))
                 .map(Tuple::second)
                 .toList();
+    }
+
+    public List<T> pathBetween(T start, T end, List<T> path) {
+        verifyExists(start);
+        verifyExists(end);
+
+        path.add(start);
+
+        if (start.equals(end)) {
+            return path;
+        }
+
+        if (childrenOf(start).isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        for (T child : childrenOf(start)) {
+            List<T> res = pathBetween(child, end, path);
+            if (!res.isEmpty()) {
+                return res;
+            }
+        }
+
+        throw new IllegalArgumentException("No path between " + start + " and " + end);
     }
 }

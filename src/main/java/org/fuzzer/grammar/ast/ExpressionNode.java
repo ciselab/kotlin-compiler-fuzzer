@@ -8,6 +8,7 @@ import org.fuzzer.representations.context.Context;
 import org.fuzzer.representations.types.KType;
 import org.fuzzer.utils.RandomNumberGenerator;
 import org.fuzzer.utils.Tree;
+import org.fuzzer.utils.Tuple;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,21 +26,28 @@ public class ExpressionNode extends ASTNode {
 
     @Override
     public CodeFragment getSample(RandomNumberGenerator rng, Context ctx) {
-        KType sampledType = ctx.getRandomType();
+        KType sampledType = ctx.getRandomSamplableType();
 
         System.out.println("Sampling type: " + sampledType);
 
-        CodeFragment code = getSampleOfType(rng, ctx, sampledType);
+        CodeFragment code = getSampleOfType(rng, ctx, sampledType).first();
 
         return code;
     }
 
-    public CodeFragment getSampleOfType(RandomNumberGenerator rng, Context ctx, KType type) {
+    public Tuple<CodeFragment, List<KType>> getSampleOfType(RandomNumberGenerator rng, Context ctx, KType type) {
 
         try {
             int depth = 0;
             KCallable baseCallable = getCallableOfType(type, depth++, ctx, rng);
             Tree<KCallable> rootNode = new Tree<>(baseCallable);
+
+            KType returnType = baseCallable.getReturnType();
+            List<KType> typeParameterInstances = ctx.getParameterInstances(type, returnType);
+
+            if (typeParameterInstances.size() != type.getGenerics().size()) {
+                throw new IllegalStateException("Sampling subtypes failed");
+            }
 
             rootNode = sampleTypedCallables(rootNode, depth, ctx, rng);
             verifyCallableCompatibility(rootNode, ctx);
@@ -49,7 +57,11 @@ public class ExpressionNode extends ASTNode {
                 stats.increment(SampleStructure.STATEMENT);
             }
 
-            return new CodeFragment(expression);
+            CodeFragment code = new CodeFragment(expression);
+
+            return new Tuple<>(code, typeParameterInstances.stream()
+                    .map(t -> ctx.getTypeByName(t.name())).toList());
+
         } catch (CloneNotSupportedException e) {
             throw new RuntimeException(e.getMessage());
         }

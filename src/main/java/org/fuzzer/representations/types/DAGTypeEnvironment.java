@@ -271,4 +271,37 @@ public class DAGTypeEnvironment implements TypeEnvironment, Serializable {
         List<KType> samplableTypes = samplableTypes();
         return samplableTypes.get(rng.fromUniformDiscrete(0, samplableTypes.size() - 1));
     }
+
+    public List<KType> getParameterInstances(KType from, KType to) {
+        if (from.getGenerics().isEmpty()) {
+            return new LinkedList<>();
+        }
+
+        List<KType> typePath = dag.pathBetween(from, to, new LinkedList<>());
+        for (int i = 1; i < typePath.size(); i++) {
+            // TODO: what if types are only partially instantiated?
+            KType f = typePath.get(i - 1);
+            KType t = typePath.get(i);
+
+            if (dag.isLabeled(f, t)) {
+                List<KType> labels = dag.getLabel(f, t).conditions();
+                boolean allTypesConcrete = true;
+
+                for (KType label : labels) {
+                    try {
+                        getTypeByName(label.name());
+                    } catch (IllegalArgumentException ignored) {
+                        allTypesConcrete = false;
+                        break;
+                    }
+                }
+
+                if (allTypesConcrete) {
+                    return labels;
+                }
+            }
+        }
+
+        throw new IllegalStateException("Path between " + from + " and " + to + " contains no labeled transitions.");
+    }
 }

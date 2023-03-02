@@ -71,18 +71,16 @@ public class Context implements Cloneable, Serializable {
     public KCallable randomCallableOfType(KType type, Predicate<KCallable> condition) throws CloneNotSupportedException {
         if (type instanceof KClassifierType) {
             Set<KType> subtypes = typeHierarchy.subtypesOf(type);
+            // Keep only the callables
             List<KCallable> alternatives = new ArrayList<>(callablesByOwner
-                    .entrySet().stream()
-                    // Get callables that match the return type
-                    .filter(entry -> subtypes.contains(entry.getKey()))
-                    // Keep only the callables
-                    .map(Map.Entry::getValue)
+                    .values().stream()
                     // Add all the sets together
                     .reduce(new HashSet<>(), (acc, newSet) -> {
                         acc.addAll(newSet);
                         return acc;
-                    })
-                    .stream()
+                    }).stream()
+                    // Get callables that match the return type
+                    .filter(entry -> subtypes.contains(entry.getReturnType()))
                     // Filter on the condition
                     .filter(condition).toList());
             // callablesByReturnType.entrySet().stream().filter(entry -> subtypes.contains(entry.getKey())).map(Map.Entry::getValue).reduce(new HashSet<>(), (acc, newSet) -> {acc.addAll(newSet); return acc;}).stream().filter(condition).toList()
@@ -109,7 +107,10 @@ public class Context implements Cloneable, Serializable {
     public KCallable randomConsumerCallable(KType type) throws CloneNotSupportedException {
         // TODO handle function inputs
         Predicate<KCallable> noFunctionInputs = kCallable -> kCallable.getInputTypes().stream().noneMatch(input -> input instanceof KFuncType);
-        return randomCallableOfType(type, kCallable -> !kCallable.getInputTypes().isEmpty() && noFunctionInputs.test(kCallable));
+        Predicate<KCallable> onlySamplableInputTypes = kCallable -> {
+            return new HashSet<>(typeHierarchy.samplableTypes()).containsAll(kCallable.getInputTypes());
+        };
+        return randomCallableOfType(type, kCallable -> !kCallable.getInputTypes().isEmpty() && noFunctionInputs.test(kCallable) && onlySamplableInputTypes.test(kCallable));
     }
 
     public boolean containsIdentifier(String identifier) {
@@ -135,6 +136,10 @@ public class Context implements Cloneable, Serializable {
 
     public KType getRandomType() {
         return typeHierarchy.randomType();
+    }
+
+    public KType getRandomSamplableType() {
+        return typeHierarchy.randomSamplableType();
     }
 
     public String getNewIdentifier() {
@@ -1146,6 +1151,9 @@ public class Context implements Cloneable, Serializable {
         }
     }
 
+    public List<KType> getParameterInstances(KType from, KType to) {
+        return typeHierarchy.getParameterInstances(from, to);
+    }
 
     @Override
     public Context clone() {

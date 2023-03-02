@@ -36,6 +36,11 @@ public record KGenericType(String name, KTypeIndicator genericKind, KGenericType
         return false;
     }
 
+    @Override
+    public String codeRepresentation() {
+        return name;
+    }
+
     public boolean isSymbolic() {
         if (!(KTypeIndicator.SYMBOLIC_GENERIC.equals(genericKind) ||
                 KTypeIndicator.CONCRETE_GENERIC.equals(genericKind))) {

@@ -2,12 +2,12 @@ package org.fuzzer.utils;
 
 import java.io.Serializable;
 
-public record Tuple<T>(T first, T second) implements Serializable {
+public record Tuple<T, V>(T first, V second) implements Serializable {
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Tuple<?> tuple)) return false;
+        if (!(o instanceof Tuple<?, ?> tuple)) return false;
 
         if (!first.equals(tuple.first)) return false;
         return second.equals(tuple.second);

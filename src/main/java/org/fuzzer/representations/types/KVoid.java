@@ -45,6 +45,11 @@ public class KVoid implements KType {
     }
 
     @Override
+    public String codeRepresentation() {
+        return "Unit";
+    }
+
+    @Override
     public int hashCode() {
         return Integer.MAX_VALUE / 2;
     }

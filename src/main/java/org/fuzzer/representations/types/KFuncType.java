@@ -63,6 +63,11 @@ public class KFuncType implements KType {
     }
 
     @Override
+    public String codeRepresentation() {
+        return null;
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof KFuncType kFuncType)) return false;

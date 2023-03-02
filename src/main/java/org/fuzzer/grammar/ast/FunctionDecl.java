@@ -8,8 +8,10 @@ import org.fuzzer.representations.callables.KFunction;
 import org.fuzzer.representations.callables.KIdentifierCallable;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.representations.context.KScope;
+import org.fuzzer.representations.types.KClassifierType;
 import org.fuzzer.representations.types.KType;
 import org.fuzzer.utils.RandomNumberGenerator;
+import org.fuzzer.utils.Tuple;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,12 +32,7 @@ public class FunctionDecl extends ASTNode {
                 code.appendToText(funcName + " (");
 
                 // Sample a return type
-                KType returnType = ctx.getRandomType();
-
-                // TODO: replace once generics are fixed
-                while (returnType.name().contains("Comparable")) {
-                    returnType = ctx.getRandomType();
-                }
+                KClassifierType returnType = (KClassifierType) ctx.getRandomSamplableType();
 
                 // Sample some parameters
                 int numberOfParams = rng.fromGeometric();
@@ -62,23 +59,23 @@ public class FunctionDecl extends ASTNode {
                 // Change the scope to a function
                 clone.updateScope(KScope.FUNCTION_SCOPE);
 
-                code.appendToText(") : " + returnType.name() + " {" + System.lineSeparator());
+                ExpressionNode expr = new ExpressionNode(antlrNode, 3);
+                expr.recordStatistics(this.stats);
+
+                // Sample a consistently-types return statement
+                Tuple<CodeFragment, List<KType>> returnStatementAndInstances = expr.getSampleOfType(rng, ctx, returnType);
+
+                code.appendToText(") : " + returnType.codeRepresentation(returnStatementAndInstances.second()) + " {" + System.lineSeparator());
 
                 // Sample some expressions in the function body
                 int numberOfStatements = rng.fromGeometric();
-
-                ExpressionNode expr = new ExpressionNode(antlrNode, 3);
-                expr.recordStatistics(this.stats);
 
                 for (int i = 0; i < numberOfStatements; i++) {
                     CodeFragment sampleExpr = expr.getSample(rng, ctx);
                     code.extend(sampleExpr);
                 }
 
-                // Sample a consistently-types return statement
-                String returnStatement = expr.getSampleOfType(rng, ctx, returnType).getText();
-                code.extend("return " + returnStatement);
-
+                code.extend("return " + returnStatementAndInstances.first());
                 code.extend(new CodeFragment("}"));
 
                 // Record this sample

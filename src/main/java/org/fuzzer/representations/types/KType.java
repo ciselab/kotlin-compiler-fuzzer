@@ -18,4 +18,6 @@ public interface KType extends Serializable {
     boolean canBeInstantiated();
 
     boolean canBeDeclared();
+
+    String codeRepresentation();
 }
