@@ -196,6 +196,17 @@ public class DAGTypeEnvironment implements TypeEnvironment, Serializable {
         dag.addNode(newType, parents);
     }
 
+    public void addTypeWithParameterizedParents(List<KType> parents, List<List<KType>> parameterInstances, KType newType) {
+        dag.addNode(newType, new HashSet<>(parents));
+
+        for (int i = 0; i < parents.size(); i++) {
+            if (parameterInstances.get(i).isEmpty()) {
+                continue;
+            }
+            dag.labelEdge(parents.get(i), newType, parameterInstances.get(i));
+        }
+    }
+
     @Override
     public KType getTypeByName(String typeName) {
         List<KType> matchingTypes = dag.allEntries().stream()

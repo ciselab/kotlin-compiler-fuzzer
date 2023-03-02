@@ -25,7 +25,7 @@ public class Context implements Cloneable, Serializable {
     private HashMap<KType, Set<KCallable>> callablesByOwner;
 
     //    private HashMap<KType, Set<KCallable>> callablesByReturnType;
-    private TypeEnvironment typeHierarchy;
+    private DAGTypeEnvironment typeHierarchy;
 
     private RandomNumberGenerator rng;
 
@@ -212,17 +212,6 @@ public class Context implements Cloneable, Serializable {
                 extractedTypes.put(tup.getKey(), updatedWrappers);
             }
 
-//            // Get the parents of this type
-//            List<KClassifierType> ownersOfThisType = nestedTypes.entrySet().stream()
-//                    .filter(e -> e.getValue().stream().map(KTypeWrapper::toType).toList().contains(classifier))
-//                    .map(Map.Entry::getKey)
-//                    .toList();
-//
-//            for (KClassifierType owner : ownersOfThisType) {
-//                // Update the callabels of the owner, which may include the nested type
-//
-//            }
-
             // Update symbolic types for callables of this classifier
             for (KGenericType generic : classifier.getGenerics()) {
                 KTypeIndicator genericIndicator = generic.genericKind();
@@ -251,16 +240,20 @@ public class Context implements Cloneable, Serializable {
             }
 
             KClassifierType nextAddition = canAddNext.get(0);
-            Set<KType> parentsOfAddition = parents.get(nextAddition).stream()
+            List<KType> parentsOfAddition = new ArrayList<>(parents.get(nextAddition).stream()
                     .map(wrapper -> typeHierarchy.getRootTypeByName(wrapper.name()))
-                    .collect(Collectors.toSet());
+                    .toList());
+            List<List<KType>> genericsOfAddition = new ArrayList<>(parents.get(nextAddition).stream()
+                    .map(wrapper -> wrapper.generics().stream().map(KTypeWrapper::toType).toList())
+                    .toList());
 
             // If there are no parents, it is a descendant of Any
             if (parentsOfAddition.isEmpty()) {
                 parentsOfAddition.add(any);
+                genericsOfAddition.add(new LinkedList<>());
             }
 
-            addType(parentsOfAddition, nextAddition);
+            typeHierarchy.addTypeWithParameterizedParents(parentsOfAddition, genericsOfAddition, nextAddition);
 
             classesToAdd.remove(nextAddition);
             addedClasses.add(nextAddition);
