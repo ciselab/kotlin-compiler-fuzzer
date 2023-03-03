@@ -3,13 +3,14 @@ package org.fuzzer.representations.types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.function.Predicate;
 
 public abstract class KClassifierType implements KType {
     private final String name;
 
     private final List<KGenericType> generics;
 
-    private final List<KType> genericInstances;
+    protected final List<KType> genericInstances;
 
     public KClassifierType(String name, List<KGenericType> generics, List<KType> genericInstances) {
         this.name = name;
@@ -48,6 +49,10 @@ public abstract class KClassifierType implements KType {
         return generics;
     }
 
+    public abstract KClassifierType withNewName(String name);
+
+    public abstract KClassifierType withNewGenericInstances(List<KType> genericInstances);
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -85,5 +90,27 @@ public abstract class KClassifierType implements KType {
         genericRepr.append(">");
 
         return name + genericRepr;
+    }
+
+    public String codeRepresentation(List<KType> overridenGenericInstances) {
+        StringBuilder genericSection = new StringBuilder();
+        if (!generics.isEmpty()) {
+            genericSection.append("<");
+
+            List<? extends KType> typesToIterate = overridenGenericInstances != null ? overridenGenericInstances : genericInstances.isEmpty() ? generics : genericInstances;
+            for (int i = 0; i < typesToIterate.size() - 1; i++) {
+                genericSection.append(typesToIterate.get(i).codeRepresentation()).append(",");
+            }
+
+            genericSection.append(typesToIterate.get(typesToIterate.size() - 1).codeRepresentation());
+            genericSection.append(">");
+        }
+
+        return name + genericSection;
+    }
+
+    @Override
+    public String codeRepresentation() {
+        return codeRepresentation(null);
     }
 }

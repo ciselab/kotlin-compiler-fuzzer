@@ -17,9 +17,11 @@ import org.fuzzer.utils.KGrammarVocabulary;
  *     | platformModifier) NL*
  *     ;
  */
+
 public record KTypeModifiers(String memberModifier,
                              String visibilityModifier,
                              String propertyModifier,
+                             // TODO refactor in context extraction
                              String inheritanceModifier) {
     public boolean isVisibile() {
         return KGrammarVocabulary.visModifierPublic.equals(visibilityModifier);

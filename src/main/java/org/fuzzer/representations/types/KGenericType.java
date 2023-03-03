@@ -2,7 +2,6 @@ package org.fuzzer.representations.types;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public record KGenericType(String name, KTypeIndicator genericKind, KGenericType upperBound) implements KType {
 
@@ -34,6 +33,11 @@ public record KGenericType(String name, KTypeIndicator genericKind, KGenericType
     @Override
     public boolean canBeDeclared() {
         return false;
+    }
+
+    @Override
+    public String codeRepresentation() {
+        return name;
     }
 
     public boolean isSymbolic() {

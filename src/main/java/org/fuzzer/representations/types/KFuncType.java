@@ -2,6 +2,7 @@ package org.fuzzer.representations.types;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 public class KFuncType implements KType {
 
@@ -60,6 +61,11 @@ public class KFuncType implements KType {
     @Override
     public boolean canBeDeclared() {
         return false;
+    }
+
+    @Override
+    public String codeRepresentation() {
+        return null;
     }
 
     @Override

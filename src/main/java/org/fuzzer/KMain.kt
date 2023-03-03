@@ -1,41 +1,29 @@
-package org.fuzzer
-
-import org.fuzzer.representations.context.Context
-import org.jetbrains.kotlin.spec.grammar.tools.*
-import org.fuzzer.utils.FileUtilities.*;
-import org.fuzzer.utils.RandomNumberGenerator
-import java.io.File
-
-
-class KMain {
-    fun foo(fileName : String): KotlinParseTree? {
-        val tokens = try {
-            val fileContents = fileContentToString(File(fileName));
-            tokenizeKotlinCode(fileContents);
-        } catch (e: KotlinLexerException) {
-            println("Tokenization the code fails")
-            return null
-        }
-        val parseTree = try {
-            parseKotlinCode(tokens)
-        } catch (e: KotlinParserException) {
-            println("Parsing the code fails")
-            return null
-        }
-
-        return parseTree
-    }
-}
-
-fun main(args: Array<String>) {
-    val classPath = "src/test/resources/kotlin/";
-    val classes = listOf("Any.kt", "Comparable.kt", "Arrays.kt",
-        "Char.kt", "CharSequence.kt", "Number.kt",
-        "Primitives.kt")
-
-    val rng : RandomNumberGenerator = RandomNumberGenerator(0)
-    val ctx : Context = Context(rng)
-
-    val fileNames = classes.map { x -> classPath + x }
-    ctx.fromFileNames(fileNames)
-}
+//fun main(args: Array<String>) {
+//
+//    fun K_ (BP_: MutableMap<Enum<Map<Float,Set<MutableMap<Map.Entry<MutableListIterator<Iterable<Boolean>>,MutableMap<String,String>>,Array<Double>>>>>,Unit>,) : Comparable<Double> {
+//
+//        return (5.toLong()).dec()
+//    }
+//    fun v_YGZ (c: Double,) : String {
+//
+//        return v_YGZ(2.0.plus((0x48.toByte()).dec()))
+//    }
+//    fun k (ANgE8: Int,J__s4: Short,r: String,) : Comparable<Double> {
+//
+//        Char.MIN_LOW_SURROGATE
+//        false.xor(false.not())
+//        return Float.MIN_VALUE.rem(3.dec())
+//    }
+//    fun r (En: Any,) : Int {
+//
+//        "fooBar".subSequence(Byte.MIN_VALUE.rem(Byte.MIN_VALUE.dec()), Byte.MIN_VALUE.plus(Short.MAX_VALUE.dec()))
+//        return Char.SIZE_BYTES.xor(Byte.MIN_VALUE.div(Short.SIZE_BYTES.dec()))
+//    }
+//    fun rsr2_ki (f_: MutableMap<Boolean,MutableMap<Int,Double>>,b6: Map.Entry<MutableSet<String>,MutableListIterator<Array<MutableIterator<Long>>>>,) : Any {
+//
+//        Char.SIZE_BITS.xor(Char.MAX_VALUE.minus(Char.MIN_VALUE))
+//        v_YGZ(Double.NaN.times(Long.MAX_VALUE.unaryPlus()))
+//        Long.MIN_VALUE
+//        return Double.SIZE_BITS
+//    }
+//}

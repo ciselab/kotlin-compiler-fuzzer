@@ -196,6 +196,17 @@ public class DAGTypeEnvironment implements TypeEnvironment, Serializable {
         dag.addNode(newType, parents);
     }
 
+    public void addTypeWithParameterizedParents(List<KType> parents, List<List<KType>> parameterInstances, KType newType) {
+        dag.addNode(newType, new HashSet<>(parents));
+
+        for (int i = 0; i < parents.size(); i++) {
+            if (parameterInstances.get(i).isEmpty()) {
+                continue;
+            }
+            dag.labelEdge(parents.get(i), newType, parameterInstances.get(i));
+        }
+    }
+
     @Override
     public KType getTypeByName(String typeName) {
         List<KType> matchingTypes = dag.allEntries().stream()
@@ -236,5 +247,66 @@ public class DAGTypeEnvironment implements TypeEnvironment, Serializable {
     public KType randomType() {
         List<KType> typeList = dag.allNodes().stream().toList();
         return typeList.get(rng.fromUniformDiscrete(0, typeList.size() - 1));
+    }
+
+    public KType randomSubtypeOf(KType type) {
+        List<KType> typeList = dag.allNodes().stream().toList();
+        return typeList.get(rng.fromUniformDiscrete(0, typeList.size() - 1));
+    }
+
+    public boolean canSample(KType type) {
+        dag.verifyExists(type);
+
+        if (type.canBeDeclared() && type.canBeInstantiated()) {
+            return true;
+        }
+
+        Collection<KType> children = type.canBeDeclared() ? dag.childrenOf(type) : dag.labeledChildren(type);
+
+        return children.stream().anyMatch(this::canSample);
+    }
+
+    public List<KType> samplableTypes() {
+        return dag.allEntries().stream()
+                .filter(this::canSample)
+                .toList();
+    }
+
+    public KType randomSamplableType() {
+        List<KType> samplableTypes = samplableTypes();
+        return samplableTypes.get(rng.fromUniformDiscrete(0, samplableTypes.size() - 1));
+    }
+
+    public List<KType> getParameterInstances(KType from, KType to) {
+        if (from.getGenerics().isEmpty()) {
+            return new LinkedList<>();
+        }
+
+        List<KType> typePath = dag.pathBetween(from, to, new LinkedList<>());
+        for (int i = 1; i < typePath.size(); i++) {
+            // TODO: what if types are only partially instantiated?
+            KType f = typePath.get(i - 1);
+            KType t = typePath.get(i);
+
+            if (dag.isLabeled(f, t)) {
+                List<KType> labels = dag.getLabel(f, t).conditions();
+                boolean allTypesConcrete = true;
+
+                for (KType label : labels) {
+                    try {
+                        getTypeByName(label.name());
+                    } catch (IllegalArgumentException ignored) {
+                        allTypesConcrete = false;
+                        break;
+                    }
+                }
+
+                if (allTypesConcrete) {
+                    return labels;
+                }
+            }
+        }
+
+        throw new IllegalStateException("Path between " + from + " and " + to + " contains no labeled transitions.");
     }
 }

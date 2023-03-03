@@ -48,7 +48,7 @@ public class AssignmentNode extends ASTNode {
 
         ExpressionNode expr = new ExpressionNode(this.antlrNode, this.maxDepth);
 
-        String rhs = expr.getSampleOfType(rng, ctx, type).getText();
+        String rhs = expr.getSampleOfType(rng, ctx, type).first().getText();
         String lhs = sampleExisting ? id : ("var " + id + ": " + type.name());
 
         if (!sampleExisting) {

@@ -2,6 +2,7 @@ package org.fuzzer.representations.types;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 public class KVoid implements KType {
 
@@ -42,6 +43,11 @@ public class KVoid implements KType {
     @Override
     public boolean canBeDeclared() {
         return false;
+    }
+
+    @Override
+    public String codeRepresentation() {
+        return "Unit";
     }
 
     @Override

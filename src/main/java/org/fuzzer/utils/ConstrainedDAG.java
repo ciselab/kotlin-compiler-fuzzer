@@ -1,5 +1,7 @@
 package org.fuzzer.utils;
 
+import kotlin.TuplesKt;
+
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -14,11 +16,14 @@ public class ConstrainedDAG<T> implements Graph<T> {
 
     private final Predicate<Set<T>> nodeParentsInvariant;
 
+    private final Map<Tuple<T, T>, Label<T>> edges;
+
     public ConstrainedDAG(Predicate<T> newNodeInvariant, Predicate<Set<T>> nodeParentsInvariant) {
         childrenList = new HashMap<>();
         parentList = new HashMap<>();
         this.newNodeInvariant = newNodeInvariant;
         this.nodeParentsInvariant = nodeParentsInvariant;
+        this.edges = new HashMap<>();
     }
 
     public ConstrainedDAG() {
@@ -26,6 +31,7 @@ public class ConstrainedDAG<T> implements Graph<T> {
         parentList = new HashMap<>();
         newNodeInvariant = x -> true;
         nodeParentsInvariant = x -> true;
+        this.edges = new HashMap<>();
     }
 
     @Override
@@ -122,7 +128,7 @@ public class ConstrainedDAG<T> implements Graph<T> {
         return childrenList.get(node);
     }
 
-    private <S extends T> void verifyExists(S node) {
+    public <S extends T> void verifyExists(S node) {
         if (!(parentList.containsKey(node) && childrenList.containsKey(node))) {
             throw new IllegalArgumentException("Node " + node + " does not exist in the graph.");
         }
@@ -136,5 +142,54 @@ public class ConstrainedDAG<T> implements Graph<T> {
 
     public List<T> allEntries() {
         return parentList.keySet().stream().toList();
+    }
+
+    public void labelEdge(T from, T to, List<T> conditions) {
+        verifyExists(from);
+        verifyExists(to);
+        if (isLabeled(from, to)) {
+            throw new IllegalArgumentException("Edge from " + from + " to " + to + " is already labeled " + getLabel(from, to));
+        }
+
+        edges.put(new Tuple<>(from, to), new Label<>(conditions));
+    }
+
+    public boolean isLabeled(T from, T to) {
+        return edges.containsKey(new Tuple<>(from, to));
+    }
+
+    public Label<T> getLabel(T from, T to) {
+        return isLabeled(from, to) ? edges.get(new Tuple<>(from, to)) : null;
+    }
+
+    public List<T> labeledChildren(T from) {
+        return edges.keySet().stream()
+                .filter(tLabel -> tLabel.first().equals(from))
+                .map(Tuple::second)
+                .toList();
+    }
+
+    public List<T> pathBetween(T start, T end, List<T> path) {
+        verifyExists(start);
+        verifyExists(end);
+
+        path.add(start);
+
+        if (start.equals(end)) {
+            return path;
+        }
+
+        if (childrenOf(start).isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        for (T child : childrenOf(start)) {
+            List<T> res = pathBetween(child, end, path);
+            if (!res.isEmpty()) {
+                return res;
+            }
+        }
+
+        throw new IllegalArgumentException("No path between " + start + " and " + end);
     }
 }
