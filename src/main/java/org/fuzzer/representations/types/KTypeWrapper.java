@@ -37,6 +37,11 @@ public record KTypeWrapper(KTypeWrapper ownerType,
         this(null, null, null, null, new ArrayList<>(), indicator, name, generics, new ArrayList<>(), KTypeWrapper.getVoidWrapper());
     }
 
+    public KTypeWrapper addModifiers(KTypeModifiers modifiers) {
+        return new KTypeWrapper(ownerType, varName, modifiers, upperBound, parent,
+                indicator, name, generics, inputTypes, returnType);
+    }
+
     public KTypeWrapper addOwner(KTypeWrapper owner) {
         return new KTypeWrapper(owner, varName, modifiers, upperBound, parent,
                 indicator, name, generics, inputTypes, returnType);

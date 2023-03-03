@@ -119,8 +119,10 @@ public class Context implements Cloneable, Serializable {
         };
         Predicate<KCallable> onlySamplableOwners = kCallable -> {
             List<KType> samplableTypes = typeHierarchy.samplableTypes();
-            KType owner = callablesByOwner.entrySet().stream().filter(e -> e.getValue().contains(kCallable)).map(Map.Entry::getKey).toList().get(0);
-            return samplableTypes.contains(owner);
+            // If empty, an identifier was sampled
+            List<KType> owner = callablesByOwner.entrySet().stream().filter(e -> e.getValue().contains(kCallable)).map(Map.Entry::getKey).toList();
+
+            return owner.isEmpty() || samplableTypes.contains(owner.get(0));
         };
 
         return randomCallableOfType(type, kCallable -> !kCallable.getInputTypes().isEmpty()
@@ -324,7 +326,7 @@ public class Context implements Cloneable, Serializable {
                 }
 
                 for (KClassifierType c : extractedTypes.keySet()) {
-                    List<KTypeWrapper> updatedWrappers = updateName(nextAdditionName, classToAdd.name(), parents.get(c));
+                    List<KTypeWrapper> updatedWrappers = updateName(nextAdditionName, classToAdd.name(), extractedTypes.get(c));
                     extractedTypes.put(c, updatedWrappers);
                 }
             } else {
@@ -854,7 +856,7 @@ public class Context implements Cloneable, Serializable {
                     throw new UnsupportedOperationException("Cannot yet parse empty companion object nodes.");
                 }
 
-                // Ignore companion object and treat its attributes as the class' atributes
+                // Ignore companion object and treat its attributes as the class' attributes
                 return getClassMembers(classBodyNodeList.get(0));
             }
 
@@ -902,7 +904,7 @@ public class Context implements Cloneable, Serializable {
                 Optional.of(propertyDecl.getChildren().get(0)) :
                 Optional.empty();
 
-        final Optional<KTypeModifiers> modifiers = modifiersNode.map(this::getModifiers);
+        Optional<KTypeModifiers> modifiers = modifiersNode.map(this::getModifiers);
 
         // Handle declaration(s)
         KotlinParseTree varDeclNode = propertyDecl.getChildren().stream()
@@ -918,7 +920,13 @@ public class Context implements Cloneable, Serializable {
                 varTypes = getMultiVarDecl(varDeclNode);
             }
             case KGrammarVocabulary.varDecl -> {
-                varTypes.add(getVarDecl(varDeclNode));
+                KTypeWrapper varDecl = getVarDecl(varDeclNode);
+                if (modifiers.isPresent()) {
+                    varTypes.add(varDecl.addModifiers(modifiers.get()));
+                } else {
+                    varTypes.add(varDecl);
+                }
+
             }
         }
 

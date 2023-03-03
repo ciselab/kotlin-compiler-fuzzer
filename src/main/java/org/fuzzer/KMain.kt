@@ -1,25 +1,29 @@
 fun main(args: Array<String>) {
 
-    fun ka6 (j6: MutableListIterator<Boolean>,Z7b: Map.Entry<Short,Number>,) : Number {
+    fun XuP (t: MutableMap<Any,MutableCollection<Byte>>,) : Number {
 
-        return (5.toLong()).div((5.toLong()).minus((0x48.toByte()).dec()))
+        return (5.toLong()).toFloat()
     }
-    fun D_L_l6o_ (kV_: Map.Entry<Unit,Unit>,gt: MutableIterator<Map<Iterable<Float>,Byte>>,) : String {
+    fun l (p_: MutableSet<Iterable<MutableListIterator<ListIterator<List<Comparable<List<String>>>>>>>,aY: Collection<Collection<Byte>>,eS: Collection<MutableSet<Number>>,D: MutableMap.MutableEntry<MutableListIterator<Any>,MutableCollection<Boolean>>,) : String {
 
-        2.0.plus(3.and((5.toLong()).toInt()))
-        (5.toLong()).toShort()
-        return "fooBar".plus((5.toLong()).compareTo((5.toLong()).toLong()))
+        (5.toLong()).rem(2.0.plus(3.inc()))
+        return (5.toLong()).toString()
     }
-    fun y () : Any {
+    fun Z (e6_GV: Byte,) : Double {
 
-        return (5.toLong()).rem(3.inc())
+        (5.toLong()).shl(3.inv())
+        1.0f.minus((4.toShort()).inc())
+        (4.toShort()).dec()
+        return 2.0.inc()
     }
-    fun T7x__ (G: MutableList<ListIterator<Unit>>,Ko_: ListIterator<Array<MutableListIterator<Map<MutableListIterator<Int>,String>>>>,) : Boolean {
+    fun L_un (r: Collection<Boolean>,) : Float {
 
-        return true.xor((5.toLong()).equals('w'.inc()))
+        'w'.plus(3.inc())
+        1.0f.rem((5.toLong()).toByte())
+        return (5.toLong()).plus((5.toLong()).times(1.0f.dec()))
     }
-    fun Px_8 (F: Unit,I2D: Number,p9: ListIterator<Set<Double>>,r2E_wP2_: MutableMap.MutableEntry<Comparable<Any>,MutableIterable<Byte>>,) : CharSequence {
+    fun jQ (o_: ListIterator<MutableIterator<MutableMap.MutableEntry<MutableIterable<MutableList<Iterator<String>>>,Unit>>>,AFM2: Number,) : Number {
 
-        return "fooBar".subSequence((5.toLong()).compareTo((5.toLong()).toShort()), 3.ushr((0x48.toByte()).unaryPlus()))
+        return (5.toLong()).compareTo((5.toLong()).ushr(3.inc()))
     }
 }

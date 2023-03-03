@@ -129,7 +129,7 @@ public class ExpressionNode extends ASTNode {
         try {
             callable = ctx.randomConsumerCallable(type);
         } catch (IllegalArgumentException e) {
-            throw new IllegalStateException("No callable found.");
+            throw new IllegalStateException("No callable found for type: " + type);
         }
 
         return callable;
