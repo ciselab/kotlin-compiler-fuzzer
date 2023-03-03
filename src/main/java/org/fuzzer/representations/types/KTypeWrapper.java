@@ -152,22 +152,22 @@ public record KTypeWrapper(KTypeWrapper ownerType,
         }
     }
 
-    public KCallable toCallable(KType ownerType) {
+    public KCallable toCallable(KType callableOwner) {
         switch (indicator) {
             case FUNCTION -> {
                 List<KType> input = inputTypes.stream().map(KTypeWrapper::toType).toList();
                 KType output = returnType.toType();
 
                 // No owner means this is a function, not a method
-                if (ownerType == null || new KVoid().equals(ownerType)) {
+                if (callableOwner == null || new KVoid().equals(callableOwner)) {
                     return new KFunction(name, input, output);
                 }
 
-                if (!(ownerType instanceof KClassifierType)) {
-                    throw new IllegalArgumentException("Cannot create method callable with owner of type: " + ownerType);
+                if (!(callableOwner instanceof KClassifierType)) {
+                    throw new IllegalArgumentException("Cannot create method callable with owner of type: " + callableOwner);
                 }
 
-                return new KMethod((KClassifierType) ownerType, name, input, output);
+                return new KMethod((KClassifierType) callableOwner, name, input, output);
             }
 
             case CONSTRUCTOR -> {
@@ -189,13 +189,13 @@ public record KTypeWrapper(KTypeWrapper ownerType,
                 }
 
                 if (modifiers.isConst() && modifiers.isVisibile()) {
-                    return new KIdentifierCallable(ownerType().name() + "." + varName, varType);
+                    return new KIdentifierCallable(callableOwner.name() + "." + varName, varType);
                 }
 
                 return null;
             }
             case CONCRETE_GENERIC, SYMBOLIC_GENERIC -> {
-                KGenericType symbolicFromOwner = ownerType.getGenerics().stream().filter(g -> g.name().equals(this.name)).toList().get(0);
+                KGenericType symbolicFromOwner = callableOwner.getGenerics().stream().filter(g -> g.name().equals(this.name)).toList().get(0);
                 return new KIdentifierCallable(varName, symbolicFromOwner);
             }
             default -> {

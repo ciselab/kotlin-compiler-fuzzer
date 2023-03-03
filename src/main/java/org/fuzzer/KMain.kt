@@ -1,29 +1,29 @@
 fun main(args: Array<String>) {
 
-    fun XuP (t: MutableMap<Any,MutableCollection<Byte>>,) : Number {
+    fun K_ (BP_: MutableMap<Enum<Map<Float,Set<MutableMap<Map.Entry<MutableListIterator<Iterable<Boolean>>,MutableMap<String,String>>,Array<Double>>>>>,Unit>,) : Comparable<Double> {
 
-        return (5.toLong()).toFloat()
+        return (5.toLong()).dec()
     }
-    fun l (p_: MutableSet<Iterable<MutableListIterator<ListIterator<List<Comparable<List<String>>>>>>>,aY: Collection<Collection<Byte>>,eS: Collection<MutableSet<Number>>,D: MutableMap.MutableEntry<MutableListIterator<Any>,MutableCollection<Boolean>>,) : String {
+    fun v_YGZ (c: Double,) : String {
 
-        (5.toLong()).rem(2.0.plus(3.inc()))
-        return (5.toLong()).toString()
+        return v_YGZ(2.0.plus((0x48.toByte()).dec()))
     }
-    fun Z (e6_GV: Byte,) : Double {
+    fun k (ANgE8: Int,J__s4: Short,r: String,) : Comparable<Double> {
 
-        (5.toLong()).shl(3.inv())
-        1.0f.minus((4.toShort()).inc())
-        (4.toShort()).dec()
-        return 2.0.inc()
+        Char.MIN_LOW_SURROGATE
+        false.xor(false.not())
+        return Float.MIN_VALUE.rem(3.dec())
     }
-    fun L_un (r: Collection<Boolean>,) : Float {
+    fun r (En: Any,) : Int {
 
-        'w'.plus(3.inc())
-        1.0f.rem((5.toLong()).toByte())
-        return (5.toLong()).plus((5.toLong()).times(1.0f.dec()))
+        "fooBar".subSequence(Byte.MIN_VALUE.rem(Byte.MIN_VALUE.dec()), Byte.MIN_VALUE.plus(Short.MAX_VALUE.dec()))
+        return Char.SIZE_BYTES.xor(Byte.MIN_VALUE.div(Short.SIZE_BYTES.dec()))
     }
-    fun jQ (o_: ListIterator<MutableIterator<MutableMap.MutableEntry<MutableIterable<MutableList<Iterator<String>>>,Unit>>>,AFM2: Number,) : Number {
+    fun rsr2_ki (f_: MutableMap<Boolean,MutableMap<Int,Double>>,b6: Map.Entry<MutableSet<String>,MutableListIterator<Array<MutableIterator<Long>>>>,) : Any {
 
-        return (5.toLong()).compareTo((5.toLong()).ushr(3.inc()))
+        Char.SIZE_BITS.xor(Char.MAX_VALUE.minus(Char.MIN_VALUE))
+        v_YGZ(Double.NaN.times(Long.MAX_VALUE.unaryPlus()))
+        Long.MIN_VALUE
+        return Double.SIZE_BITS
     }
 }

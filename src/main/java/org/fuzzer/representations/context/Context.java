@@ -248,6 +248,7 @@ public class Context implements Cloneable, Serializable {
             }
 
             // Update indicators for all callables
+            // TODO some callables do not need to get the updated modifiers
             for (Map.Entry<KClassifierType, List<KTypeWrapper>> tup : extractedTypes.entrySet()) {
                 List<KTypeWrapper> updatedWrappers = updateIndicatorOfWrappers(nameToUpdate, indicator, modifiers, tup.getValue());
                 extractedTypes.put(tup.getKey(), updatedWrappers);
@@ -385,7 +386,8 @@ public class Context implements Cloneable, Serializable {
             }
 
             KTypeIndicator newIndicator = nameToUpdate.equals(wrapper.name()) && wrapper.indicator().equals(KTypeIndicator.UNKNOWN) ? indicatorToUpdate : wrapper.indicator();
-            KTypeModifiers newModifiers = nameToUpdate.equals(wrapper.name()) ? modifiersToUpdate : wrapper.modifiers();
+//            KTypeModifiers newModifiers = nameToUpdate.equals(wrapper.name()) ? modifiersToUpdate : wrapper.modifiers();
+            KTypeModifiers newModifiers = wrapper.modifiers();
             KTypeWrapper newOwner = updateIndicatorOfWrappers(nameToUpdate, indicatorToUpdate, modifiersToUpdate, Collections.singletonList(wrapper.ownerType())).get(0);
             List<KTypeWrapper> newGenerics = updateIndicatorOfWrappers(nameToUpdate, indicatorToUpdate, modifiersToUpdate, wrapper.generics());
             List<KTypeWrapper> newInputTypes = updateIndicatorOfWrappers(nameToUpdate, indicatorToUpdate, modifiersToUpdate, wrapper.inputTypes());
@@ -767,9 +769,9 @@ public class Context implements Cloneable, Serializable {
                     propertyModifier = concereteModifierNode.getChildren().get(0).getText();
                 }
                 // TODO: handle
-//                case KGrammarVocabulary.inheritanceModifier -> {
-//                    inheritanceModifier = concereteModifierNode.getChildren().get(0).getText();
-//                }
+                case KGrammarVocabulary.inheritanceModifier -> {
+                    inheritanceModifier = concereteModifierNode.getChildren().get(0).getText();
+                }
                 default -> {
                     continue;
                 }
