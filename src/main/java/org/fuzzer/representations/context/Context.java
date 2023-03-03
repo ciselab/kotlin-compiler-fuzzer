@@ -100,7 +100,14 @@ public class Context implements Cloneable, Serializable {
     }
 
     public KCallable randomTerminalCallableOfType(KType type) throws CloneNotSupportedException {
-        KCallable callable = randomCallableOfType(type, KCallable::isTerminal);
+        Predicate<KCallable> onlySamplableOwners = kCallable -> {
+            List<KType> samplableTypes = typeHierarchy.samplableTypes();
+            // If empty, an identifier was sampled
+            List<KType> owner = callablesByOwner.entrySet().stream().filter(e -> e.getValue().contains(kCallable)).map(Map.Entry::getKey).toList();
+
+            return owner.isEmpty() || samplableTypes.contains(owner.get(0));
+        };
+        KCallable callable = randomCallableOfType(type, kCallable -> kCallable.isTerminal() && onlySamplableOwners.test(kCallable));
         return callable;
     }
 
@@ -110,7 +117,14 @@ public class Context implements Cloneable, Serializable {
         Predicate<KCallable> onlySamplableInputTypes = kCallable -> {
             return new HashSet<>(typeHierarchy.samplableTypes()).containsAll(kCallable.getInputTypes());
         };
-        return randomCallableOfType(type, kCallable -> !kCallable.getInputTypes().isEmpty() && noFunctionInputs.test(kCallable) && onlySamplableInputTypes.test(kCallable));
+        Predicate<KCallable> onlySamplableOwners = kCallable -> {
+            List<KType> samplableTypes = typeHierarchy.samplableTypes();
+            KType owner = callablesByOwner.entrySet().stream().filter(e -> e.getValue().contains(kCallable)).map(Map.Entry::getKey).toList().get(0);
+            return samplableTypes.contains(owner);
+        };
+
+        return randomCallableOfType(type, kCallable -> !kCallable.getInputTypes().isEmpty()
+                && noFunctionInputs.test(kCallable) && onlySamplableInputTypes.test(kCallable) && onlySamplableOwners.test(kCallable));
     }
 
     public boolean containsIdentifier(String identifier) {
@@ -135,7 +149,27 @@ public class Context implements Cloneable, Serializable {
     }
 
     public KType getRandomType() {
-        return typeHierarchy.randomType();
+        KClassifierType randomType = (KClassifierType) typeHierarchy.randomType();
+        List<KType> genericInstances = new LinkedList<>();
+
+        for (KGenericType type : randomType.getGenerics()) {
+            KType upperBoundType = typeHierarchy.getTypeFromGeneric(type.upperBound(), randomType, new LinkedList<>());
+            genericInstances.add(randomSubtypeOf(upperBoundType));
+        }
+
+        return randomType.withNewGenericInstances(genericInstances);
+    }
+
+    public KType randomSubtypeOf(KType type) {
+        KClassifierType randomType = (KClassifierType) typeHierarchy.randomSubtypeOf(type);
+        List<KType> genericInstances = new LinkedList<>();
+
+        for (KGenericType subtype : randomType.getGenerics()) {
+            KType upperBoundType = typeHierarchy.getTypeFromGeneric(subtype.upperBound(), randomType, new LinkedList<>());
+            genericInstances.add(randomSubtypeOf(upperBoundType));
+        }
+
+        return randomType.withNewGenericInstances(genericInstances);
     }
 
     public KType getRandomSamplableType() {
@@ -258,10 +292,47 @@ public class Context implements Cloneable, Serializable {
                 genericsOfAddition.add(new LinkedList<>());
             }
 
-            typeHierarchy.addTypeWithParameterizedParents(parentsOfAddition, genericsOfAddition, nextAddition);
+            String nextAdditionName = nextAddition.name();
+            List<KClassifierType> possibleOwners = nestedTypes.entrySet().stream()
+                    .filter(e -> e.getValue().stream().map(KTypeWrapper::name).toList().contains(nextAdditionName))
+                    .map(Map.Entry::getKey)
+                    .toList();
 
             classesToAdd.remove(nextAddition);
             addedClasses.add(nextAddition);
+
+            KClassifierType classToAdd = null;
+
+            if (!possibleOwners.isEmpty()) {
+                if (possibleOwners.size() > 1) {
+                    throw new IllegalStateException("Ambiguous owner for class " + nextAdditionName);
+                }
+
+                String ownerName = possibleOwners.get(0).name();
+                classToAdd = nextAddition.withNewName(ownerName + "." + nextAdditionName);
+
+                // Update the class representation in relevant stores
+                extractedTypes.put(classToAdd, extractedTypes.get(nextAddition));
+                extractedTypes.remove(nextAddition);
+
+                parents.put(classToAdd, parents.get(nextAddition));
+                parents.remove(nextAddition);
+
+                for (KClassifierType c : parents.keySet()) {
+                    List<KTypeWrapper> updatedWrappers = updateName(nextAdditionName, classToAdd.name(), parents.get(c));
+                    parents.put(c, updatedWrappers);
+                }
+
+                for (KClassifierType c : extractedTypes.keySet()) {
+                    List<KTypeWrapper> updatedWrappers = updateName(nextAdditionName, classToAdd.name(), parents.get(c));
+                    extractedTypes.put(c, updatedWrappers);
+                }
+            } else {
+                classToAdd = nextAddition;
+            }
+            typeHierarchy.addTypeWithParameterizedParents(parentsOfAddition, genericsOfAddition, classToAdd);
+
+
         }
 
         // Add callables
@@ -279,9 +350,13 @@ public class Context implements Cloneable, Serializable {
 
                 KCallable extractedCallable = typeWrapper.toCallable(ownerType);
 
+                // Not visible class attributes
+                if (extractedCallable == null) {
+                    continue;
+                }
+
                 // Store the callables
                 callablesByOwner.putIfAbsent(ownerType, new HashSet<>());
-
                 callablesByOwner.get(ownerType).add(extractedCallable);
             }
         }
@@ -318,6 +393,34 @@ public class Context implements Cloneable, Serializable {
 
             KTypeWrapper newWrapper = new KTypeWrapper(newOwner, wrapper.varName(), newModifiers, newUpperBound,
                     newParent, newIndicator, wrapper.name(), newGenerics,
+                    newInputTypes, newReturnType);
+
+            res.add(newWrapper);
+        }
+
+        return res;
+    }
+
+    private List<KTypeWrapper> updateName(String oldName, String newName, List<KTypeWrapper> wrappersToUpdate) {
+        List<KTypeWrapper> res = new LinkedList<>();
+
+        for (KTypeWrapper wrapper : wrappersToUpdate) {
+            if (wrapper == null) {
+                res.add(null);
+                continue;
+            }
+
+            String newWrapperName = wrapper.name().equals(oldName) ? newName : wrapper.name();
+
+            KTypeWrapper newOwner = updateName(oldName, newName,  Collections.singletonList(wrapper.ownerType())).get(0);
+            List<KTypeWrapper> newGenerics = updateName(oldName, newName, wrapper.generics());
+            List<KTypeWrapper> newInputTypes = updateName(oldName, newName, wrapper.inputTypes());
+            KTypeWrapper newReturnType = updateName(oldName, newName, Collections.singletonList(wrapper.returnType())).get(0);
+            List<KTypeWrapper> newParent = updateName(oldName, newName, wrapper.parent());
+            KTypeWrapper newUpperBound = updateName(oldName, newName, Collections.singletonList(wrapper.upperBound())).get(0);
+
+            KTypeWrapper newWrapper = new KTypeWrapper(newOwner, wrapper.varName(), wrapper.modifiers(), newUpperBound,
+                    newParent, wrapper.indicator(), newWrapperName, newGenerics,
                     newInputTypes, newReturnType);
 
             res.add(newWrapper);

@@ -12,6 +12,16 @@ public class KInterfaceType extends KClassifierType {
         super(name);
     }
 
+    @Override
+    public KInterfaceType withNewName(String name) {
+        return new KInterfaceType(name, getGenerics(), genericInstances);
+    }
+
+    @Override
+    public KInterfaceType withNewGenericInstances(List<KType> genericInstances) {
+        return new KInterfaceType(name(), getGenerics(), genericInstances);
+    }
+
     public KInterfaceType(String name, List<KGenericType> generics, List<KType> genericInstances) {
         super(name, generics, genericInstances);
     }

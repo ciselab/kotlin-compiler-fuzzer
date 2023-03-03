@@ -249,6 +249,11 @@ public class DAGTypeEnvironment implements TypeEnvironment, Serializable {
         return typeList.get(rng.fromUniformDiscrete(0, typeList.size() - 1));
     }
 
+    public KType randomSubtypeOf(KType type) {
+        List<KType> typeList = dag.allNodes().stream().toList();
+        return typeList.get(rng.fromUniformDiscrete(0, typeList.size() - 1));
+    }
+
     public boolean canSample(KType type) {
         dag.verifyExists(type);
 

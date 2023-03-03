@@ -46,16 +46,11 @@ public class ParameterNode extends ASTNode {
         String id = ctx.getNewIdentifier();
         KType type = ctx.getRandomType();
 
-        // TODO fix symbolics ASAP
-        while (type.name().contains("Comparable")) {
-            type = ctx.getRandomType();
-        }
-
         this.sampledId = id;
         this.sampledType = type;
 
         // Kotlin allows for trailing commas
-        return new CodeFragment(id.replaceAll("\"", "") + ": " + type.name() + ",");
+        return new CodeFragment(id.replaceAll("\"", "") + ": " + type.codeRepresentation() + ",");
     }
 
     @Override

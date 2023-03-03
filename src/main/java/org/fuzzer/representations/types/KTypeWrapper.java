@@ -183,7 +183,11 @@ public record KTypeWrapper(KTypeWrapper ownerType,
                     throw new IllegalArgumentException("Indicator mismatch.");
                 }
 
-                return new KIdentifierCallable(varName, varType);
+                if (modifiers.isConst() && modifiers.isVisibile()) {
+                    return new KIdentifierCallable(ownerType().name() + "." + varName, varType);
+                }
+
+                return null;
             }
             case CONCRETE_GENERIC, SYMBOLIC_GENERIC -> {
                 KGenericType symbolicFromOwner = ownerType.getGenerics().stream().filter(g -> g.name().equals(this.name)).toList().get(0);

@@ -3,6 +3,7 @@ package org.fuzzer.representations.types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.function.Predicate;
 
 public abstract class KClassifierType implements KType {
     private final String name;
@@ -47,6 +48,10 @@ public abstract class KClassifierType implements KType {
     public List<KGenericType> getGenerics() {
         return generics;
     }
+
+    public abstract KClassifierType withNewName(String name);
+
+    public abstract KClassifierType withNewGenericInstances(List<KType> genericInstances);
 
     @Override
     public boolean equals(Object o) {

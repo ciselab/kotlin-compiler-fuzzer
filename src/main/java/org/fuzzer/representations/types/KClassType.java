@@ -43,6 +43,16 @@ public class KClassType extends KClassifierType {
     }
 
     @Override
+    public KClassType withNewName(String name) {
+        return new KClassType(name, getGenerics(), genericInstances, open, abs);
+    }
+
+    @Override
+    public KClassType withNewGenericInstances(List<KType> genericInstances) {
+        return new KClassType(name(), getGenerics(), genericInstances, open, abs);
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof KClassType that)) return false;
