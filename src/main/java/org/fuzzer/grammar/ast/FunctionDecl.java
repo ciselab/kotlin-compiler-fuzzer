@@ -59,11 +59,11 @@ public class FunctionDecl extends ASTNode {
                 // Change the scope to a function
                 clone.updateScope(KScope.FUNCTION_SCOPE);
 
-                ExpressionNode expr = new ExpressionNode(antlrNode, 3);
-                expr.recordStatistics(this.stats);
+                StatementNode stmtNode = new StatementNode(antlrNode, 3);
+                stmtNode.recordStatistics(this.stats);
 
                 // Sample a consistently-types return statement
-                Tuple<CodeFragment, List<KType>> returnStatementAndInstances = expr.getSampleOfType(rng, ctx, returnType);
+                Tuple<CodeFragment, List<KType>> returnStatementAndInstances = new ExpressionNode(antlrNode, 3).getSampleOfType(rng, ctx, returnType);
 
                 code.appendToText(") : " + returnType.codeRepresentation(returnStatementAndInstances.second()) + " {" + System.lineSeparator());
 
@@ -71,7 +71,7 @@ public class FunctionDecl extends ASTNode {
                 int numberOfStatements = rng.fromGeometric();
 
                 for (int i = 0; i < numberOfStatements; i++) {
-                    CodeFragment sampleExpr = expr.getSample(rng, ctx);
+                    CodeFragment sampleExpr = stmtNode.getSample(rng, ctx);
                     code.extend(sampleExpr);
                 }
 
