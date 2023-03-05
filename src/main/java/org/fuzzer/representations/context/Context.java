@@ -154,6 +154,10 @@ public class Context implements Cloneable, Serializable {
         KClassifierType randomType = (KClassifierType) typeHierarchy.randomType();
         List<KType> genericInstances = new LinkedList<>();
 
+        if (randomType.name().contains("Enum")) {
+            System.out.println("hit");
+        }
+
         for (KGenericType type : randomType.getGenerics()) {
             KType upperBoundType = typeHierarchy.getTypeFromGeneric(type.upperBound(), randomType, new LinkedList<>());
             genericInstances.add(randomSubtypeOf(upperBoundType));

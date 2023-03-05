@@ -25,7 +25,7 @@ public class TestMain {
         compilerArgs.add("");
         compilerArgs.add("-Xuse-k2");
 
-        DTRunner runner = new DTRunner(1, 5,
+        DTRunner runner = new DTRunner(1, 100,
                 fileNames, "output/",
                 compilerPath, compilerArgs,
                 0, 3, ctxFileName,

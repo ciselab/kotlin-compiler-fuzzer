@@ -245,12 +245,12 @@ public class DAGTypeEnvironment implements TypeEnvironment, Serializable {
 
     @Override
     public KType randomType() {
-        List<KType> typeList = dag.allNodes().stream().toList();
+        List<KType> typeList = dag.allNodes().stream().filter(this::hasNonRecursiveGenerics).toList();
         return typeList.get(rng.fromUniformDiscrete(0, typeList.size() - 1));
     }
 
     public KType randomSubtypeOf(KType type) {
-        List<KType> typeList = dag.allNodes().stream().toList();
+        List<KType> typeList = subtypesOf(type).stream().filter(this::hasNonRecursiveGenerics).toList();
         return typeList.get(rng.fromUniformDiscrete(0, typeList.size() - 1));
     }
 
@@ -263,7 +263,7 @@ public class DAGTypeEnvironment implements TypeEnvironment, Serializable {
 
         Collection<KType> children = type.canBeDeclared() ? dag.childrenOf(type) : dag.labeledChildren(type);
 
-        return children.stream().anyMatch(this::canSample);
+        return hasNonRecursiveGenerics(type) && children.stream().anyMatch(this::canSample);
     }
 
     public List<KType> samplableTypes() {
@@ -308,5 +308,16 @@ public class DAGTypeEnvironment implements TypeEnvironment, Serializable {
         }
 
         throw new IllegalStateException("Path between " + from + " and " + to + " contains no labeled transitions.");
+    }
+
+    // If any parameter of a type is the type itself, we cannot represent it.
+    // i.e., Enum<E : Enum<E>>
+    // More complex recursive relations can cause this problem as well
+    // TODO: handle those
+    private boolean hasNonRecursiveGenerics(KType type) {
+        return type.getGenerics().stream().allMatch(g -> {
+            KType genericUpperBound = getTypeFromGeneric(g.upperBound(), (KClassifierType) type, new LinkedList<>());
+            return !type.equals(genericUpperBound);
+        });
     }
 }
