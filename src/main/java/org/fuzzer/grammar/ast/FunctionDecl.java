@@ -4,6 +4,7 @@ import org.antlr.v4.tool.ast.GrammarAST;
 import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.RuleName;
 import org.fuzzer.grammar.SampleStructure;
+import org.fuzzer.grammar.ast.statements.StatementNode;
 import org.fuzzer.representations.callables.KFunction;
 import org.fuzzer.representations.callables.KIdentifierCallable;
 import org.fuzzer.representations.context.Context;
@@ -62,8 +63,11 @@ public class FunctionDecl extends ASTNode {
                 StatementNode stmtNode = new StatementNode(antlrNode, 3);
                 stmtNode.recordStatistics(this.stats);
 
+                // TODO: adapt this
+                boolean allowSubtypes = true;
+
                 // Sample a consistently-types return statement
-                Tuple<CodeFragment, List<KType>> returnStatementAndInstances = new ExpressionNode(antlrNode, 3).getSampleOfType(rng, ctx, returnType);
+                Tuple<CodeFragment, List<KType>> returnStatementAndInstances = new ExpressionNode(antlrNode, 3).getSampleOfType(rng, ctx, returnType, allowSubtypes);
 
                 code.appendToText(") : " + returnType.codeRepresentation(returnStatementAndInstances.second()) + " {" + System.lineSeparator());
 

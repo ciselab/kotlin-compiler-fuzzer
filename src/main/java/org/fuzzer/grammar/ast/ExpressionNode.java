@@ -12,7 +12,6 @@ import org.fuzzer.utils.Tuple;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Predicate;
 
 public class ExpressionNode extends ASTNode {
@@ -28,12 +27,13 @@ public class ExpressionNode extends ASTNode {
     public CodeFragment getSample(RandomNumberGenerator rng, Context ctx) {
         KType sampledType = ctx.getRandomSamplableType();
 
-        CodeFragment code = getSampleOfType(rng, ctx, sampledType).first();
+        boolean allowSubtypes = true;
+        CodeFragment code = getSampleOfType(rng, ctx, sampledType, allowSubtypes).first();
 
         return code;
     }
 
-    public Tuple<CodeFragment, List<KType>> getSampleOfType(RandomNumberGenerator rng, Context ctx, KType type) {
+    public Tuple<CodeFragment, List<KType>> getSampleOfType(RandomNumberGenerator rng, Context ctx, KType type, boolean allowSubtypes) {
 
         try {
             int depth = 0;
@@ -48,7 +48,7 @@ public class ExpressionNode extends ASTNode {
             }
 
             rootNode = sampleTypedCallables(rootNode, depth, ctx, rng);
-            verifyCallableCompatibility(rootNode, ctx);
+            verifyCallableCompatibility(rootNode, ctx, allowSubtypes);
             String expression = rootNode.getValue().call(ctx);
 
             if (this.stats != null) {
@@ -100,10 +100,11 @@ public class ExpressionNode extends ASTNode {
     public KCallable getCallableOfType(KType type, int depth, Context ctx, RandomNumberGenerator rng) throws CloneNotSupportedException {
         boolean sampleConsumerCallable = (depth < maxDepth - 1) && rng.randomBoolean(0.25);
         KCallable callable = null;
+        boolean allowSubtypes = true;
 
         if (sampleConsumerCallable) {
             try {
-                callable = ctx.randomConsumerCallable(type);
+                callable = ctx.randomConsumerCallable(type, allowSubtypes);
             } catch (IllegalArgumentException ignored) {}
 
             if (callable != null) {
@@ -112,7 +113,7 @@ public class ExpressionNode extends ASTNode {
         }
 
         try {
-            callable = ctx.randomTerminalCallableOfType(type);
+            callable = ctx.randomTerminalCallableOfType(type, allowSubtypes);
         } catch (IllegalArgumentException ignored) {}
 
         if (callable != null) {
@@ -125,7 +126,7 @@ public class ExpressionNode extends ASTNode {
 
         // Rolled false, and no terminal callable found.
         try {
-            callable = ctx.randomConsumerCallable(type);
+            callable = ctx.randomConsumerCallable(type, allowSubtypes);
         } catch (IllegalArgumentException e) {
             throw new IllegalStateException("No callable found for type: " + type);
         }
@@ -133,9 +134,9 @@ public class ExpressionNode extends ASTNode {
         return callable;
     }
 
-    private void verifyCallableCompatibility(Tree<KCallable> callableTree, Context ctx) throws CloneNotSupportedException {
+    private void verifyCallableCompatibility(Tree<KCallable> callableTree, Context ctx, boolean allowSubtypes) throws CloneNotSupportedException {
         for (Tree<KCallable> child : callableTree.getChildren()) {
-            verifyCallableCompatibility(child, ctx);
+            verifyCallableCompatibility(child, ctx, allowSubtypes);
         }
         List<KCallable> childrenCallables = List.copyOf(callableTree.getChildrenValues());
         KCallable callable = callableTree.getValue();
@@ -144,7 +145,7 @@ public class ExpressionNode extends ASTNode {
             // TODO implement a class member callable
             KMethod methodCallable = (KMethod) callable;
             KType ownerType = ctx.getTypeByName(methodCallable.getOwnerType().name());
-            KCallable owner = sampleOwnerCallableOfType(ownerType, ctx);
+            KCallable owner = sampleOwnerCallableOfType(ownerType, ctx, allowSubtypes);
             callable.call(ctx, owner, childrenCallables);
         } else {
             callable.call(ctx, null, childrenCallables);
@@ -153,15 +154,15 @@ public class ExpressionNode extends ASTNode {
 
     }
 
-    private KCallable sampleOwnerCallableOfType(KType type, Context ctx) throws CloneNotSupportedException {
+    private KCallable sampleOwnerCallableOfType(KType type, Context ctx, boolean allowSubtypes) throws CloneNotSupportedException {
         // Sample callables that are either identifiers or constructors
         Predicate<KCallable> constructorOrIdOrAnon = kCallable -> kCallable instanceof KConstructor ||
                 kCallable instanceof KIdentifierCallable ||
                 kCallable instanceof KAnonymousCallable;
 
-        KCallable sampledOwner = null;
+        KCallable sampledOwner;
         try {
-            sampledOwner = ctx.randomCallableOfType(type, constructorOrIdOrAnon);
+            sampledOwner = ctx.randomCallableOfType(type, constructorOrIdOrAnon, allowSubtypes);
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Cannot sample an owner of type: " + type);
         }
@@ -169,7 +170,7 @@ public class ExpressionNode extends ASTNode {
         List<KCallable> sampledOwnerInput = new ArrayList<>();
 
         for (KType inputType : sampledOwner.getInputTypes()) {
-            sampledOwnerInput.add(sampleOwnerCallableOfType(inputType, ctx));
+            sampledOwnerInput.add(sampleOwnerCallableOfType(inputType, ctx, allowSubtypes));
         }
 
         sampledOwner.call(ctx, null, sampledOwnerInput);
