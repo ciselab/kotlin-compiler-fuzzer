@@ -68,7 +68,7 @@ public class Context implements Cloneable, Serializable {
     }
 
     public List<KCallable> callablesOfType(KType type, boolean allowSubtypes) {
-        Set<KType> subtypes = allowSubtypes ? Collections.singleton(type) : typeHierarchy.subtypesOf(type);
+        Set<KType> subtypes = allowSubtypes ? typeHierarchy.subtypesOf(type) : Collections.singleton(type);
         // Keep only the callables
         List<KCallable> alternatives = new ArrayList<>(callablesByOwner
                 .values().stream()
@@ -1296,6 +1296,11 @@ public class Context implements Cloneable, Serializable {
             return kCallable.getName().equals("iterator") && kCallable.getInputTypes().isEmpty();
         });
     }
+
+    public boolean isBooleanType(KType type) {
+        return isSubtypeOf(type, getTypeByName("Boolean"));
+    }
+
     private boolean isContainerCallable(KCallable callable) {
         // A "container" callable implements the iterator() function
         return isContainerType(callable.getReturnType());
