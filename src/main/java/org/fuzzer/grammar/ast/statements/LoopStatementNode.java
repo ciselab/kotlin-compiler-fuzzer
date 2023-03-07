@@ -3,7 +3,6 @@ package org.fuzzer.grammar.ast.statements;
 import org.antlr.v4.tool.ast.GrammarAST;
 import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.ast.ASTNode;
-import org.fuzzer.grammar.ast.ExpressionNode;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.utils.RandomNumberGenerator;
 

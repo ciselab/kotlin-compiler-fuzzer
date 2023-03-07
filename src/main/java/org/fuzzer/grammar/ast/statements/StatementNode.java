@@ -3,7 +3,7 @@ package org.fuzzer.grammar.ast.statements;
 import org.antlr.v4.tool.ast.GrammarAST;
 import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.ast.ASTNode;
-import org.fuzzer.grammar.ast.ExpressionNode;
+import org.fuzzer.grammar.ast.expressions.SimpleExpressionNode;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.utils.RandomNumberGenerator;
 
@@ -20,7 +20,7 @@ public class StatementNode extends ASTNode {
         super(anltrNode, new LinkedList<>());
         List<ASTNode> children = new LinkedList<>();
         children.add(new AssignmentNode(anltrNode, maxDepth));
-        children.add(new ExpressionNode(antlrNode, maxDepth));
+        children.add(new SimpleExpressionNode(antlrNode, maxDepth));
         this.children = children;
     }
     @Override

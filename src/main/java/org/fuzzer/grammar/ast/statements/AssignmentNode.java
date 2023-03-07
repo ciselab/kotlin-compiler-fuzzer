@@ -3,22 +3,16 @@ package org.fuzzer.grammar.ast.statements;
 import org.antlr.v4.tool.ast.GrammarAST;
 import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.ast.ASTNode;
-import org.fuzzer.grammar.ast.ExpressionNode;
+import org.fuzzer.grammar.ast.expressions.SimpleExpressionNode;
 import org.fuzzer.representations.callables.*;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.representations.types.KClassifierType;
 import org.fuzzer.representations.types.KType;
 import org.fuzzer.utils.RandomNumberGenerator;
-import org.fuzzer.utils.StringUtilities;
-import org.fuzzer.utils.Tree;
 import org.fuzzer.utils.Tuple;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.function.Predicate;
-
-import static org.fuzzer.utils.StringUtilities.removeGeneric;
 
 public class AssignmentNode extends ASTNode {
 
@@ -42,11 +36,11 @@ public class AssignmentNode extends ASTNode {
             type = ctx.getRandomSamplableType();
         }
 
-        ExpressionNode expr = new ExpressionNode(this.antlrNode, this.maxDepth);
-        Tuple<CodeFragment, List<KType>> codeAndInstances = expr.getSampleOfType(rng, ctx, type);
+        SimpleExpressionNode expr = new SimpleExpressionNode(this.antlrNode, this.maxDepth);
+        var codeAndInstances = expr.getSampleOfType(rng, ctx, type, true);
 
         String rhs = codeAndInstances.first().getText();
-        String lhs = sampleExisting ? id : ("var " + id + ": " + ((KClassifierType) type).codeRepresentation(codeAndInstances.second()));
+        String lhs = sampleExisting ? id : ("var " + id + ": " + ((KClassifierType) type).codeRepresentation(codeAndInstances.second().second()));
 
         if (!sampleExisting) {
             ctx.addIdentifier(id, new KIdentifierCallable(id, type));

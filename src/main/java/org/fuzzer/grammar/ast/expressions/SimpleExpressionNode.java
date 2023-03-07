@@ -1,8 +1,9 @@
-package org.fuzzer.grammar.ast;
+package org.fuzzer.grammar.ast.expressions;
 
 import org.antlr.v4.tool.ast.GrammarAST;
 import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.SampleStructure;
+import org.fuzzer.grammar.ast.ASTNode;
 import org.fuzzer.representations.callables.*;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.representations.types.KType;
@@ -11,32 +12,35 @@ import org.fuzzer.utils.Tree;
 import org.fuzzer.utils.Tuple;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Predicate;
 
 public class ExpressionNode extends ASTNode {
 
-    private final int maxDepth;
+    protected final int maxDepth;
 
     public ExpressionNode(GrammarAST antlrNode, int maxDepth) {
         super(antlrNode, new ArrayList<>());
         this.maxDepth = maxDepth;
+        this.children = new LinkedList<>();
+        children.add(new IfExpressionNode(antlrNode, maxDepth));
     }
 
     @Override
     public CodeFragment getSample(RandomNumberGenerator rng, Context ctx) {
-        KType sampledType = ctx.getRandomSamplableType();
+        boolean sampleChild = rng.randomBoolean();
 
-        boolean allowSubtypes = true;
-        CodeFragment code = getSampleOfType(rng, ctx, sampledType, allowSubtypes).first();
+        KType sampledType = ctx.getRandomSamplableType();
+        CodeFragment code = getSampleOfType(rng, ctx, sampledType, true).first();
 
         return code;
     }
 
     public Tuple<CodeFragment, List<KType>> getSampleOfType(RandomNumberGenerator rng, Context ctx, KType type, boolean allowSubtypes) {
-
         try {
             int depth = 0;
+
             KCallable baseCallable = getCallableOfType(type, depth++, ctx, rng);
             Tree<KCallable> rootNode = new Tree<>(baseCallable);
 
@@ -70,7 +74,7 @@ public class ExpressionNode extends ASTNode {
 
     }
 
-    public Tree<KCallable> sampleTypedCallables(Tree<KCallable> currentNode, int depth,
+    private Tree<KCallable> sampleTypedCallables(Tree<KCallable> currentNode, int depth,
                                                 Context ctx, RandomNumberGenerator rng) throws CloneNotSupportedException {
         KCallable currentCallable = currentNode.getValue();
         if (currentCallable.isTerminal()) {
@@ -97,7 +101,7 @@ public class ExpressionNode extends ASTNode {
         return currentNode;
     }
 
-    public KCallable getCallableOfType(KType type, int depth, Context ctx, RandomNumberGenerator rng) throws CloneNotSupportedException {
+    private KCallable getCallableOfType(KType type, int depth, Context ctx, RandomNumberGenerator rng) throws CloneNotSupportedException {
         boolean sampleConsumerCallable = (depth < maxDepth - 1) && rng.randomBoolean(0.25);
         KCallable callable = null;
         boolean allowSubtypes = true;
