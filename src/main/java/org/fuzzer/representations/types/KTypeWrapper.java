@@ -47,6 +47,11 @@ public record KTypeWrapper(KTypeWrapper ownerType,
                 indicator, name, generics, inputTypes, returnType);
     }
 
+    public KTypeWrapper addReturnType(KTypeWrapper returnType) {
+        return new KTypeWrapper(ownerType, varName, modifiers, upperBound, parent,
+                indicator, name, generics, inputTypes, returnType);
+    }
+
     public static KTypeWrapper getVoidWrapper() {
         return new KTypeWrapper(null, null, null, null, new ArrayList<>(), KTypeIndicator.CLASS, "void", new ArrayList<>(), new ArrayList<>(), null);
     }

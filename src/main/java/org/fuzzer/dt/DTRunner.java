@@ -149,7 +149,6 @@ public class DTRunner {
             text += "\n}";
 
             String kotlinFile = outputFileName + ".kt";
-
             KotlinParseTree parseTree = parseKotlinCode(tokenizeKotlinCode(text));
 
             stats.record(parseTree);

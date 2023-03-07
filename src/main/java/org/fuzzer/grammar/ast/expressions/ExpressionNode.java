@@ -12,6 +12,7 @@ import org.fuzzer.utils.Tree;
 import org.fuzzer.utils.Tuple;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Predicate;
@@ -23,14 +24,12 @@ public class ExpressionNode extends ASTNode {
     public ExpressionNode(GrammarAST antlrNode, int maxDepth) {
         super(antlrNode, new ArrayList<>());
         this.maxDepth = maxDepth;
-        this.children = new LinkedList<>();
-        children.add(new IfExpressionNode(antlrNode, maxDepth));
-        children.add(new SimpleExpressionNode(antlrNode, maxDepth));
     }
 
     @Override
     public CodeFragment getSample(RandomNumberGenerator rng, Context ctx) {
-        ExpressionNode childToSample = (ExpressionNode) children.get(rng.fromUniformDiscrete(0, children.size()));
+        List<ExpressionNode> alternatives = new ArrayList<>(List.of(new ExpressionNode[]{new IfExpressionNode(antlrNode, maxDepth), new SimpleExpressionNode(antlrNode, maxDepth)}));
+        ExpressionNode childToSample = alternatives.get(rng.fromUniformDiscrete(0, alternatives.size()));
         return childToSample.getSample(rng, ctx);
     }
 
@@ -140,10 +139,16 @@ public class ExpressionNode extends ASTNode {
 
         if (callable.requiresOwner()) {
             // TODO implement a class member callable
-            KMethod methodCallable = (KMethod) callable;
-            KType ownerType = ctx.getTypeByName(methodCallable.getOwnerType().name());
-            KCallable owner = sampleOwnerCallableOfType(ownerType, ctx, allowSubtypes);
-            callable.call(ctx, owner, childrenCallables);
+            if (callable instanceof KConstructor) {
+                callable.call(ctx, null, childrenCallables);
+            // Otherwise, it is a method
+            } else {
+                KMethod methodCallable = (KMethod) callable;
+                KType ownerType = ctx.getTypeByName(methodCallable.getOwnerType().name());
+                KCallable owner = sampleOwnerCallableOfType(ownerType, ctx, allowSubtypes);
+                callable.call(ctx, owner, childrenCallables);
+            }
+
         } else {
             callable.call(ctx, null, childrenCallables);
         }
@@ -159,7 +164,7 @@ public class ExpressionNode extends ASTNode {
 
         KCallable sampledOwner;
         try {
-            sampledOwner = ctx.randomCallableOfType(type, constructorOrIdOrAnon, allowSubtypes);
+            sampledOwner = ctx.randomCallableOfType(type, Collections.singletonList(constructorOrIdOrAnon), allowSubtypes);
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Cannot sample an owner of type: " + type);
         }

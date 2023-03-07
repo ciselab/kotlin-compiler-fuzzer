@@ -86,12 +86,14 @@ public class Context implements Cloneable, Serializable {
         return alternatives;
     }
 
-    public KCallable randomCallableOfType(KType type, Predicate<KCallable> condition, boolean allowSubtypes) throws CloneNotSupportedException {
+    public KCallable randomCallableOfType(KType type, List<Predicate<KCallable>> conditions, boolean allowSubtypes) throws CloneNotSupportedException {
         if (type instanceof KClassifierType) {
-            List<KCallable> alternatives = callablesOfType(type, allowSubtypes).stream().filter(condition).toList();
+            List<KCallable> alternatives = callablesOfType(type, allowSubtypes).stream()
+                    .filter(callable -> conditions.stream().allMatch(condition -> condition.test(callable)))
+                    .toList();
 
             if (alternatives.isEmpty()) {
-                throw new IllegalArgumentException("Cannot sample callable of type " + type + " under condition " + condition);
+                throw new IllegalArgumentException("Cannot sample callable of type " + type + " under conditions " + conditions);
             }
 
             KCallable selected = alternatives.get(rng.fromUniformDiscrete(0, alternatives.size() - 1));
@@ -125,9 +127,12 @@ public class Context implements Cloneable, Serializable {
 
             return owner.isEmpty() || samplableTypes.contains(owner.get(0));
         };
-        KCallable callable = randomCallableOfType(type,
-                kCallable -> kCallable.isTerminal() && onlySamplableOwners.test(kCallable),
-                allowSubtypes);
+
+        List<Predicate<KCallable>> predicates = new LinkedList<>();
+        predicates.add(KCallable::isTerminal);
+        predicates.add(onlySamplableOwners);
+
+        KCallable callable = randomCallableOfType(type, predicates, allowSubtypes);
 
         return callable;
     }
@@ -146,9 +151,14 @@ public class Context implements Cloneable, Serializable {
             return owner.isEmpty() || samplableTypes.contains(owner.get(0));
         };
 
-        return randomCallableOfType(type,
-                kCallable -> !kCallable.getInputTypes().isEmpty() && noFunctionInputs.test(kCallable) && onlySamplableInputTypes.test(kCallable) && onlySamplableOwners.test(kCallable),
-                allowSubtypes);
+        List<Predicate<KCallable>> predicates = new LinkedList<>();
+        predicates.add(kCallable -> !kCallable.getInputTypes().isEmpty());
+        predicates.add(noFunctionInputs);
+        predicates.add(onlySamplableInputTypes);
+        predicates.add(onlySamplableOwners);
+
+
+        return randomCallableOfType(type, predicates, allowSubtypes);
     }
 
     public boolean containsIdentifier(String identifier) {
@@ -374,6 +384,10 @@ public class Context implements Cloneable, Serializable {
                 }
 
                 KCallable extractedCallable = typeWrapper.toCallable(ownerType);
+
+                if (extractedCallable instanceof KConstructor) {
+                    extractedCallable.updateReturnType(ownerType);
+                }
 
                 // Not visible class attributes
                 if (extractedCallable == null) {
