@@ -69,7 +69,7 @@ public class FunctionDecl extends ASTNode {
                 boolean allowSubtypes = true;
 
                 // Sample a consistently-types return statement
-                var returnStatementAndInstances = new ExpressionNode(antlrNode, 3).getSampleOfType(rng, ctx, returnType, allowSubtypes);
+                var returnStatementAndInstances = new ExpressionNode(antlrNode, 3).getRandomExpressionNode(rng).getSampleOfType(rng, ctx, returnType, allowSubtypes);
 
                 code.appendToText(") : " + returnType.codeRepresentation(returnStatementAndInstances.second().second()) + " {" + System.lineSeparator());
 

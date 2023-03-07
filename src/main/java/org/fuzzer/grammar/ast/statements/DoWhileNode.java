@@ -27,7 +27,7 @@ public class DoWhileNode extends ASTNode {
         CodeFragment code = new CodeFragment();
         code.appendToText("do {");
 
-        CodeFragment conditionCode = new SimpleExpressionNode(antlrNode, maxDepth).getSampleOfType(rng, ctx, boolType, true).first();
+        CodeFragment conditionCode = new SimpleExpressionNode(antlrNode, maxDepth).getRandomExpressionNode(rng).getSampleOfType(rng, ctx, boolType, true).first();
 
         int numberOfStatements = rng.fromGeometric();
         StatementNode stmtNode = new StatementNode(antlrNode, maxDepth);

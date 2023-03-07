@@ -28,9 +28,12 @@ public class ExpressionNode extends ASTNode {
 
     @Override
     public CodeFragment getSample(RandomNumberGenerator rng, Context ctx) {
+        return getRandomExpressionNode(rng).getSample(rng, ctx);
+    }
+
+    public ExpressionNode getRandomExpressionNode(RandomNumberGenerator rng) {
         List<ExpressionNode> alternatives = new ArrayList<>(List.of(new ExpressionNode[]{new IfExpressionNode(antlrNode, maxDepth), new SimpleExpressionNode(antlrNode, maxDepth)}));
-        ExpressionNode childToSample = alternatives.get(rng.fromUniformDiscrete(0, alternatives.size()));
-        return childToSample.getSample(rng, ctx);
+        return alternatives.get(rng.fromUniformDiscrete(0, alternatives.size() - 1));
     }
 
     public Tuple<CodeFragment, Tuple<KType, List<KType>>> getSampleOfType(RandomNumberGenerator rng, Context ctx, KType type, boolean allowSubtypes) {

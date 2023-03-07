@@ -37,7 +37,7 @@ public class AssignmentNode extends ASTNode {
         }
 
         SimpleExpressionNode expr = new SimpleExpressionNode(this.antlrNode, this.maxDepth);
-        var codeAndInstances = expr.getSampleOfType(rng, ctx, type, true);
+        var codeAndInstances = expr.getRandomExpressionNode(rng).getSampleOfType(rng, ctx, type, true);
 
         String rhs = codeAndInstances.first().getText();
         String lhs = sampleExisting ? id : ("var " + id + ": " + ((KClassifierType) type).codeRepresentation(codeAndInstances.second().second()));

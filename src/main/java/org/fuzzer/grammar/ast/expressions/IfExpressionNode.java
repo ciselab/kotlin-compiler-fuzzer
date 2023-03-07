@@ -24,7 +24,7 @@ public class IfExpressionNode extends ExpressionNode {
     public Tuple<CodeFragment, Tuple<KType, List<KType>>> getSampleOfType(RandomNumberGenerator rng, Context ctx, KType type, boolean allowSubtypes) {
         KType booleanType = ctx.getTypeByName("Boolean");
 
-        CodeFragment conditionCode = getSampleOfType(rng, ctx, booleanType, true).first();
+        CodeFragment conditionCode = super.getSampleOfType(rng, ctx, booleanType, true).first();
         CodeFragment trueBranchCode = new CodeFragment();
         CodeFragment falseBranchCode = new CodeFragment();
 
