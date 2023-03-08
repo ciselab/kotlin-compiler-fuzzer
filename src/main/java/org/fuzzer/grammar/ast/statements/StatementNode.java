@@ -12,21 +12,31 @@ import java.util.List;
 
 public class StatementNode extends ASTNode {
 
-    public StatementNode(GrammarAST antlrNode, List<ASTNode> children) {
-        super(antlrNode, children);
-    }
+    protected final int maxDepth;
 
-    public StatementNode(GrammarAST anltrNode, int maxDepth) {
-        super(anltrNode, new LinkedList<>());
-        List<ASTNode> children = new LinkedList<>();
-        children.add(new AssignmentNode(anltrNode, maxDepth));
-        children.add(new SimpleExpressionNode(antlrNode, maxDepth));
-        this.children = children;
+    public StatementNode(GrammarAST antlrNode, int maxDepth) {
+        super(antlrNode, new LinkedList<>());
+        this.maxDepth = maxDepth;
     }
     @Override
     public CodeFragment getSample(RandomNumberGenerator rng, Context ctx) {
-        ASTNode nodeToSample = children.get(rng.fromUniformDiscrete(0, children.size() - 1));
-        return nodeToSample.getSample(rng, ctx.clone());
+        return getRandomStatementNode(rng).getSample(rng, ctx);
+    }
+
+    public StatementNode getRandomStatementNode(RandomNumberGenerator rng) {
+        List<StatementNode> alternatives = new LinkedList<>();
+        alternatives.add(new AssignmentNode(antlrNode, this.maxDepth));
+        alternatives.add(new DoWhileNode(antlrNode, maxDepth));
+        alternatives.add(new SimpleStatementNode(antlrNode, maxDepth));
+
+        boolean returnSimpleStatement = rng.randomBoolean();
+
+        // Forcibly simplify the sampling
+        if (returnSimpleStatement) {
+            return alternatives.get(alternatives.size() - 1);
+        }
+
+        return alternatives.get(rng.fromUniformDiscrete(0, alternatives.size() - 1));
     }
 
     @Override

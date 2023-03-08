@@ -14,11 +14,11 @@ import org.fuzzer.utils.Tuple;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AssignmentNode extends ASTNode {
+public class AssignmentNode extends StatementNode {
 
     private final int maxDepth;
     public AssignmentNode(GrammarAST antlrNode, int maxDepth) {
-        super(antlrNode, new ArrayList<>());
+        super(antlrNode, maxDepth);
         this.maxDepth = maxDepth;
     }
 
@@ -43,7 +43,8 @@ public class AssignmentNode extends ASTNode {
         String lhs = sampleExisting ? id : ("var " + id + ": " + ((KClassifierType) type).codeRepresentation(codeAndInstances.second().second()));
 
         if (!sampleExisting) {
-            ctx.addIdentifier(id, new KIdentifierCallable(id, type));
+            KType parameterizedTypeOfIdentifier = ((KClassifierType) type).withNewGenericInstances(codeAndInstances.second().second());
+            ctx.addIdentifier(id, new KIdentifierCallable(id, parameterizedTypeOfIdentifier));
         }
 
         return new CodeFragment(lhs + " = " + rhs);

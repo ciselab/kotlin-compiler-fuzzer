@@ -33,6 +33,11 @@ public class ExpressionNode extends ASTNode {
 
     public ExpressionNode getRandomExpressionNode(RandomNumberGenerator rng) {
         List<ExpressionNode> alternatives = new ArrayList<>(List.of(new ExpressionNode[]{new IfExpressionNode(antlrNode, maxDepth), new SimpleExpressionNode(antlrNode, maxDepth)}));
+
+        if (rng.randomBoolean()) {
+            return alternatives.get(alternatives.size() - 1);
+        }
+
         return alternatives.get(rng.fromUniformDiscrete(0, alternatives.size() - 1));
     }
 
@@ -44,6 +49,11 @@ public class ExpressionNode extends ASTNode {
             Tree<KCallable> rootNode = new Tree<>(baseCallable);
 
             KType returnType = baseCallable.getReturnType();
+
+            if (returnType.name().contains("Comparable")) {
+                System.out.println("break");
+            }
+
             List<KType> typeParameterInstances = ctx.getParameterInstances(type, returnType);
 
             if (typeParameterInstances.size() != type.getGenerics().size()) {
