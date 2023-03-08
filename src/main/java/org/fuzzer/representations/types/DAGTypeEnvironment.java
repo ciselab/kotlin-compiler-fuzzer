@@ -178,12 +178,56 @@ public class DAGTypeEnvironment implements TypeEnvironment, Serializable {
 
     @Override
     public Set<KType> subtypesOf(KType type) {
-        return dag.allDescendants(type);
+        Set<KType> subtypes = dag.allDescendants(type);
+
+        if (((KClassifierType) type).genericInstances.isEmpty()) {
+            return subtypes;
+        }
+
+        Set<KType> res = new HashSet<>();
+        List<KType> instacesInType = ((KClassifierType) type).genericInstances;
+
+        for (KType nextType : subtypes) {
+            if (!(nextType instanceof KClassifierType classifier)) {
+                throw new IllegalArgumentException("Cannot handle supertypes of " + nextType);
+            }
+
+            try {
+                List<KType> params = getParameterInstances(type, classifier);
+                if (params.equals(instacesInType)) {
+                    res.add(classifier.withNewGenericInstances(params));
+                }
+            } catch (IllegalArgumentException ignored) {}
+        }
+
+        return res;
     }
 
     @Override
     public Set<KType> supertypesOf(KType type) {
-        return dag.allAncestors(type);
+        Set<KType> supertypes = dag.allAncestors(type);
+
+        if (((KClassifierType) type).genericInstances.isEmpty()) {
+            return supertypes;
+        }
+
+        Set<KType> res = new HashSet<>();
+        List<KType> instacesInType = ((KClassifierType) type).genericInstances;
+
+        for (KType nextType : supertypes) {
+            if (!(nextType instanceof KClassifierType classifier)) {
+                throw new IllegalArgumentException("Cannot handle supertypes of " + nextType);
+            }
+
+            try {
+                List<KType> params = getParameterInstances(classifier, type);
+                if (params.equals(instacesInType)) {
+                    res.add(classifier.withNewGenericInstances(params));
+                }
+            } catch (IllegalArgumentException ignored) {}
+        }
+
+        return res;
     }
 
     @Override
@@ -312,7 +356,7 @@ public class DAGTypeEnvironment implements TypeEnvironment, Serializable {
             }
         }
 
-        throw new IllegalStateException("Path between " + from + " and " + to + " contains no labeled transitions.");
+        throw new IllegalArgumentException("Path between " + from + " and " + to + " contains no labeled transitions.");
     }
 
     // If any parameter of a type is the type itself, we cannot represent it.

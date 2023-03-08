@@ -2,17 +2,12 @@ package org.fuzzer.grammar.ast.statements;
 
 import org.antlr.v4.tool.ast.GrammarAST;
 import org.fuzzer.generator.CodeFragment;
-import org.fuzzer.grammar.ast.ASTNode;
 import org.fuzzer.grammar.ast.expressions.SimpleExpressionNode;
 import org.fuzzer.representations.callables.*;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.representations.types.KClassifierType;
 import org.fuzzer.representations.types.KType;
 import org.fuzzer.utils.RandomNumberGenerator;
-import org.fuzzer.utils.Tuple;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class AssignmentNode extends StatementNode {
 
@@ -34,6 +29,10 @@ public class AssignmentNode extends StatementNode {
         } else {
             id = ctx.getNewIdentifier();
             type = ctx.getRandomAssignableType();
+        }
+
+        if (type.name().contains("Comparable")) {
+            System.out.println("here");
         }
 
         SimpleExpressionNode expr = new SimpleExpressionNode(this.antlrNode, this.maxDepth);
