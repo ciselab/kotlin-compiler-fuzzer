@@ -1,6 +1,8 @@
 package org.fuzzer.representations.context;
 
 import org.fuzzer.representations.callables.KCallable;
+import org.fuzzer.representations.callables.KFunction;
+import org.fuzzer.representations.callables.KMethod;
 import org.fuzzer.representations.types.KType;
 import org.fuzzer.representations.types.TypeEnvironment;
 import org.fuzzer.utils.RandomNumberGenerator;
@@ -26,6 +28,30 @@ public class MapIdentifierStore implements IdentifierStore {
     @Override
     public boolean isEmpty() {
         return identifierMap.isEmpty();
+    }
+
+    @Override
+    public boolean hasAssignableIdentifiers() {
+        return !allAssignableIdentifiers().isEmpty();
+    }
+
+    @Override
+    public List<KCallable> allIdentifiers() {
+        return identifierMap.values().stream().toList();
+    }
+
+    @Override
+    public List<KCallable> allAssignableIdentifiers() {
+        return allIdentifiers().stream()
+                .filter(kCallable -> !(kCallable instanceof KFunction || kCallable instanceof KMethod))
+                .toList();
+    }
+
+    @Override
+    public String randomAssignableIdentifier() {
+        List<KCallable> alternatives = allAssignableIdentifiers();
+        List<String> idNames = alternatives.stream().map(KCallable::getName).toList();
+        return idNames.get(rng.fromUniformDiscrete(0, idNames.size() - 1));
     }
 
     @Override

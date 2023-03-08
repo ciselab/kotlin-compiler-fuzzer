@@ -277,6 +277,11 @@ public class DAGTypeEnvironment implements TypeEnvironment, Serializable {
         return samplableTypes.get(rng.fromUniformDiscrete(0, samplableTypes.size() - 1));
     }
 
+    public KType randomAssignableType() {
+        List<KType> alternatives = samplableTypes().stream().filter(t -> !(t instanceof KFuncType)).toList();
+        return alternatives.get(rng.fromUniformDiscrete(0, alternatives.size() - 1));
+    }
+
     public List<KType> getParameterInstances(KType from, KType to) {
         if (from.getGenerics().isEmpty()) {
             return new LinkedList<>();

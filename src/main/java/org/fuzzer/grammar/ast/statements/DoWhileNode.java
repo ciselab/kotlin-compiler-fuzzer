@@ -28,8 +28,10 @@ public class DoWhileNode extends StatementNode {
         int numberOfStatements = rng.fromGeometric();
         StatementNode stmtNode = new StatementNode(antlrNode, maxDepth).getRandomStatementNode(rng);
 
+        Context innerContext = ctx.clone();
+
         for (int statement = 0; statement < numberOfStatements; statement++) {
-            CodeFragment newCode = stmtNode.getSample(rng, ctx);
+            CodeFragment newCode = stmtNode.getSample(rng, innerContext);
             code.extend(newCode);
         }
 

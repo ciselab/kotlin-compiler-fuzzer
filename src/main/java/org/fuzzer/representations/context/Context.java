@@ -23,7 +23,6 @@ public class Context implements Cloneable, Serializable {
 
     private HashMap<KType, Set<KCallable>> callablesByOwner;
 
-    //    private HashMap<KType, Set<KCallable>> callablesByReturnType;
     private DAGTypeEnvironment typeHierarchy;
 
     private RandomNumberGenerator rng;
@@ -57,6 +56,14 @@ public class Context implements Cloneable, Serializable {
 
     public String randomIdentifier() {
         return idStore.randomIdentifier();
+    }
+
+    public boolean hasAssignableIdentifiers() {
+        return idStore.hasAssignableIdentifiers();
+    }
+
+    public String randomAssignableIdentifier() {
+        return idStore.randomAssignableIdentifier();
     }
 
     public KType typeOfIdentifier(String id) {
@@ -208,6 +215,10 @@ public class Context implements Cloneable, Serializable {
 
     public KType getRandomSamplableType() {
         return typeHierarchy.randomSamplableType();
+    }
+
+    public KType getRandomAssignableType() {
+        return typeHierarchy.randomAssignableType();
     }
 
     public String getNewIdentifier() {
@@ -1318,6 +1329,10 @@ public class Context implements Cloneable, Serializable {
     private boolean isContainerCallable(KCallable callable) {
         // A "container" callable implements the iterator() function
         return isContainerType(callable.getReturnType());
+    }
+
+    private boolean isFunctionType(KType type) {
+        return type instanceof KFuncType;
     }
 
     @Override

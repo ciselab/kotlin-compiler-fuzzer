@@ -33,19 +33,22 @@ public class IfExpressionNode extends ExpressionNode {
         // Sample some statements in the true branch
         int numberOfStatements = rng.fromGeometric();
 
+        Context trueBranchContext = ctx.clone();
+        Context falseBranchContext = ctx.clone();
+
         for (int i = 0; i < numberOfStatements; i++) {
-            CodeFragment sampleExpr = stmtNode.getSample(rng, ctx);
+            CodeFragment sampleExpr = stmtNode.getSample(rng, trueBranchContext);
             trueBranchCode.extend(sampleExpr);
         }
         // Get a sound return type
-        var trueCodeAndTypeParams = super.getSampleOfType(rng, ctx, type, true);
+        var trueCodeAndTypeParams = super.getSampleOfType(rng, trueBranchContext, type, true);
         trueBranchCode.extend(trueCodeAndTypeParams.first());
 
         // Sample some statements in the false branch
         numberOfStatements = rng.fromGeometric();
 
         for (int i = 0; i < numberOfStatements; i++) {
-            CodeFragment sampleExpr = stmtNode.getSample(rng, ctx);
+            CodeFragment sampleExpr = stmtNode.getSample(rng, falseBranchContext);
             falseBranchCode.extend(sampleExpr);
         }
 
@@ -56,7 +59,7 @@ public class IfExpressionNode extends ExpressionNode {
         List<KType> parameterList = trueCodeAndTypeParams.second().second();
 
         // Get a sound return type for the false branch
-        falseBranchCode.extend(super.getSampleOfType(rng, ctx, returnType, true).first());
+        falseBranchCode.extend(super.getSampleOfType(rng, falseBranchContext, returnType, true).first());
 
         CodeFragment code = new CodeFragment();
 

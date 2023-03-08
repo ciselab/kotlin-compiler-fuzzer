@@ -26,14 +26,14 @@ public class AssignmentNode extends StatementNode {
     public CodeFragment getSample(RandomNumberGenerator rng, Context ctx) {
         KType type;
         String id;
-        boolean sampleExisting = ctx.hasAnyVariables() && rng.randomBoolean();
+        boolean sampleExisting = ctx.hasAssignableIdentifiers() && rng.randomBoolean();
 
         if (sampleExisting) {
-            id = ctx.randomIdentifier();
+            id = ctx.randomAssignableIdentifier();
             type = ctx.typeOfIdentifier(id);
         } else {
             id = ctx.getNewIdentifier();
-            type = ctx.getRandomSamplableType();
+            type = ctx.getRandomAssignableType();
         }
 
         SimpleExpressionNode expr = new SimpleExpressionNode(this.antlrNode, this.maxDepth);

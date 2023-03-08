@@ -37,6 +37,10 @@ public class FunctionDecl extends ASTNode {
                 // Sample a return type
                 KClassifierType returnType = (KClassifierType) ctx.getRandomSamplableType();
 
+                // Sample a consistently-types return statement
+                var returnStatementAndInstances = new ExpressionNode(antlrNode, 3).getRandomExpressionNode(rng).getSampleOfType(rng, ctx, returnType, true);
+                returnType = returnType.withNewGenericInstances(returnStatementAndInstances.second().second());
+
                 // Sample some parameters
                 int numberOfParams = rng.fromGeometric();
                 ParameterNode parameterNode = new ParameterNode(this.antlrNode);
@@ -67,17 +71,13 @@ public class FunctionDecl extends ASTNode {
 
                 // TODO: adapt this
                 boolean allowSubtypes = true;
-
-                // Sample a consistently-types return statement
-                var returnStatementAndInstances = new ExpressionNode(antlrNode, 3).getRandomExpressionNode(rng).getSampleOfType(rng, ctx, returnType, allowSubtypes);
-
                 code.appendToText(") : " + returnType.codeRepresentation(returnStatementAndInstances.second().second()) + " {" + System.lineSeparator());
 
                 // Sample some expressions in the function body
                 int numberOfStatements = rng.fromGeometric();
 
                 for (int i = 0; i < numberOfStatements; i++) {
-                    CodeFragment sampleExpr = stmtNode.getSample(rng, ctx);
+                    CodeFragment sampleExpr = stmtNode.getSample(rng, clone);
                     code.extend(sampleExpr);
                 }
 
