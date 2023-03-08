@@ -31,10 +31,6 @@ public class AssignmentNode extends StatementNode {
             type = ctx.getRandomAssignableType();
         }
 
-        if (type.name().contains("Comparable")) {
-            System.out.println("here");
-        }
-
         SimpleExpressionNode expr = new SimpleExpressionNode(this.antlrNode, this.maxDepth);
         var codeAndInstances = expr.getRandomExpressionNode(rng).getSampleOfType(rng, ctx, type, true);
 

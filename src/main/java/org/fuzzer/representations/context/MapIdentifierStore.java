@@ -2,7 +2,9 @@ package org.fuzzer.representations.context;
 
 import org.fuzzer.representations.callables.KCallable;
 import org.fuzzer.representations.callables.KFunction;
+import org.fuzzer.representations.callables.KIdentifierCallable;
 import org.fuzzer.representations.callables.KMethod;
+import org.fuzzer.representations.types.KClassifierType;
 import org.fuzzer.representations.types.KType;
 import org.fuzzer.representations.types.TypeEnvironment;
 import org.fuzzer.utils.RandomNumberGenerator;
@@ -43,8 +45,19 @@ public class MapIdentifierStore implements IdentifierStore {
     @Override
     public List<KCallable> allAssignableIdentifiers() {
         return allIdentifiers().stream()
-                .filter(kCallable -> !(kCallable instanceof KFunction || kCallable instanceof KMethod))
+                .filter(this::isMutable)
                 .toList();
+    }
+
+    /**
+     * Whether a callable is mutable.
+     */
+    private boolean isMutable(KCallable callable) {
+        if (! (callable instanceof KIdentifierCallable identifier)) {
+            return  false;
+        }
+
+        return identifier.isMutable();
     }
 
     @Override

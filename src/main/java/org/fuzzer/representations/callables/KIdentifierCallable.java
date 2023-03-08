@@ -8,9 +8,16 @@ import java.util.Optional;
 
 public class KIdentifierCallable extends KCallable {
 
+    private final boolean mutable;
 
     public KIdentifierCallable(String id, KType returnType) {
         super(id, returnType);
+        this.mutable = true;
+    }
+
+    public KIdentifierCallable(String id, KType returnType, boolean mutable) {
+        super(id, returnType);
+        this.mutable = mutable;
     }
 
     @Override
@@ -21,5 +28,9 @@ public class KIdentifierCallable extends KCallable {
     @Override
     public boolean requiresOwner() {
         return false;
+    }
+
+    public boolean isMutable() {
+        return mutable;
     }
 }

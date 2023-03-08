@@ -58,7 +58,7 @@ public class FunctionDecl extends ASTNode {
                     sampledTypes.add(parameterNode.getSampledType());
                     sampledIds.add(parameterNode.getSampledId());
 
-                    clone.addIdentifier(parameterNode.getSampledId(), new KIdentifierCallable(parameterNode.getSampledId(), parameterNode.getSampledType()));
+                    clone.addIdentifier(parameterNode.getSampledId(), new KIdentifierCallable(parameterNode.getSampledId(), parameterNode.getSampledType(), false));
 
                     code.appendToText(sampledParam);
                 }

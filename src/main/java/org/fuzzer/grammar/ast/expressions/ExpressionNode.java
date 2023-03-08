@@ -130,7 +130,7 @@ public class ExpressionNode extends ASTNode {
         }
 
         if (depth >= maxDepth - 1) {
-            throw new IllegalStateException("Max depth exceeded, but no terminal found.");
+            throw new IllegalStateException("Max depth exceeded, but no terminal callable of type " + type + " found.");
         }
 
         // Rolled false, and no terminal callable found.
