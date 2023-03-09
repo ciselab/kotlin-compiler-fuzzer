@@ -213,6 +213,10 @@ public class Context implements Cloneable, Serializable {
         return randomType.withNewGenericInstances(genericInstances);
     }
 
+    public List<KType> samplableTypes() {
+        return typeHierarchy.samplableTypes();
+    }
+
     public KType getRandomSamplableType() {
         return typeHierarchy.randomSamplableType();
     }
@@ -243,7 +247,7 @@ public class Context implements Cloneable, Serializable {
         HashMap<KClassifierType, List<KTypeWrapper>> nestedTypes = new HashMap<>();
 
         for (String fileName : fileNames) {
-            KotlinParseTree parseTree = null;
+            KotlinParseTree parseTree;
             try {
                 String fileContents = FileUtilities.fileContentToString(new File(fileName));
                 KotlinTokensList tokens = tokenizeKotlinCode(fileContents);

@@ -6,15 +6,13 @@ import org.fuzzer.grammar.SampleStructure;
 import org.fuzzer.grammar.ast.ASTNode;
 import org.fuzzer.representations.callables.*;
 import org.fuzzer.representations.context.Context;
+import org.fuzzer.representations.types.KFuncType;
 import org.fuzzer.representations.types.KType;
 import org.fuzzer.utils.RandomNumberGenerator;
 import org.fuzzer.utils.Tree;
 import org.fuzzer.utils.Tuple;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.function.Predicate;
 
 public class ExpressionNode extends ASTNode {
@@ -32,9 +30,12 @@ public class ExpressionNode extends ASTNode {
     }
 
     public ExpressionNode getRandomExpressionNode(RandomNumberGenerator rng) {
-        List<ExpressionNode> alternatives = new ArrayList<>(List.of(new ExpressionNode[]{new IfExpressionNode(antlrNode, maxDepth), new SimpleExpressionNode(antlrNode, maxDepth)}));
+        List<ExpressionNode> alternatives = new ArrayList<>(List.of(
+                new ExpressionNode[]{new IfExpressionNode(antlrNode, maxDepth),
+                        new TryExpressionNode(antlrNode, maxDepth),
+                        new SimpleExpressionNode(antlrNode, maxDepth)}));
 
-        if (rng.randomBoolean()) {
+        if (rng.fromUniformContinuous(0.0, 1.0) < 0.8) {
             return alternatives.get(alternatives.size() - 1);
         }
 
@@ -174,10 +175,19 @@ public class ExpressionNode extends ASTNode {
         Predicate<KCallable> constructorOrIdOrAnon = kCallable -> kCallable instanceof KConstructor ||
                 kCallable instanceof KIdentifierCallable ||
                 kCallable instanceof KAnonymousCallable;
+        Predicate<KCallable> noFunctionInputs = kCallable -> kCallable.getInputTypes().stream().noneMatch(input -> input instanceof KFuncType);
+        Predicate<KCallable> onlySamplableInputTypes = kCallable -> {
+            return new HashSet<>(ctx.samplableTypes()).containsAll(kCallable.getInputTypes());
+        };
+
+        List<Predicate<KCallable>> predicates = new LinkedList<>();
+        predicates.add(constructorOrIdOrAnon);
+        predicates.add(noFunctionInputs);
+        predicates.add(onlySamplableInputTypes);
 
         KCallable sampledOwner;
         try {
-            sampledOwner = ctx.randomCallableOfType(type, Collections.singletonList(constructorOrIdOrAnon), allowSubtypes);
+            sampledOwner = ctx.randomCallableOfType(type, predicates, allowSubtypes);
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Cannot sample an owner of type: " + type);
         }
