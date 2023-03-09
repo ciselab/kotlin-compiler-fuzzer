@@ -32,7 +32,7 @@ public class StatementNode extends ASTNode {
         boolean returnSimpleStatement = rng.randomBoolean();
 
         // Forcibly simplify the sampling
-        if (returnSimpleStatement) {
+        if (rng.fromUniformContinuous(0.0, 1.0) < 0.8) {
             return alternatives.get(alternatives.size() - 1);
         }
 

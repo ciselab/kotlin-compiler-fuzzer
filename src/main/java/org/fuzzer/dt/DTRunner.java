@@ -149,14 +149,13 @@ public class DTRunner {
             text += "\n}";
 
             String kotlinFile = outputFileName + ".kt";
-            KotlinParseTree parseTree = parseKotlinCode(tokenizeKotlinCode(text));
-
-            stats.record(parseTree);
 
             BufferedWriter writer = new BufferedWriter(new FileWriter(kotlinFile));
             writer.write(text);
-
             writer.close();
+
+            KotlinParseTree parseTree = parseKotlinCode(tokenizeKotlinCode(text));
+            stats.record(parseTree);
 
             int argNum = 0;
             List<Long> compilertimes = new LinkedList<>();
