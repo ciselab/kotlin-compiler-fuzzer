@@ -31,7 +31,6 @@ public class TryExpressionNode extends ExpressionNode {
         int numberOfStatements = rng.fromGeometric();
 
         Context tryContext = ctx.clone();
-        Context catchContext = ctx.clone();
 
         for (int i = 0; i < numberOfStatements; i++) {
             CodeFragment sampleExpr = stmtNode.getSample(rng, tryContext);
@@ -57,6 +56,7 @@ public class TryExpressionNode extends ExpressionNode {
 
         // Sample some catch blocks
         for (int i = 0; i < numberOfCatchBlocks; i ++) {
+            Context catchContext = ctx.clone();
             KType exceptionToCatch  = ctx.randomSubtypeOf(throwableType);
             CodeFragment catchCode = new CodeFragment("catch (" + ctx.getNewIdentifier() + ": " + exceptionToCatch.name() + ") {");
 
