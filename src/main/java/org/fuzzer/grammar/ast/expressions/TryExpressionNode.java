@@ -77,12 +77,13 @@ public class TryExpressionNode extends ExpressionNode {
 
         // Sample a finally block
         if (rng.randomBoolean() || numberOfCatchBlocks == 0) {
+            Context finallyContext = ctx.clone();
             CodeFragment finallyCode = new CodeFragment("finally {");
 
             numberOfStatements = rng.fromGeometric();
 
             for (int j = 0; j < numberOfStatements; j++) {
-                CodeFragment sampleExpr = stmtNode.getSample(rng, catchContext);
+                CodeFragment sampleExpr = stmtNode.getSample(rng, finallyContext);
                 finallyCode.extend(sampleExpr);
             }
 
