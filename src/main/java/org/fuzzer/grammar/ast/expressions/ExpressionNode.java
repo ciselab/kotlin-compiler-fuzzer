@@ -33,6 +33,7 @@ public class ExpressionNode extends ASTNode {
         List<ExpressionNode> alternatives = new ArrayList<>(List.of(
                 new ExpressionNode[]{new IfExpressionNode(antlrNode, maxDepth),
                         new TryExpressionNode(antlrNode, maxDepth),
+                        new ElvisOpExpression(antlrNode, maxDepth),
                         new SimpleExpressionNode(antlrNode, maxDepth)}));
 
         if (rng.fromUniformContinuous(0.0, 1.0) < 0.8) {
