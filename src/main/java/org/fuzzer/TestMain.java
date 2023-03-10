@@ -22,14 +22,18 @@ public class TestMain {
         List<String> fileNames = classes.stream().map(x -> classPath + x).toList();
 
         List<String> compilerArgs = new ArrayList<>();
-        compilerArgs.add("");
-        compilerArgs.add("-Xuse-k2");
+        compilerArgs.add("-Xrender-internal-diagnostic-names");
+        compilerArgs.add("-Xrender-internal-diagnostic-names -Xuse-k2");
 
-        DTRunner runner = new DTRunner(1, 100,
-                fileNames, "output/",
-                compilerPath, compilerArgs,
-                0, 3, ctxFileName,
-                lexerGrammarFile, grammarFile);
-        runner.run();
+        for (int i = 0; i < 20; i++) {
+            System.out.println("Iteration " + i);
+
+            DTRunner runner = new DTRunner(10, i*10,
+                    fileNames, "output/",
+                    compilerPath, compilerArgs,
+                    0, 3, ctxFileName,
+                    lexerGrammarFile, grammarFile);
+            runner.run();
+        }
     }
 }

@@ -162,7 +162,10 @@ public class DTRunner {
 
             // Run each of the compilers in series
             for (String compilerArgs : args) {
+                argNum++;
                 List<String> command = new ArrayList<>();
+                File compilerOutputFile = new File(directoryOutput + "v" +  argNum + "/" + randomFileName + ".log");
+                compilerOutputFile.createNewFile();
 
                 command.add(kotlinCompilerPath);
                 command.add(kotlinFile);
@@ -171,34 +174,36 @@ public class DTRunner {
                 inputArgs.add("-d");
 
                 // Manually define the jar output
-                inputArgs.add(directoryOutput + "v" + ++argNum + "/" + randomFileName + ".jar");
-
+                inputArgs.add(directoryOutput + "v" +  argNum + "/" + randomFileName + ".jar");
                 command.addAll(inputArgs);
+
                 System.out.println(command);
 
                 ProcessBuilder pb = new ProcessBuilder(command);
                 pb.directory(new File(System.getProperty("user.dir")));
+                pb.redirectError(compilerOutputFile);
 
                 compilertimes.add(System.currentTimeMillis());
 
                 Process p = pb.start();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                while (reader.readLine() != null) {
-                }
-                p.waitFor();
+                StringBuilder builder = new StringBuilder();
 
+                String line;
+                while ( (line = reader.readLine()) != null) {
+                    builder.append(line);
+                    builder.append(System.getProperty("line.separator"));
+                }
+
+                p.waitFor();
                 compilertimes.set(compilertimes.size() - 1, System.currentTimeMillis() - compilertimes.get(compilertimes.size() - 1));
             }
 
             stats.record(compilertimes.get(0), compilertimes.get(1));
 
-            System.out.println(stats.toJson());
-
-//            File compiled1 = new File(directoryOutput + "v1/" + randomFileName + ".jar");
-//            File compiled2 = new File(directoryOutput + "v2/" + randomFileName + ".jar");
-//            if (compareByByte(compiled1, compiled2) != -1) {
-//                System.out.println("Discrepancy detected!");
-//            }
+            BufferedWriter statsWriter = new BufferedWriter(new FileWriter(directoryOutput + "/" + randomFileName + ".json"));
+            statsWriter.write(stats.toJson().toString());
+            statsWriter.close();
         }
     }
 }
