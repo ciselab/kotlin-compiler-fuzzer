@@ -9,6 +9,15 @@ import java.util.List;
 public interface IdentifierStore extends Serializable {
 
     boolean isEmpty();
+
+    boolean hasAssignableIdentifiers();
+
+    List<KCallable> allIdentifiers();
+
+    List<KCallable> allAssignableIdentifiers();
+
+    String randomAssignableIdentifier();
+
     List<KCallable> identifiersOfType(KType type);
 
     boolean hasIdentifier(String identifier);

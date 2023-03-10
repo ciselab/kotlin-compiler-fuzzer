@@ -21,4 +21,6 @@ public interface KType extends Serializable {
     boolean canBeDeclared();
 
     String codeRepresentation();
+
+
 }

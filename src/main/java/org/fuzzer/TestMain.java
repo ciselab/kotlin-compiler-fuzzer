@@ -16,20 +16,24 @@ public class TestMain {
         String compilerPath = "src/main/resources/kotlinc/bin/kotlinc";
         String classPath = "src/test/resources/kotlin/";
 
-        List<String> classes = new ArrayList<>(List.of("Any.kt", "Comparable.kt",
-                "Array.kt", "Enum.kt", "Iterator.kt", "Library.kt", "Collections.kt", "Unit.kt",
+        List<String> classes = new ArrayList<>(List.of("Any.kt", "Comparable.kt", "Throwable.kt",
+                "Array.kt", "Enum.kt", "Iterator.kt", "Library.kt", "Collections.kt", "Unit.kt", "ExceptionsH.kt",
                 "Char.kt", "CharSequence.kt", "Number.kt", "Primitives.kt", "Boolean.kt", "String.kt"));
         List<String> fileNames = classes.stream().map(x -> classPath + x).toList();
 
         List<String> compilerArgs = new ArrayList<>();
-        compilerArgs.add("");
-        compilerArgs.add("-Xuse-k2");
+        compilerArgs.add("-Xrender-internal-diagnostic-names");
+        compilerArgs.add("-Xrender-internal-diagnostic-names -Xuse-k2");
 
-        DTRunner runner = new DTRunner(1, 5,
-                fileNames, "output/",
-                compilerPath, compilerArgs,
-                0, 3, ctxFileName,
-                lexerGrammarFile, grammarFile);
-        runner.run();
+        for (int i = 0; i < 20; i++) {
+            System.out.println("Iteration " + i);
+
+            DTRunner runner = new DTRunner(10, i*10,
+                    fileNames, "output/",
+                    compilerPath, compilerArgs,
+                    0, 3, ctxFileName,
+                    lexerGrammarFile, grammarFile);
+            runner.run();
+        }
     }
 }

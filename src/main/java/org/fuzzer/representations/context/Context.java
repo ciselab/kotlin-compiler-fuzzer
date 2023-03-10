@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import static org.jetbrains.kotlin.spec.grammar.tools.KotlinGrammarToolsKt.parseKotlinCode;
 import static org.jetbrains.kotlin.spec.grammar.tools.KotlinGrammarToolsKt.tokenizeKotlinCode;
@@ -24,7 +23,6 @@ public class Context implements Cloneable, Serializable {
 
     private HashMap<KType, Set<KCallable>> callablesByOwner;
 
-    //    private HashMap<KType, Set<KCallable>> callablesByReturnType;
     private DAGTypeEnvironment typeHierarchy;
 
     private RandomNumberGenerator rng;
@@ -60,6 +58,14 @@ public class Context implements Cloneable, Serializable {
         return idStore.randomIdentifier();
     }
 
+    public boolean hasAssignableIdentifiers() {
+        return idStore.hasAssignableIdentifiers();
+    }
+
+    public String randomAssignableIdentifier() {
+        return idStore.randomAssignableIdentifier();
+    }
+
     public KType typeOfIdentifier(String id) {
         return idStore.typeOfIdentifier(id);
     }
@@ -68,38 +74,59 @@ public class Context implements Cloneable, Serializable {
         return typeHierarchy.isSubtypeOf(subtype, supertype);
     }
 
-    public KCallable randomCallableOfType(KType type, Predicate<KCallable> condition) throws CloneNotSupportedException {
-        if (type instanceof KClassifierType) {
-            Set<KType> subtypes = typeHierarchy.subtypesOf(type);
-            // Keep only the callables
-            List<KCallable> alternatives = new ArrayList<>(callablesByOwner
-                    .values().stream()
-                    // Add all the sets together
-                    .reduce(new HashSet<>(), (acc, newSet) -> {
-                        acc.addAll(newSet);
-                        return acc;
-                    }).stream()
-                    // Get callables that match the return type
-                    .filter(entry -> subtypes.contains(entry.getReturnType()))
-                    // Filter on the condition
-                    .filter(condition).toList());
-            // callablesByReturnType.entrySet().stream().filter(entry -> subtypes.contains(entry.getKey())).map(Map.Entry::getValue).reduce(new HashSet<>(), (acc, newSet) -> {acc.addAll(newSet); return acc;}).stream().filter(condition).toList()
+    public List<KCallable> callablesOfType(KType type, boolean allowSubtypes) {
+        Set<KType> subtypes = allowSubtypes ? typeHierarchy.subtypesOf(type) : Collections.singleton(type);
+        // Keep only the callables
+        List<KCallable> alternatives = new ArrayList<>(callablesByOwner
+                .values().stream()
+                // Add all the sets together
+                .reduce(new HashSet<>(), (acc, newSet) -> {
+                    acc.addAll(newSet);
+                    return acc;
+                }).stream()
+                // Get callables that match the return type
+                .filter(entry -> subtypes.contains(entry.getReturnType()))
+                .toList());
 
-            alternatives.addAll(identifiersOfType(type).stream().filter(condition).toList());
+        alternatives.addAll(identifiersOfType(type).stream().toList());
+
+        return alternatives;
+    }
+
+    public KCallable randomCallableOfType(KType type, List<Predicate<KCallable>> conditions, boolean allowSubtypes) throws CloneNotSupportedException {
+        if (type instanceof KClassifierType) {
+            List<KCallable> alternatives = callablesOfType(type, allowSubtypes).stream()
+                    .filter(callable -> conditions.stream().allMatch(condition -> condition.test(callable)))
+                    .toList();
 
             if (alternatives.isEmpty()) {
-                throw new IllegalArgumentException("Cannot sample callable of type " + type + " under condition " + condition);
+                throw new IllegalArgumentException("Cannot sample callable of type " + type + " under conditions " + conditions);
             }
+
             KCallable selected = alternatives.get(rng.fromUniformDiscrete(0, alternatives.size() - 1));
-            KCallable clone = (KCallable) selected.clone();
-            return clone;
+            return (KCallable) selected.clone();
         } else {
             // TODO handle function types
             throw new UnsupportedOperationException("Cannot yet sample function subtypes.");
         }
     }
 
-    public KCallable randomTerminalCallableOfType(KType type) throws CloneNotSupportedException {
+    public KCallable randomContainerCallable() {
+        List<KType> containerTypes = typeHierarchy.samplableTypes().stream()
+                .filter(this::isContainerType)
+                .toList();
+
+        List<KCallable> feasibleCallables = containerTypes.stream()
+                .map(t -> callablesOfType(t, false))
+                .reduce(new LinkedList<>(), (acc, l) -> {
+                    acc.addAll(l);
+                    return l;
+                });
+
+        return feasibleCallables.get(rng.fromUniformDiscrete(0, feasibleCallables.size() - 1));
+    }
+
+    public KCallable randomTerminalCallableOfType(KType type, boolean allowSubtypes) throws CloneNotSupportedException {
         Predicate<KCallable> onlySamplableOwners = kCallable -> {
             List<KType> samplableTypes = typeHierarchy.samplableTypes();
             // If empty, an identifier was sampled
@@ -107,11 +134,17 @@ public class Context implements Cloneable, Serializable {
 
             return owner.isEmpty() || samplableTypes.contains(owner.get(0));
         };
-        KCallable callable = randomCallableOfType(type, kCallable -> kCallable.isTerminal() && onlySamplableOwners.test(kCallable));
+
+        List<Predicate<KCallable>> predicates = new LinkedList<>();
+        predicates.add(KCallable::isTerminal);
+        predicates.add(onlySamplableOwners);
+
+        KCallable callable = randomCallableOfType(type, predicates, allowSubtypes);
+
         return callable;
     }
 
-    public KCallable randomConsumerCallable(KType type) throws CloneNotSupportedException {
+    public KCallable randomConsumerCallable(KType type, boolean allowSubtypes) throws CloneNotSupportedException {
         // TODO handle function inputs
         Predicate<KCallable> noFunctionInputs = kCallable -> kCallable.getInputTypes().stream().noneMatch(input -> input instanceof KFuncType);
         Predicate<KCallable> onlySamplableInputTypes = kCallable -> {
@@ -125,8 +158,14 @@ public class Context implements Cloneable, Serializable {
             return owner.isEmpty() || samplableTypes.contains(owner.get(0));
         };
 
-        return randomCallableOfType(type, kCallable -> !kCallable.getInputTypes().isEmpty()
-                && noFunctionInputs.test(kCallable) && onlySamplableInputTypes.test(kCallable) && onlySamplableOwners.test(kCallable));
+        List<Predicate<KCallable>> predicates = new LinkedList<>();
+        predicates.add(kCallable -> !kCallable.getInputTypes().isEmpty());
+        predicates.add(noFunctionInputs);
+        predicates.add(onlySamplableInputTypes);
+        predicates.add(onlySamplableOwners);
+
+
+        return randomCallableOfType(type, predicates, allowSubtypes);
     }
 
     public boolean containsIdentifier(String identifier) {
@@ -174,8 +213,16 @@ public class Context implements Cloneable, Serializable {
         return randomType.withNewGenericInstances(genericInstances);
     }
 
+    public List<KType> samplableTypes() {
+        return typeHierarchy.samplableTypes();
+    }
+
     public KType getRandomSamplableType() {
         return typeHierarchy.randomSamplableType();
+    }
+
+    public KType getRandomAssignableType() {
+        return typeHierarchy.randomAssignableType();
     }
 
     public String getNewIdentifier() {
@@ -200,7 +247,7 @@ public class Context implements Cloneable, Serializable {
         HashMap<KClassifierType, List<KTypeWrapper>> nestedTypes = new HashMap<>();
 
         for (String fileName : fileNames) {
-            KotlinParseTree parseTree = null;
+            KotlinParseTree parseTree;
             try {
                 String fileContents = FileUtilities.fileContentToString(new File(fileName));
                 KotlinTokensList tokens = tokenizeKotlinCode(fileContents);
@@ -352,6 +399,10 @@ public class Context implements Cloneable, Serializable {
                 }
 
                 KCallable extractedCallable = typeWrapper.toCallable(ownerType);
+
+                if (extractedCallable instanceof KConstructor) {
+                    extractedCallable.updateReturnType(ownerType);
+                }
 
                 // Not visible class attributes
                 if (extractedCallable == null) {
@@ -1266,6 +1317,26 @@ public class Context implements Cloneable, Serializable {
 
     public List<KType> getParameterInstances(KType from, KType to) {
         return typeHierarchy.getParameterInstances(from, to);
+    }
+
+    private boolean isContainerType(KType type) {
+        // A "container" callable implements the iterator() function
+        return callablesByOwner.get(type).stream().anyMatch(kCallable -> {
+            return kCallable.getName().equals("iterator") && kCallable.getInputTypes().isEmpty();
+        });
+    }
+
+    public boolean isBooleanType(KType type) {
+        return isSubtypeOf(type, getTypeByName("Boolean"));
+    }
+
+    private boolean isContainerCallable(KCallable callable) {
+        // A "container" callable implements the iterator() function
+        return isContainerType(callable.getReturnType());
+    }
+
+    private boolean isFunctionType(KType type) {
+        return type instanceof KFuncType;
     }
 
     @Override

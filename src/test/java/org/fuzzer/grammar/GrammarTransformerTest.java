@@ -33,7 +33,6 @@ class GrammarTransformerTest {
     @Test
     void testGrammarTransformer() {
         ASTNode node = transformer.transformGrammar();
-        System.out.println("Done");
     }
 
 }

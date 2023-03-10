@@ -178,12 +178,56 @@ public class DAGTypeEnvironment implements TypeEnvironment, Serializable {
 
     @Override
     public Set<KType> subtypesOf(KType type) {
-        return dag.allDescendants(type);
+        Set<KType> subtypes = dag.allDescendants(type);
+
+        if (((KClassifierType) type).genericInstances.isEmpty()) {
+            return subtypes;
+        }
+
+        Set<KType> res = new HashSet<>();
+        List<KType> instacesInType = ((KClassifierType) type).genericInstances;
+
+        for (KType nextType : subtypes) {
+            if (!(nextType instanceof KClassifierType classifier)) {
+                throw new IllegalArgumentException("Cannot handle supertypes of " + nextType);
+            }
+
+            try {
+                List<KType> params = getParameterInstances(type, classifier);
+                if (params.equals(instacesInType)) {
+                    res.add(classifier.withNewGenericInstances(params));
+                }
+            } catch (IllegalArgumentException ignored) {}
+        }
+
+        return res;
     }
 
     @Override
     public Set<KType> supertypesOf(KType type) {
-        return dag.allAncestors(type);
+        Set<KType> supertypes = dag.allAncestors(type);
+
+        if (((KClassifierType) type).genericInstances.isEmpty()) {
+            return supertypes;
+        }
+
+        Set<KType> res = new HashSet<>();
+        List<KType> instacesInType = ((KClassifierType) type).genericInstances;
+
+        for (KType nextType : supertypes) {
+            if (!(nextType instanceof KClassifierType classifier)) {
+                throw new IllegalArgumentException("Cannot handle supertypes of " + nextType);
+            }
+
+            try {
+                List<KType> params = getParameterInstances(classifier, type);
+                if (params.equals(instacesInType)) {
+                    res.add(classifier.withNewGenericInstances(params));
+                }
+            } catch (IllegalArgumentException ignored) {}
+        }
+
+        return res;
     }
 
     @Override
@@ -245,12 +289,12 @@ public class DAGTypeEnvironment implements TypeEnvironment, Serializable {
 
     @Override
     public KType randomType() {
-        List<KType> typeList = dag.allNodes().stream().toList();
+        List<KType> typeList = dag.allNodes().stream().filter(this::hasNonRecursiveGenerics).toList();
         return typeList.get(rng.fromUniformDiscrete(0, typeList.size() - 1));
     }
 
     public KType randomSubtypeOf(KType type) {
-        List<KType> typeList = dag.allNodes().stream().toList();
+        List<KType> typeList = subtypesOf(type).stream().filter(this::hasNonRecursiveGenerics).toList();
         return typeList.get(rng.fromUniformDiscrete(0, typeList.size() - 1));
     }
 
@@ -263,7 +307,28 @@ public class DAGTypeEnvironment implements TypeEnvironment, Serializable {
 
         Collection<KType> children = type.canBeDeclared() ? dag.childrenOf(type) : dag.labeledChildren(type);
 
-        return children.stream().anyMatch(this::canSample);
+        KClassifierType classType = (KClassifierType) type;
+
+        return hasNonRecursiveGenerics(type) && canSampleGenericInstanceOfType(type, classType.genericInstances) && children.stream().anyMatch(this::canSample);
+    }
+
+    private boolean canSampleGenericInstanceOfType(KType type, List<KType> genericInstances) {
+        Set<KType> subtypes = subtypesOf(type);
+
+        for (KType nextType : subtypes) {
+            if (!(nextType instanceof KClassifierType classifier)) {
+                throw new IllegalArgumentException("Cannot handle subtypes of " + nextType);
+            }
+
+            try {
+                List<KType> params = getParameterInstances(type, classifier);
+                if (params.equals(genericInstances)) {
+                    return true;
+                }
+            } catch (IllegalArgumentException ignored) {}
+        }
+
+        return false;
     }
 
     public List<KType> samplableTypes() {
@@ -275,6 +340,11 @@ public class DAGTypeEnvironment implements TypeEnvironment, Serializable {
     public KType randomSamplableType() {
         List<KType> samplableTypes = samplableTypes();
         return samplableTypes.get(rng.fromUniformDiscrete(0, samplableTypes.size() - 1));
+    }
+
+    public KType randomAssignableType() {
+        List<KType> alternatives = samplableTypes().stream().filter(t -> !(t instanceof KFuncType)).toList();
+        return alternatives.get(rng.fromUniformDiscrete(0, alternatives.size() - 1));
     }
 
     public List<KType> getParameterInstances(KType from, KType to) {
@@ -307,6 +377,17 @@ public class DAGTypeEnvironment implements TypeEnvironment, Serializable {
             }
         }
 
-        throw new IllegalStateException("Path between " + from + " and " + to + " contains no labeled transitions.");
+        throw new IllegalArgumentException("Path between " + from + " and " + to + " contains no labeled transitions.");
+    }
+
+    // If any parameter of a type is the type itself, we cannot represent it.
+    // i.e., Enum<E : Enum<E>>
+    // More complex recursive relations can cause this problem as well
+    // TODO: handle those
+    private boolean hasNonRecursiveGenerics(KType type) {
+        return type.getGenerics().stream().allMatch(g -> {
+            KType genericUpperBound = getTypeFromGeneric(g.upperBound(), (KClassifierType) type, new LinkedList<>());
+            return !type.equals(genericUpperBound);
+        });
     }
 }

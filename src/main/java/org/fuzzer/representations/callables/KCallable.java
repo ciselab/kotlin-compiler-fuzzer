@@ -1,6 +1,7 @@
 package org.fuzzer.representations.callables;
 
 import org.fuzzer.representations.context.Context;
+import org.fuzzer.representations.types.KClassifierType;
 import org.fuzzer.representations.types.KType;
 
 import java.io.Serializable;
@@ -60,8 +61,12 @@ public abstract class KCallable implements Cloneable, Serializable {
         this.lastInput = lastInput;
     }
 
-    protected void updateOwner(KCallable owner) {
+    public void updateOwner(KCallable owner) {
         this.owner = owner;
+    }
+
+    public void updateReturnType(KClassifierType returnType) {
+        this.returnType = returnType;
     }
     public void verifyInput(Context ctx, List<KCallable> input) {
         if (!inputMatchesTypes(ctx, input))

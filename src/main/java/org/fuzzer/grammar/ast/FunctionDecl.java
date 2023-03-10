@@ -4,6 +4,9 @@ import org.antlr.v4.tool.ast.GrammarAST;
 import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.RuleName;
 import org.fuzzer.grammar.SampleStructure;
+import org.fuzzer.grammar.ast.expressions.ExpressionNode;
+import org.fuzzer.grammar.ast.expressions.SimpleExpressionNode;
+import org.fuzzer.grammar.ast.statements.StatementNode;
 import org.fuzzer.representations.callables.KFunction;
 import org.fuzzer.representations.callables.KIdentifierCallable;
 import org.fuzzer.representations.context.Context;
@@ -34,6 +37,10 @@ public class FunctionDecl extends ASTNode {
                 // Sample a return type
                 KClassifierType returnType = (KClassifierType) ctx.getRandomSamplableType();
 
+                // Sample a consistently-types return statement
+                var returnStatementAndInstances = new ExpressionNode(antlrNode, 3).getRandomExpressionNode(rng).getSampleOfType(rng, ctx, returnType, true);
+                returnType = returnType.withNewGenericInstances(returnStatementAndInstances.second().second());
+
                 // Sample some parameters
                 int numberOfParams = rng.fromGeometric();
                 ParameterNode parameterNode = new ParameterNode(this.antlrNode);
@@ -51,7 +58,7 @@ public class FunctionDecl extends ASTNode {
                     sampledTypes.add(parameterNode.getSampledType());
                     sampledIds.add(parameterNode.getSampledId());
 
-                    clone.addIdentifier(parameterNode.getSampledId(), new KIdentifierCallable(parameterNode.getSampledId(), parameterNode.getSampledType()));
+                    clone.addIdentifier(parameterNode.getSampledId(), new KIdentifierCallable(parameterNode.getSampledId(), parameterNode.getSampledType(), false));
 
                     code.appendToText(sampledParam);
                 }
@@ -59,19 +66,18 @@ public class FunctionDecl extends ASTNode {
                 // Change the scope to a function
                 clone.updateScope(KScope.FUNCTION_SCOPE);
 
-                ExpressionNode expr = new ExpressionNode(antlrNode, 3);
-                expr.recordStatistics(this.stats);
+                StatementNode stmtNode = new StatementNode(antlrNode, 3);
+                stmtNode.recordStatistics(this.stats);
 
-                // Sample a consistently-types return statement
-                Tuple<CodeFragment, List<KType>> returnStatementAndInstances = expr.getSampleOfType(rng, ctx, returnType);
-
-                code.appendToText(") : " + returnType.codeRepresentation(returnStatementAndInstances.second()) + " {" + System.lineSeparator());
+                // TODO: adapt this
+                boolean allowSubtypes = true;
+                code.appendToText(") : " + returnType.codeRepresentation(returnStatementAndInstances.second().second()) + " {" + System.lineSeparator());
 
                 // Sample some expressions in the function body
                 int numberOfStatements = rng.fromGeometric();
 
                 for (int i = 0; i < numberOfStatements; i++) {
-                    CodeFragment sampleExpr = expr.getSample(rng, ctx);
+                    CodeFragment sampleExpr = stmtNode.getSample(rng, clone);
                     code.extend(sampleExpr);
                 }
 

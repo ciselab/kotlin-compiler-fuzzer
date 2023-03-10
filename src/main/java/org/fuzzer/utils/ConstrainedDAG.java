@@ -180,7 +180,8 @@ public class ConstrainedDAG<T> implements Graph<T> {
         }
 
         if (childrenOf(start).isEmpty()) {
-            return new ArrayList<>();
+            path.remove(start);
+            return new LinkedList<>();
         }
 
         for (T child : childrenOf(start)) {
