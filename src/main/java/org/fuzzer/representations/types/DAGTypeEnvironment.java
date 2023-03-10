@@ -307,7 +307,28 @@ public class DAGTypeEnvironment implements TypeEnvironment, Serializable {
 
         Collection<KType> children = type.canBeDeclared() ? dag.childrenOf(type) : dag.labeledChildren(type);
 
-        return hasNonRecursiveGenerics(type) && children.stream().anyMatch(this::canSample);
+        KClassifierType classType = (KClassifierType) type;
+
+        return hasNonRecursiveGenerics(type) && canSampleGenericInstanceOfType(type, classType.genericInstances) && children.stream().anyMatch(this::canSample);
+    }
+
+    private boolean canSampleGenericInstanceOfType(KType type, List<KType> genericInstances) {
+        Set<KType> subtypes = subtypesOf(type);
+
+        for (KType nextType : subtypes) {
+            if (!(nextType instanceof KClassifierType classifier)) {
+                throw new IllegalArgumentException("Cannot handle subtypes of " + nextType);
+            }
+
+            try {
+                List<KType> params = getParameterInstances(type, classifier);
+                if (params.equals(genericInstances)) {
+                    return true;
+                }
+            } catch (IllegalArgumentException ignored) {}
+        }
+
+        return false;
     }
 
     public List<KType> samplableTypes() {

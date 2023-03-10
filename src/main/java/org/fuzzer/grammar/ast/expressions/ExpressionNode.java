@@ -52,10 +52,6 @@ public class ExpressionNode extends ASTNode {
 
             KType returnType = baseCallable.getReturnType();
 
-            if (returnType.name().contains("Comparable")) {
-                System.out.println("break");
-            }
-
             List<KType> typeParameterInstances = ctx.getParameterInstances(type, returnType);
 
             if (typeParameterInstances.size() != type.getGenerics().size()) {
