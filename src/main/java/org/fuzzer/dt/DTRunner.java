@@ -7,22 +7,14 @@ import org.antlr.v4.tool.LexerGrammar;
 import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.GrammarTransformer;
 import org.fuzzer.grammar.RuleHandler;
+import org.fuzzer.grammar.SampleStructure;
 import org.fuzzer.grammar.ast.ASTNode;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.utils.FileUtilities;
 import org.fuzzer.utils.RandomNumberGenerator;
-import org.jetbrains.kotlin.spec.grammar.tools.KotlinGrammarToolsKt;
-import org.jetbrains.kotlin.spec.grammar.tools.KotlinParseTree;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.UUID;
-
-import static org.fuzzer.utils.FileUtilities.compareByByte;
-import static org.jetbrains.kotlin.spec.grammar.tools.KotlinGrammarToolsKt.parseKotlinCode;
-import static org.jetbrains.kotlin.spec.grammar.tools.KotlinGrammarToolsKt.tokenizeKotlinCode;
+import java.util.*;
 
 public class DTRunner {
 
@@ -44,19 +36,26 @@ public class DTRunner {
 
     private final int maxDepth;
 
+    private String compilerScriptPath;
+
     private final String kotlinCompilerPath;
 
     private final List<String> args;
 
+    private final File statsFile;
+
     public DTRunner(int numberOfFiles, int numberOfStatements,
                     List<String> inputFileNames, String directoryOutput,
                     String kotlinCompilerPath, List<String> commandLineArgs,
+                    String compilerScriptPath,
                     int seed, int maxDepth, String contextFileName,
-                    String lexerFileName, String grammarFileName) throws IOException, RecognitionException, ClassNotFoundException {
+                    String lexerFileName, String grammarFileName,
+                    boolean serializeContext) throws IOException, RecognitionException, ClassNotFoundException {
         this.numberOfFiles = numberOfFiles;
         this.numberOfStatements = numberOfStatements;
         this.directoryOutput = directoryOutput;
         this.kotlinCompilerPath = kotlinCompilerPath;
+        this.compilerScriptPath = compilerScriptPath;
         this.args = commandLineArgs;
         this.maxDepth = maxDepth;
 
@@ -92,12 +91,13 @@ public class DTRunner {
             FileOutputStream f = new FileOutputStream(contextFileName);
             ObjectOutputStream o = new ObjectOutputStream(f);
 
-            // Serialize file
-            o.writeObject(rootContext);
+            if (serializeContext) {
+                // Serialize file
+                o.writeObject(rootContext);
 
-            o.close();
-            f.close();
-
+                o.close();
+                f.close();
+            }
         } else {
 
             // Deserialize
@@ -111,6 +111,16 @@ public class DTRunner {
             fi.close();
         }
 
+        this.statsFile = new File(directoryOutput + "/stats.csv");
+
+        if (!statsFile.exists()) {
+            statsFile.createNewFile();
+
+            BufferedWriter statsWriter = new BufferedWriter(new FileWriter(statsFile.getAbsolutePath()));
+            statsWriter.write("file,time,func,stmt,exp,k1_exit,k1_time,k1_mem,k1_sz,k2_exit,k2_time,k2_mem,k2_sz,loc,sloc,lloc,cloc,mcc,cog,smells,cmm_ratio,mcckloc,smellskloc");
+            statsWriter.flush();
+            statsWriter.close();
+        }
     }
 
     private List<Context> createContexts() {
@@ -123,24 +133,35 @@ public class DTRunner {
         return ctxs;
     }
 
-    public void run() throws IOException, InterruptedException {
-        List<Context> contexts = createContexts();
+    public void run(Long seed, Long timeLimitMs) throws IOException {
+        Long startTime = System.currentTimeMillis();
+
+        BufferedWriter statsWriter = new BufferedWriter(new FileWriter(statsFile.getAbsolutePath(), true));
 
         ASTNode grammarRoot = new GrammarTransformer(lexerGrammar, parserGrammar).transformGrammar();
-        FuzzerStatistics stats = new FuzzerStatistics();
 
-        grammarRoot.recordStatistics(stats);
+        int i = 0;
 
-        for (int i = 0; i < numberOfFiles; i++) {
+        while (System.currentTimeMillis() - startTime < timeLimitMs) {
             CodeFragment code = new CodeFragment();
 
+            FuzzerStatistics stats = new FuzzerStatistics();
+            grammarRoot.recordStatistics(stats);
+
             for (int j = 0; j < numberOfStatements; j++) {
+//                System.out.println("Function #" + j);
                 // Function declarations.
                 ASTNode nodeToSample = grammarRoot.getChildren().get(0).getChildren().get(5).getChildren().get(0).getChildren().get(0).getChildren().get(2);
 
-                CodeFragment newCode = nodeToSample.getSample(rng, contexts.get(i));
+                Context ctx = rootContext.clone();
+                ctx.updateRNGSeed(rootContext.getNewSeed());
+
+                CodeFragment newCode = nodeToSample.getSample(rng, ctx);
                 code.extend(newCode);
             }
+
+            Long timeTaken = System.currentTimeMillis() - startTime;
+
             String randomFileName = UUID.randomUUID().toString();
             String outputFileName = directoryOutput + randomFileName;
 
@@ -151,59 +172,23 @@ public class DTRunner {
             String kotlinFile = outputFileName + ".kt";
 
             BufferedWriter writer = new BufferedWriter(new FileWriter(kotlinFile));
+//            System.out.println("Writing to " + kotlinFile);
             writer.write(text);
             writer.close();
 
-            KotlinParseTree parseTree = parseKotlinCode(tokenizeKotlinCode(text));
-            stats.record(parseTree);
+            Map<SampleStructure, Long> sampleStatistics = stats.getExtendedGrammarVisitations();
+            String dataToWrite = randomFileName + ","
+                    + timeTaken + ","
+                    + sampleStatistics.getOrDefault(SampleStructure.FUNCTION, 0L) + ","
+                    + sampleStatistics.getOrDefault(SampleStructure.STATEMENT, 0L) + ","
+                    + sampleStatistics.getOrDefault(SampleStructure.EXPR, 0L) + ",";
 
-            int argNum = 0;
-            List<Long> compilertimes = new LinkedList<>();
-
-            // Run each of the compilers in series
-            for (String compilerArgs : args) {
-                argNum++;
-                List<String> command = new ArrayList<>();
-                File compilerOutputFile = new File(directoryOutput + "v" +  argNum + "/" + randomFileName + ".log");
-                compilerOutputFile.createNewFile();
-
-                command.add(kotlinCompilerPath);
-                command.add(kotlinFile);
-
-                List<String> inputArgs = compilerArgs.isEmpty() ? new ArrayList<>() : new ArrayList<>(List.of(compilerArgs.split(" ")));
-                inputArgs.add("-d");
-
-                // Manually define the jar output
-                inputArgs.add(directoryOutput + "v" +  argNum + "/" + randomFileName + ".jar");
-                command.addAll(inputArgs);
-
-                System.out.println(command);
-
-                ProcessBuilder pb = new ProcessBuilder(command);
-                pb.directory(new File(System.getProperty("user.dir")));
-                pb.redirectError(compilerOutputFile);
-
-                compilertimes.add(System.currentTimeMillis());
-
-                Process p = pb.start();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                StringBuilder builder = new StringBuilder();
-
-                String line;
-                while ( (line = reader.readLine()) != null) {
-                    builder.append(line);
-                    builder.append(System.getProperty("line.separator"));
-                }
-
-                p.waitFor();
-                compilertimes.set(compilertimes.size() - 1, System.currentTimeMillis() - compilertimes.get(compilertimes.size() - 1));
-            }
-
-            stats.record(compilertimes.get(0), compilertimes.get(1));
-
-            BufferedWriter statsWriter = new BufferedWriter(new FileWriter(directoryOutput + "/" + randomFileName + ".json"));
-            statsWriter.write(stats.toJson().toString());
-            statsWriter.close();
+            statsWriter.newLine();
+            statsWriter.write(dataToWrite);
         }
+
+        statsWriter.newLine();
+        statsWriter.flush();
+        statsWriter.close();
     }
 }

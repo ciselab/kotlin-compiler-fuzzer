@@ -29,6 +29,12 @@ public class Context implements Cloneable, Serializable {
 
     private KScope scope;
 
+    private HashSet<String> forbiddenIdentifiers =
+            new HashSet<>(Arrays.asList("as", "break", "class", "continue", "do",
+                    "else", "false", "for", "fun", "if", "in", "interface", "is",
+                    "null", "object", "package", "return", "super", "this", "throw",
+                    "true", "try", "typealias", "typeof", "val", "var", "when", "while"));
+
     public Context(RandomNumberGenerator rng) {
         this.callablesByOwner = new HashMap<>();
 
@@ -36,6 +42,19 @@ public class Context implements Cloneable, Serializable {
         this.idStore = new MapIdentifierStore(typeHierarchy, rng);
         this.rng = rng;
         this.scope = KScope.GLOBAL_SCOPE;
+    }
+
+    public void updateRNG(RandomNumberGenerator rng) {
+        this.rng = rng;
+        idStore.updateRNG(rng);
+    }
+
+    public void updateRNGSeed(Long seed) {
+        updateRNG(new RandomNumberGenerator(seed));
+    }
+
+    public Long getNewSeed() {
+        return rng.getNewSeed();
     }
 
     public KScope getScope() {
@@ -230,7 +249,7 @@ public class Context implements Cloneable, Serializable {
 
         do {
             newId = StringUtilities.randomIdentifier();
-        } while (containsIdentifier(newId));
+        } while (containsIdentifier(newId) || forbiddenIdentifiers.contains(newId));
 
         return newId;
     }

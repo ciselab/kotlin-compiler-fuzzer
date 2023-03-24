@@ -19,6 +19,10 @@ public class RandomNumberGenerator implements Serializable {
         return lowerBound + random.nextInt(1 + upperBound - lowerBound);
     }
 
+    public Long getNewSeed() {
+        return random.nextLong();
+    }
+
     public boolean randomBoolean() {
         return fromUniformDiscrete(0, 1) == 1;
     }

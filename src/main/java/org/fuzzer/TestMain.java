@@ -10,6 +10,7 @@ import java.util.List;
 public class TestMain {
     public static void main(String[] args) throws IOException, RecognitionException, InterruptedException, ClassNotFoundException {
         String ctxFileName = "context.ser";
+        String compilerScriptPath = "src/scripts/compile_file.sh";
 
         String lexerGrammarFile = "./src/main/resources/KotlinLexer.g4";
         String grammarFile = "./src/main/resources/KotlinParser.g4";
@@ -22,18 +23,18 @@ public class TestMain {
         List<String> fileNames = classes.stream().map(x -> classPath + x).toList();
 
         List<String> compilerArgs = new ArrayList<>();
-        compilerArgs.add("-Xrender-internal-diagnostic-names");
-        compilerArgs.add("-Xrender-internal-diagnostic-names -Xuse-k2");
+        compilerArgs.add("false");
+        compilerArgs.add("true");
 
-        for (int i = 0; i < 20; i++) {
-            System.out.println("Iteration " + i);
+        DTRunner runner = new DTRunner(1000, 5,
+                fileNames, "output/",
+                compilerPath, compilerArgs,
+                compilerScriptPath,
+                0, 3, ctxFileName,
+                lexerGrammarFile, grammarFile,
+                false);
 
-            DTRunner runner = new DTRunner(10, i*10,
-                    fileNames, "output/",
-                    compilerPath, compilerArgs,
-                    0, 3, ctxFileName,
-                    lexerGrammarFile, grammarFile);
-            runner.run();
-        }
+        // 5 minutes
+//        runner.run(300000L);
     }
 }

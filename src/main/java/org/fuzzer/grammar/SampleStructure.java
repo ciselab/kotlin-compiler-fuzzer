@@ -7,5 +7,5 @@ public enum SampleStructure {
     METHOD,
     CONSTRUCTOR,
     STATEMENT,
-    CTRL_FLOW
+    EXPR
 }

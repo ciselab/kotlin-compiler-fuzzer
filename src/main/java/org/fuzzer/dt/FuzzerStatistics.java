@@ -39,6 +39,10 @@ public class FuzzerStatistics {
                 .collect(Collectors.toSet());
     }
 
+    public Map<SampleStructure, Long> getExtendedGrammarVisitations() {
+        return extendedGrammarVisitations;
+    }
+
     public void stop() {
         this.finishTime = System.currentTimeMillis();
     }
