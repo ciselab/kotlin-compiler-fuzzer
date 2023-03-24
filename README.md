@@ -7,7 +7,7 @@ Differential fuzzer for testing different versions of the Kotlin compiler
 2. Run the resulting `jar` file providing the required paths. For the current version, the command is:
 
 ```bash
-java -DlexerFile="./src/main/resources/KotlinLexer.g4" -DgrammarFile="./src/main/resources/KotlinParser.g4" -Dkotlinc="src/main/resources/kotlinc/bin/kotlinc" -DclassPath="src/test/resources/kotlin/" -jar ./build/libs/kotlin-compiler-fuzzer-0.1.0-uber.jar 
+java -DlexerFile="./src/main/resources/KotlinLexer.g4" -DgrammarFile="./src/main/resources/KotlinParser.g4" -Dkotlinc="src/main/resources/kotlinc/bin/kotlinc" -DclassPath="src/test/resources/kotlin/" -Dtime="300000" -jar ./build/libs/kotlin-compiler-fuzzer-0.1.0-uber.jar
 ```
 
 3. Inspect the `output` directory for the generated files, compiled `jar`s, and compiler statistics.
