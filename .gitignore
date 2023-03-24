@@ -40,5 +40,8 @@ kotlin-ide/
 # Output of experiments
 src/main/java/output
 src/main/resources/kotlinc/
-output/*
+output*
+*.ipynb
+META-INF/
+detekt/
 context.ser

@@ -45,3 +45,6 @@ output/*
 context.ser
 Dockerfile
 .dockerignore
+output*
+*.ipynb
+META-INF/
