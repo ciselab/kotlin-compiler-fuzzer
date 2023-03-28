@@ -26,7 +26,7 @@ public class TestMain {
         compilerArgs.add("false");
         compilerArgs.add("true");
 
-        DTRunner runner = new DTRunner(1000, 5,
+        DTRunner runner = new DTRunner(10000, 5,
                 fileNames, "output/",
                 compilerPath, compilerArgs,
                 compilerScriptPath,
@@ -35,6 +35,6 @@ public class TestMain {
                 false);
 
         // 5 minutes
-//        runner.run(300000L);
+        runner.run(0L, 30000L);
     }
 }

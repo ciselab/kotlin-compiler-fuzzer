@@ -38,7 +38,10 @@ public class FunctionDecl extends ASTNode {
                 KClassifierType returnType = (KClassifierType) ctx.getRandomSamplableType();
 
                 // Sample a consistently-types return statement
-                var returnStatementAndInstances = new ExpressionNode(antlrNode, 3).getRandomExpressionNode(rng).getSampleOfType(rng, ctx, returnType, true);
+                ExpressionNode returnNode = new ExpressionNode(antlrNode, 3);
+                returnNode.recordStatistics(stats);
+
+                var returnStatementAndInstances = returnNode.getRandomExpressionNode(rng).getSampleOfType(rng, ctx, returnType, true);
                 returnType = returnType.withNewGenericInstances(returnStatementAndInstances.second().second());
 
                 // Sample some parameters

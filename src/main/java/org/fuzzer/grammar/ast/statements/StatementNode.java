@@ -29,14 +29,16 @@ public class StatementNode extends ASTNode {
         alternatives.add(new DoWhileNode(antlrNode, maxDepth));
         alternatives.add(new SimpleStatementNode(antlrNode, maxDepth));
 
-        boolean returnSimpleStatement = rng.randomBoolean();
-
+        StatementNode selectedNode;
         // Forcibly simplify the sampling
         if (rng.fromUniformContinuous(0.0, 1.0) < 0.8) {
-            return alternatives.get(alternatives.size() - 1);
+            selectedNode = alternatives.get(alternatives.size() - 1);
+        } else {
+            selectedNode = alternatives.get(rng.fromUniformDiscrete(0, alternatives.size() - 1));
         }
+        selectedNode.recordStatistics(stats);
 
-        return alternatives.get(rng.fromUniformDiscrete(0, alternatives.size() - 1));
+        return selectedNode;
     }
 
     @Override

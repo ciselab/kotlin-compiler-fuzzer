@@ -2,6 +2,7 @@ package org.fuzzer.grammar.ast.expressions;
 
 import org.antlr.v4.tool.ast.GrammarAST;
 import org.fuzzer.generator.CodeFragment;
+import org.fuzzer.grammar.SampleStructure;
 import org.fuzzer.grammar.ast.statements.StatementNode;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.representations.types.KType;
@@ -17,6 +18,11 @@ public class ElvisOpExpression extends ExpressionNode {
 
     public CodeFragment getSample(RandomNumberGenerator rng, Context ctx) {
         KType sampledType = ctx.getRandomSamplableType();
+
+        if (this.stats != null) {
+            stats.increment(SampleStructure.ELVIS_OP);
+        }
+
         return getSampleOfType(rng, ctx, sampledType, true).first();
     }
 
@@ -36,6 +42,10 @@ public class ElvisOpExpression extends ExpressionNode {
         code.appendToText(lhsCodeAndParams.first());
         code.appendToText(" ?: ");
         code.appendToText(rhsCodeAndParams.first());
+
+        if (stats != null) {
+            stats.increment(SampleStructure.ELVIS_OP);
+        }
 
         return new Tuple<>(code, new Tuple<>(returnType, parameterList));
     }

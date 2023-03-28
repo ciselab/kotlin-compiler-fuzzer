@@ -117,7 +117,7 @@ public class DTRunner {
             statsFile.createNewFile();
 
             BufferedWriter statsWriter = new BufferedWriter(new FileWriter(statsFile.getAbsolutePath()));
-            statsWriter.write("file,time,func,stmt,exp,k1_exit,k1_time,k1_mem,k1_sz,k2_exit,k2_time,k2_mem,k2_sz,loc,sloc,lloc,cloc,mcc,cog,smells,cmm_ratio,mcckloc,smellskloc");
+            statsWriter.write("file,time,cls,attr,func,method,constr,simple_expr,do_while,assignment,try_catch,if_expr,elvis_op,simple_stmt,k1_exit,k1_time,k1_mem,k1_sz,k2_exit,k2_time,k2_mem,k2_sz,loc,sloc,lloc,cloc,mcc,cog,smells,cmm_ratio,mcckloc,smellskloc");
             statsWriter.flush();
             statsWriter.close();
         }
@@ -177,14 +177,15 @@ public class DTRunner {
             writer.close();
 
             Map<SampleStructure, Long> sampleStatistics = stats.getExtendedGrammarVisitations();
-            String dataToWrite = randomFileName + ","
-                    + timeTaken + ","
-                    + sampleStatistics.getOrDefault(SampleStructure.FUNCTION, 0L) + ","
-                    + sampleStatistics.getOrDefault(SampleStructure.STATEMENT, 0L) + ","
-                    + sampleStatistics.getOrDefault(SampleStructure.EXPR, 0L) + ",";
+            StringBuilder dataToWrite = new StringBuilder(randomFileName + ","
+                    + timeTaken + ",");
+
+            for (SampleStructure s : SampleStructure.values()) {
+                dataToWrite.append(sampleStatistics.getOrDefault(s, 0L)).append(",");
+            }
 
             statsWriter.newLine();
-            statsWriter.write(dataToWrite);
+            statsWriter.write(dataToWrite.toString());
         }
 
         statsWriter.newLine();

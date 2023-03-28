@@ -2,6 +2,7 @@ package org.fuzzer.grammar.ast.expressions;
 
 import org.antlr.v4.tool.ast.GrammarAST;
 import org.fuzzer.generator.CodeFragment;
+import org.fuzzer.grammar.SampleStructure;
 import org.fuzzer.grammar.ast.statements.StatementNode;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.representations.types.KType;
@@ -29,6 +30,7 @@ public class IfExpressionNode extends ExpressionNode {
         CodeFragment falseBranchCode = new CodeFragment();
 
         StatementNode stmtNode = new StatementNode(antlrNode, maxDepth);
+        stmtNode.recordStatistics(stats);
 
         // Sample some statements in the true branch
         int numberOfStatements = rng.fromGeometric();
@@ -40,6 +42,7 @@ public class IfExpressionNode extends ExpressionNode {
             CodeFragment sampleExpr = stmtNode.getSample(rng, trueBranchContext);
             trueBranchCode.extend(sampleExpr);
         }
+
         // Get a sound return type
         var trueCodeAndTypeParams = super.getSampleOfType(rng, trueBranchContext, type, true);
         trueBranchCode.extend(trueCodeAndTypeParams.first());
@@ -70,6 +73,10 @@ public class IfExpressionNode extends ExpressionNode {
         code.extend("} else {");
         code.extend(falseBranchCode);
         code.extend("}");
+
+        if (this.stats != null) {
+            stats.increment(SampleStructure.IF_EXPR);
+        }
 
         return new Tuple<>(code, new Tuple<>(returnType, parameterList));
     }

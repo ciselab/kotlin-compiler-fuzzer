@@ -2,6 +2,7 @@ package org.fuzzer.grammar.ast.expressions;
 
 import org.antlr.v4.tool.ast.GrammarAST;
 import org.fuzzer.generator.CodeFragment;
+import org.fuzzer.grammar.SampleStructure;
 import org.fuzzer.grammar.ast.statements.StatementNode;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.representations.types.KType;
@@ -89,6 +90,10 @@ public class TryExpressionNode extends ExpressionNode {
 
             finallyCode.extend("}");
             code.extend(finallyCode);
+        }
+
+        if (this.stats != null) {
+            stats.increment(SampleStructure.TRY_CATCH);
         }
 
         return new Tuple<>(code, new Tuple<>(returnType, parameterList));

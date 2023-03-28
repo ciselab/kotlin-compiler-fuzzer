@@ -36,11 +36,17 @@ public class ExpressionNode extends ASTNode {
                         new ElvisOpExpression(antlrNode, maxDepth),
                         new SimpleExpressionNode(antlrNode, maxDepth)}));
 
+        ExpressionNode selectedNode;
+
         if (rng.fromUniformContinuous(0.0, 1.0) < 0.8) {
-            return alternatives.get(alternatives.size() - 1);
+            selectedNode = alternatives.get(alternatives.size() - 1);
+        } else {
+             selectedNode = alternatives.get(rng.fromUniformDiscrete(0, alternatives.size() - 1));
         }
 
-        return alternatives.get(rng.fromUniformDiscrete(0, alternatives.size() - 1));
+        selectedNode.recordStatistics(stats);
+
+        return selectedNode;
     }
 
     public Tuple<CodeFragment, Tuple<KType, List<KType>>> getSampleOfType(RandomNumberGenerator rng, Context ctx, KType type, boolean allowSubtypes) {
@@ -62,11 +68,11 @@ public class ExpressionNode extends ASTNode {
             verifyCallableCompatibility(rootNode, ctx, allowSubtypes);
             String expression = rootNode.getValue().call(ctx);
 
-            if (this.stats != null) {
-                stats.increment(SampleStructure.STATEMENT);
-            }
-
             CodeFragment code = new CodeFragment(expression);
+
+            if (stats != null) {
+                stats.increment(SampleStructure.SIMPLE_EXPR);
+            }
 
             return new Tuple<>(code,
                     new Tuple<>(returnType, typeParameterInstances.stream()

@@ -2,6 +2,7 @@ package org.fuzzer.grammar.ast.statements;
 
 import org.antlr.v4.tool.ast.GrammarAST;
 import org.fuzzer.generator.CodeFragment;
+import org.fuzzer.grammar.SampleStructure;
 import org.fuzzer.grammar.ast.expressions.SimpleExpressionNode;
 import org.fuzzer.representations.callables.*;
 import org.fuzzer.representations.context.Context;
@@ -32,6 +33,8 @@ public class AssignmentNode extends StatementNode {
         }
 
         SimpleExpressionNode expr = new SimpleExpressionNode(this.antlrNode, this.maxDepth);
+        expr.recordStatistics(stats);
+
         var codeAndInstances = expr.getRandomExpressionNode(rng).getSampleOfType(rng, ctx, type, true);
 
         String rhs = codeAndInstances.first().getText();
@@ -40,6 +43,10 @@ public class AssignmentNode extends StatementNode {
         if (!sampleExisting) {
             KType parameterizedTypeOfIdentifier = ((KClassifierType) type).withNewGenericInstances(codeAndInstances.second().second());
             ctx.addIdentifier(id, new KIdentifierCallable(id, parameterizedTypeOfIdentifier));
+        }
+
+        if (this.stats != null) {
+            stats.increment(SampleStructure.ASSIGNMENT);
         }
 
         return new CodeFragment(lhs + " = " + rhs);

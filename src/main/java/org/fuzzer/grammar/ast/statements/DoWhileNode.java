@@ -2,6 +2,7 @@ package org.fuzzer.grammar.ast.statements;
 
 import org.antlr.v4.tool.ast.GrammarAST;
 import org.fuzzer.generator.CodeFragment;
+import org.fuzzer.grammar.SampleStructure;
 import org.fuzzer.grammar.ast.ASTNode;
 import org.fuzzer.grammar.ast.expressions.ExpressionNode;
 import org.fuzzer.grammar.ast.expressions.SimpleExpressionNode;
@@ -23,10 +24,14 @@ public class DoWhileNode extends StatementNode {
         CodeFragment code = new CodeFragment();
         code.appendToText("do {");
 
-        CodeFragment conditionCode = new ExpressionNode(antlrNode, maxDepth).getRandomExpressionNode(rng).getSampleOfType(rng, ctx, boolType, true).first();
+        ExpressionNode conditionNode = new ExpressionNode(antlrNode, maxDepth);
+        conditionNode.recordStatistics(stats);
+
+        CodeFragment conditionCode = conditionNode.getRandomExpressionNode(rng).getSampleOfType(rng, ctx, boolType, true).first();
 
         int numberOfStatements = rng.fromGeometric();
         StatementNode stmtNode = new StatementNode(antlrNode, maxDepth).getRandomStatementNode(rng);
+        stmtNode.recordStatistics(stats);
 
         Context innerContext = ctx.clone();
 
@@ -38,6 +43,12 @@ public class DoWhileNode extends StatementNode {
         code.extend("} while(");
         code.extend(conditionCode);
         code.extend(")");
+
+        // Record this sample
+        if (this.stats != null) {
+            stats.increment(SampleStructure.DO_WHILE);
+        }
+
 
         return code;
     }

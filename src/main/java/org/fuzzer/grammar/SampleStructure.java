@@ -6,6 +6,11 @@ public enum SampleStructure {
     FUNCTION,
     METHOD,
     CONSTRUCTOR,
-    STATEMENT,
-    EXPR
+    SIMPLE_EXPR,
+    DO_WHILE,
+    ASSIGNMENT,
+    TRY_CATCH,
+    IF_EXPR,
+    ELVIS_OP,
+    SIMPLE_STMT
 }
