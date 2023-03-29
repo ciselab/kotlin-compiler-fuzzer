@@ -18,6 +18,10 @@ public class StarNode extends ASTNode {
         super(antlrNode, children);
     }
 
+    public StarNode(List<ASTNode> children) {
+        super(null, children);
+    }
+
     @Override
     public CodeFragment getSample(RandomNumberGenerator rng, Context ctx, Set<String> generatedCallableDependencies) {
         invariant();

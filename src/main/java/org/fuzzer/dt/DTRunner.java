@@ -9,9 +9,12 @@ import org.fuzzer.grammar.GrammarTransformer;
 import org.fuzzer.grammar.RuleHandler;
 import org.fuzzer.grammar.SampleStructure;
 import org.fuzzer.grammar.ast.ASTNode;
+import org.fuzzer.grammar.ast.StarNode;
 import org.fuzzer.representations.context.Context;
+import org.fuzzer.search.RandomSearch;
 import org.fuzzer.utils.FileUtilities;
 import org.fuzzer.utils.RandomNumberGenerator;
+import org.fuzzer.utils.Tuple;
 
 import java.io.*;
 import java.util.*;
@@ -139,55 +142,31 @@ public class DTRunner {
         BufferedWriter statsWriter = new BufferedWriter(new FileWriter(statsFile.getAbsolutePath(), true));
 
         ASTNode grammarRoot = new GrammarTransformer(lexerGrammar, parserGrammar).transformGrammar();
+        // Function declarations node
+        ASTNode functionNode = grammarRoot.getChildren().get(0).getChildren().get(5).getChildren().get(0).getChildren().get(0).getChildren().get(2);
+        ASTNode nodeToSample = new StarNode(List.of(functionNode));
 
-        int i = 0;
+        RandomSearch rs = new RandomSearch(nodeToSample, timeLimitMs, rootContext, seed);
 
         while (System.currentTimeMillis() - startTime < timeLimitMs) {
-            CodeFragment code = new CodeFragment();
 
-            FuzzerStatistics stats = new FuzzerStatistics();
-            grammarRoot.recordStatistics(stats);
+            List<Tuple<CodeFragment, FuzzerStatistics>> output = rs.search();
 
-            for (int j = 0; j < numberOfStatements; j++) {
-//                System.out.println("Function #" + j);
-                // Function declarations.
-                ASTNode nodeToSample = grammarRoot.getChildren().get(0).getChildren().get(5).getChildren().get(0).getChildren().get(0).getChildren().get(2);
+            for (Tuple<CodeFragment, FuzzerStatistics> tup : output) {
+                String randomFileName = UUID.randomUUID().toString();
+                String outputFileName = directoryOutput + randomFileName + ".kt";
 
-                Context ctx = rootContext.clone();
-                ctx.updateRNGSeed(rootContext.getNewSeed());
+                String text = "fun main(args: Array<String>) {\n";
+                text += tup.first().getText();
+                text += "\n}";
 
-                Set<String> dependencyVariableNames = new HashSet<>();
+                BufferedWriter writer = new BufferedWriter(new FileWriter(outputFileName));
+                writer.write(text);
+                writer.close();
 
-                CodeFragment newCode = nodeToSample.getSample(rng, ctx, dependencyVariableNames);
-                code.extend(newCode);
+                statsWriter.newLine();
+                statsWriter.write(randomFileName + "," + tup.second().csv());
             }
-
-            Long timeTaken = System.currentTimeMillis() - startTime;
-
-            String randomFileName = UUID.randomUUID().toString();
-            String outputFileName = directoryOutput + randomFileName;
-
-            String text = "fun main(args: Array<String>) {\n";
-            text += code.getText();
-            text += "\n}";
-
-            String kotlinFile = outputFileName + ".kt";
-
-            BufferedWriter writer = new BufferedWriter(new FileWriter(kotlinFile));
-//            System.out.println("Writing to " + kotlinFile);
-            writer.write(text);
-            writer.close();
-
-            Map<SampleStructure, Long> sampleStatistics = stats.getExtendedGrammarVisitations();
-            StringBuilder dataToWrite = new StringBuilder(randomFileName + ","
-                    + timeTaken + ",");
-
-            for (SampleStructure s : SampleStructure.values()) {
-                dataToWrite.append(sampleStatistics.getOrDefault(s, 0L)).append(",");
-            }
-
-            statsWriter.newLine();
-            statsWriter.write(dataToWrite.toString());
         }
 
         statsWriter.newLine();
