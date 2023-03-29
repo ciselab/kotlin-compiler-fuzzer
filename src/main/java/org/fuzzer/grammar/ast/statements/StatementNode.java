@@ -9,6 +9,7 @@ import org.fuzzer.utils.RandomNumberGenerator;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 public class StatementNode extends ASTNode {
 
@@ -19,8 +20,8 @@ public class StatementNode extends ASTNode {
         this.maxDepth = maxDepth;
     }
     @Override
-    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx) {
-        return getRandomStatementNode(rng).getSample(rng, ctx);
+    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx, Set<String> generatedCallableDependencies) {
+        return getRandomStatementNode(rng).getSample(rng, ctx, generatedCallableDependencies);
     }
 
     public StatementNode getRandomStatementNode(RandomNumberGenerator rng) {

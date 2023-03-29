@@ -9,23 +9,27 @@ import org.fuzzer.representations.types.KType;
 import org.fuzzer.utils.RandomNumberGenerator;
 import org.fuzzer.utils.Tuple;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class IfExpressionNode extends ExpressionNode {
     public IfExpressionNode(GrammarAST antlrNode, int maxDepth) {
         super(antlrNode, maxDepth);
     }
 
-    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx) {
+    @Override
+    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx, Set<String> generatedCallableDependencies) {
         KType sampledType = ctx.getRandomSamplableType();
-        return getSampleOfType(rng, ctx, sampledType, true).first();
+        return getSampleOfType(rng, ctx, sampledType, true, generatedCallableDependencies).first();
     }
 
     @Override
-    public Tuple<CodeFragment, Tuple<KType, List<KType>>> getSampleOfType(RandomNumberGenerator rng, Context ctx, KType type, boolean allowSubtypes) {
+    public Tuple<CodeFragment, Tuple<KType, List<KType>>> getSampleOfType(RandomNumberGenerator rng, Context ctx, KType type,
+                                                                          boolean allowSubtypes, Set<String> generatedCallableDependencies) {
         KType booleanType = ctx.getTypeByName("Boolean");
 
-        CodeFragment conditionCode = super.getSampleOfType(rng, ctx, booleanType, true).first();
+        CodeFragment conditionCode = super.getSampleOfType(rng, ctx, booleanType, true, generatedCallableDependencies).first();
         CodeFragment trueBranchCode = new CodeFragment();
         CodeFragment falseBranchCode = new CodeFragment();
 
@@ -39,19 +43,19 @@ public class IfExpressionNode extends ExpressionNode {
         Context falseBranchContext = ctx.clone();
 
         for (int i = 0; i < numberOfStatements; i++) {
-            CodeFragment sampleExpr = stmtNode.getSample(rng, trueBranchContext);
+            CodeFragment sampleExpr = stmtNode.getSample(rng, trueBranchContext, generatedCallableDependencies);
             trueBranchCode.extend(sampleExpr);
         }
 
         // Get a sound return type
-        var trueCodeAndTypeParams = super.getSampleOfType(rng, trueBranchContext, type, true);
+        var trueCodeAndTypeParams = super.getSampleOfType(rng, trueBranchContext, type, true, generatedCallableDependencies);
         trueBranchCode.extend(trueCodeAndTypeParams.first());
 
         // Sample some statements in the false branch
         numberOfStatements = rng.fromGeometric();
 
         for (int i = 0; i < numberOfStatements; i++) {
-            CodeFragment sampleExpr = stmtNode.getSample(rng, falseBranchContext);
+            CodeFragment sampleExpr = stmtNode.getSample(rng, falseBranchContext, generatedCallableDependencies);
             falseBranchCode.extend(sampleExpr);
         }
 
@@ -62,7 +66,7 @@ public class IfExpressionNode extends ExpressionNode {
         List<KType> parameterList = trueCodeAndTypeParams.second().second();
 
         // Get a sound return type for the false branch
-        falseBranchCode.extend(super.getSampleOfType(rng, falseBranchContext, returnType, true).first());
+        falseBranchCode.extend(super.getSampleOfType(rng, falseBranchContext, returnType, true, generatedCallableDependencies).first());
 
         CodeFragment code = new CodeFragment();
 

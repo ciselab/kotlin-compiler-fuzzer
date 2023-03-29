@@ -10,19 +10,23 @@ import org.fuzzer.utils.RandomNumberGenerator;
 import org.fuzzer.utils.Tuple;
 
 import java.util.List;
+import java.util.Set;
 
 public class TryExpressionNode extends ExpressionNode {
     public TryExpressionNode(GrammarAST antlrNode, int maxDepth) {
         super(antlrNode, maxDepth);
     }
 
-    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx) {
+    @Override
+    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx, Set<String> generatedCallableDependencies) {
         KType sampledType = ctx.getRandomSamplableType();
-        return getSampleOfType(rng, ctx, sampledType, true).first();
+        return getSampleOfType(rng, ctx, sampledType, true, generatedCallableDependencies).first();
     }
 
     @Override
-    public Tuple<CodeFragment, Tuple<KType, List<KType>>> getSampleOfType(RandomNumberGenerator rng, Context ctx, KType type, boolean allowSubtypes) {
+    public Tuple<CodeFragment, Tuple<KType, List<KType>>> getSampleOfType(RandomNumberGenerator rng, Context ctx, KType type,
+                                                                          boolean allowSubtypes, Set<String> generatedCallableDependencies) {
+
         KType throwableType = ctx.getTypeByName("Throwable");
 
         CodeFragment tryCode = new CodeFragment();
@@ -34,12 +38,12 @@ public class TryExpressionNode extends ExpressionNode {
         Context tryContext = ctx.clone();
 
         for (int i = 0; i < numberOfStatements; i++) {
-            CodeFragment sampleExpr = stmtNode.getSample(rng, tryContext);
+            CodeFragment sampleExpr = stmtNode.getSample(rng, tryContext, generatedCallableDependencies);
             tryCode.extend(sampleExpr);
         }
 
         // Get a sound return type
-        var tryCodeAndTypeParams = super.getSampleOfType(rng, tryContext, type, true);
+        var tryCodeAndTypeParams = super.getSampleOfType(rng, tryContext, type, true, generatedCallableDependencies);
         tryCode.extend(tryCodeAndTypeParams.first());
 
         CodeFragment code = new CodeFragment();
@@ -65,12 +69,12 @@ public class TryExpressionNode extends ExpressionNode {
             numberOfStatements = rng.fromGeometric();
 
             for (int j = 0; j < numberOfStatements; j++) {
-                CodeFragment sampleExpr = stmtNode.getSample(rng, catchContext);
+                CodeFragment sampleExpr = stmtNode.getSample(rng, catchContext, generatedCallableDependencies);
                 catchCode.extend(sampleExpr);
             }
 
             // Get a sound return type for the false branch
-            catchCode.extend(super.getSampleOfType(rng, catchContext, returnType, true).first());
+            catchCode.extend(super.getSampleOfType(rng, catchContext, returnType, true, generatedCallableDependencies).first());
             catchCode.extend("}");
             code.extend(catchCode);
 
@@ -84,7 +88,7 @@ public class TryExpressionNode extends ExpressionNode {
             numberOfStatements = rng.fromGeometric();
 
             for (int j = 0; j < numberOfStatements; j++) {
-                CodeFragment sampleExpr = stmtNode.getSample(rng, finallyContext);
+                CodeFragment sampleExpr = stmtNode.getSample(rng, finallyContext, generatedCallableDependencies);
                 finallyCode.extend(sampleExpr);
             }
 

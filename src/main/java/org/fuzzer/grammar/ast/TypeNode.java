@@ -7,6 +7,7 @@ import org.fuzzer.utils.RandomNumberGenerator;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class TypeNode extends ASTNode {
     public TypeNode(GrammarAST antlrNode) {
@@ -14,7 +15,7 @@ public class TypeNode extends ASTNode {
     }
 
     @Override
-    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx) {
+    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx, Set<String> generatedCallableDependencies) {
         return null;
     }
 

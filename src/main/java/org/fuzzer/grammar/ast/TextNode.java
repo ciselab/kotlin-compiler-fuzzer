@@ -7,6 +7,7 @@ import org.fuzzer.utils.RandomNumberGenerator;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class TextNode extends ASTNode {
 
@@ -19,7 +20,7 @@ public class TextNode extends ASTNode {
     }
 
     @Override
-    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx) {
+    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx, Set<String> generatedCallableDependencies) {
         invariant();
 
         return new CodeFragment(text);

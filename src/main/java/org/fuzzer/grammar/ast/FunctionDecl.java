@@ -17,7 +17,9 @@ import org.fuzzer.utils.RandomNumberGenerator;
 import org.fuzzer.utils.Tuple;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class FunctionDecl extends ASTNode {
     public FunctionDecl(GrammarAST antlrNode, List<ASTNode> children) {
@@ -25,9 +27,13 @@ public class FunctionDecl extends ASTNode {
     }
 
     @Override
-    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx) {
+    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx, Set<String> generatedCallableDependencies) {
+        // Stores the dependencies in the statements and expressions of this function
+        Set<String> dependentVariableNames = new HashSet<>();
+
         switch (ctx.getScope()) {
             // A simple function declaration
+
             case GLOBAL_SCOPE -> {
                 CodeFragment code = new CodeFragment();
                 code.appendToText(RuleName.fun + " ");
@@ -41,7 +47,10 @@ public class FunctionDecl extends ASTNode {
                 ExpressionNode returnNode = new ExpressionNode(antlrNode, 3);
                 returnNode.recordStatistics(stats);
 
-                var returnStatementAndInstances = returnNode.getRandomExpressionNode(rng).getSampleOfType(rng, ctx, returnType, true);
+
+
+                var returnStatementAndInstances = returnNode.getRandomExpressionNode(rng)
+                        .getSampleOfType(rng, ctx, returnType, true, dependentVariableNames);
                 returnType = returnType.withNewGenericInstances(returnStatementAndInstances.second().second());
 
                 // Sample some parameters
@@ -55,7 +64,7 @@ public class FunctionDecl extends ASTNode {
                 Context clone = ctx.clone();
 
                 for (int i = 0; i < numberOfParams; i++) {
-                    CodeFragment sampledParam = parameterNode.getSample(rng, clone);
+                    CodeFragment sampledParam = parameterNode.getSample(rng, clone, dependentVariableNames);
 
                     // Cache the sample parameters
                     sampledTypes.add(parameterNode.getSampledType());
@@ -80,7 +89,7 @@ public class FunctionDecl extends ASTNode {
                 int numberOfStatements = rng.fromGeometric();
 
                 for (int i = 0; i < numberOfStatements; i++) {
-                    CodeFragment sampleExpr = stmtNode.getSample(rng, clone);
+                    CodeFragment sampleExpr = stmtNode.getSample(rng, clone, dependentVariableNames);
                     code.extend(sampleExpr);
                 }
 

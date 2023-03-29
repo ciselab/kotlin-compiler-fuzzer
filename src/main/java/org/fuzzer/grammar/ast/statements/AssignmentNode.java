@@ -10,6 +10,8 @@ import org.fuzzer.representations.types.KClassifierType;
 import org.fuzzer.representations.types.KType;
 import org.fuzzer.utils.RandomNumberGenerator;
 
+import java.util.Set;
+
 public class AssignmentNode extends StatementNode {
 
     private final int maxDepth;
@@ -19,7 +21,7 @@ public class AssignmentNode extends StatementNode {
     }
 
     @Override
-    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx) {
+    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx, Set<String> generatedCallableDependencies) {
         KType type;
         String id;
         boolean sampleExisting = ctx.hasAssignableIdentifiers() && rng.randomBoolean();
@@ -35,7 +37,7 @@ public class AssignmentNode extends StatementNode {
         SimpleExpressionNode expr = new SimpleExpressionNode(this.antlrNode, this.maxDepth);
         expr.recordStatistics(stats);
 
-        var codeAndInstances = expr.getRandomExpressionNode(rng).getSampleOfType(rng, ctx, type, true);
+        var codeAndInstances = expr.getRandomExpressionNode(rng).getSampleOfType(rng, ctx, type, true, generatedCallableDependencies);
 
         String rhs = codeAndInstances.first().getText();
         String lhs = sampleExisting ? id : ("var " + id + ": " + ((KClassifierType) type).codeRepresentation(codeAndInstances.second().second()));

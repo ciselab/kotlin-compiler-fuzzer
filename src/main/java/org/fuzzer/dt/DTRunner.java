@@ -156,7 +156,9 @@ public class DTRunner {
                 Context ctx = rootContext.clone();
                 ctx.updateRNGSeed(rootContext.getNewSeed());
 
-                CodeFragment newCode = nodeToSample.getSample(rng, ctx);
+                Set<String> dependencyVariableNames = new HashSet<>();
+
+                CodeFragment newCode = nodeToSample.getSample(rng, ctx, dependencyVariableNames);
                 code.extend(newCode);
             }
 

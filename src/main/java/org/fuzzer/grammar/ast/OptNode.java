@@ -7,6 +7,7 @@ import org.fuzzer.utils.RandomNumberGenerator;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public class OptNode extends ASTNode {
 
@@ -19,9 +20,9 @@ public class OptNode extends ASTNode {
     }
 
     @Override
-    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx) {
+    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx, Set<String> generatedCallableDependencies) {
         if (rng.randomBoolean()) {
-            return children.get(0).getSample(rng, ctx);
+            return children.get(0).getSample(rng, ctx, generatedCallableDependencies);
         } else {
             return new CodeFragment();
         }

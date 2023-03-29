@@ -6,6 +6,7 @@ import org.fuzzer.representations.context.Context;
 import org.fuzzer.utils.RandomNumberGenerator;
 
 import java.util.List;
+import java.util.Set;
 
 public class BlockNode extends ASTNode {
 
@@ -14,10 +15,10 @@ public class BlockNode extends ASTNode {
     }
 
     @Override
-    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx) {
+    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx, Set<String> generatedCallableDependencies) {
         CodeFragment code = new CodeFragment();
         for (ASTNode child : children) {
-            code.extend(child.getSample(rng, ctx));
+            code.extend(child.getSample(rng, ctx, generatedCallableDependencies));
         }
 
         return code;

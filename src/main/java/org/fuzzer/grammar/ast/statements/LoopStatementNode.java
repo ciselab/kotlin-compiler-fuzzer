@@ -8,6 +8,7 @@ import org.fuzzer.utils.RandomNumberGenerator;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 public class LoopStatementNode extends ASTNode {
 
@@ -23,7 +24,7 @@ public class LoopStatementNode extends ASTNode {
     }
 
     @Override
-    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx) {
+    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx, Set<String> generatedCallableDependencies) {
         return null;
     }
 

@@ -11,6 +11,7 @@ import org.fuzzer.representations.types.KType;
 import org.fuzzer.utils.RandomNumberGenerator;
 
 import java.util.LinkedList;
+import java.util.Set;
 
 public class DoWhileNode extends StatementNode {
 
@@ -19,7 +20,7 @@ public class DoWhileNode extends StatementNode {
     }
 
     @Override
-    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx) {
+    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx, Set<String> generatedCallableDependencies) {
         KType boolType = ctx.getTypeByName("Boolean");
         CodeFragment code = new CodeFragment();
         code.appendToText("do {");
@@ -27,7 +28,7 @@ public class DoWhileNode extends StatementNode {
         ExpressionNode conditionNode = new ExpressionNode(antlrNode, maxDepth);
         conditionNode.recordStatistics(stats);
 
-        CodeFragment conditionCode = conditionNode.getRandomExpressionNode(rng).getSampleOfType(rng, ctx, boolType, true).first();
+        CodeFragment conditionCode = conditionNode.getRandomExpressionNode(rng).getSampleOfType(rng, ctx, boolType, true, generatedCallableDependencies).first();
 
         int numberOfStatements = rng.fromGeometric();
         StatementNode stmtNode = new StatementNode(antlrNode, maxDepth).getRandomStatementNode(rng);
@@ -36,7 +37,7 @@ public class DoWhileNode extends StatementNode {
         Context innerContext = ctx.clone();
 
         for (int statement = 0; statement < numberOfStatements; statement++) {
-            CodeFragment newCode = stmtNode.getSample(rng, innerContext);
+            CodeFragment newCode = stmtNode.getSample(rng, innerContext, generatedCallableDependencies);
             code.extend(newCode);
         }
 
