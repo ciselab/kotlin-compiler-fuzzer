@@ -39,7 +39,7 @@ public class ExpressionNode extends ASTNode {
 
         ExpressionNode selectedNode;
 
-        if (rng.fromUniformContinuous(0.0, 1.0) < 0.8) {
+        if (rng.fromUniformContinuous(0.0, 1.0) < 0.4) {
             selectedNode = alternatives.get(alternatives.size() - 1);
         } else {
              selectedNode = alternatives.get(rng.fromUniformDiscrete(0, alternatives.size() - 1));

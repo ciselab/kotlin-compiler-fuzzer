@@ -7,10 +7,11 @@ import org.antlr.v4.tool.LexerGrammar;
 import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.GrammarTransformer;
 import org.fuzzer.grammar.RuleHandler;
-import org.fuzzer.grammar.SampleStructure;
 import org.fuzzer.grammar.ast.ASTNode;
-import org.fuzzer.grammar.ast.StarNode;
+import org.fuzzer.grammar.ast.syntax.PlusNode;
+import org.fuzzer.grammar.ast.syntax.SyntaxNode;
 import org.fuzzer.representations.context.Context;
+import org.fuzzer.search.DiversityGA;
 import org.fuzzer.search.RandomSearch;
 import org.fuzzer.utils.FileUtilities;
 import org.fuzzer.utils.RandomNumberGenerator;
@@ -91,10 +92,10 @@ public class DTRunner {
             rootContext.addDefaultValue(rootContext.getTypeByName("String"), "\"fooBar\"");
             rootContext.addDefaultValue(rootContext.getTypeByName("Char"), "'w'");
 
-            FileOutputStream f = new FileOutputStream(contextFileName);
-            ObjectOutputStream o = new ObjectOutputStream(f);
-
             if (serializeContext) {
+                FileOutputStream f = new FileOutputStream(contextFileName);
+                ObjectOutputStream o = new ObjectOutputStream(f);
+
                 // Serialize file
                 o.writeObject(rootContext);
 
@@ -144,13 +145,17 @@ public class DTRunner {
         ASTNode grammarRoot = new GrammarTransformer(lexerGrammar, parserGrammar).transformGrammar();
         // Function declarations node
         ASTNode functionNode = grammarRoot.getChildren().get(0).getChildren().get(5).getChildren().get(0).getChildren().get(0).getChildren().get(2);
-        ASTNode nodeToSample = new StarNode(List.of(functionNode));
 
-        RandomSearch rs = new RandomSearch(nodeToSample, timeLimitMs, rootContext, seed);
+        // One or more functions
+        SyntaxNode nodeToSample = new PlusNode(List.of(functionNode));
+
+//        RandomSearch rs = new RandomSearch(nodeToSample, timeLimitMs, rootContext, seed);
+        DiversityGA ga = new DiversityGA(nodeToSample, timeLimitMs, rootContext, seed, 10);
 
         while (System.currentTimeMillis() - startTime < timeLimitMs) {
 
-            List<Tuple<CodeFragment, FuzzerStatistics>> output = rs.search();
+//            List<Tuple<CodeFragment, FuzzerStatistics>> output = rs.search();
+            List<Tuple<CodeFragment, FuzzerStatistics>> output = ga.search();
 
             for (Tuple<CodeFragment, FuzzerStatistics> tup : output) {
                 String randomFileName = UUID.randomUUID().toString();

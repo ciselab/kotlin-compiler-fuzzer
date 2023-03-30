@@ -1,12 +1,13 @@
-package org.fuzzer.grammar.ast;
+package org.fuzzer.grammar.ast.structures;
 
 import org.antlr.v4.tool.ast.GrammarAST;
 import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.RuleName;
 import org.fuzzer.grammar.SampleStructure;
+import org.fuzzer.grammar.ast.ASTNode;
 import org.fuzzer.grammar.ast.expressions.ExpressionNode;
-import org.fuzzer.grammar.ast.expressions.SimpleExpressionNode;
 import org.fuzzer.grammar.ast.statements.StatementNode;
+import org.fuzzer.representations.callables.KCallable;
 import org.fuzzer.representations.callables.KFunction;
 import org.fuzzer.representations.callables.KIdentifierCallable;
 import org.fuzzer.representations.context.Context;
@@ -14,7 +15,6 @@ import org.fuzzer.representations.context.KScope;
 import org.fuzzer.representations.types.KClassifierType;
 import org.fuzzer.representations.types.KType;
 import org.fuzzer.utils.RandomNumberGenerator;
-import org.fuzzer.utils.Tuple;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -60,7 +60,9 @@ public class FunctionDecl extends ASTNode {
                 List<String> sampledIds = new ArrayList<>();
 
                 // Clone after adding the function to allow for recursion
-                ctx.addIdentifier(funcName, new KFunction(funcName, sampledTypes, returnType));
+                KFunction newCallable = new KFunction(funcName, sampledTypes, returnType);
+                newCallable.markAsGenerated();
+                ctx.addIdentifier(funcName, newCallable);
                 Context clone = ctx.clone();
 
                 for (int i = 0; i < numberOfParams; i++) {
@@ -94,12 +96,16 @@ public class FunctionDecl extends ASTNode {
                 }
 
                 code.extend("return " + returnStatementAndInstances.first());
-                code.extend(new CodeFragment("}"));
+                code.extend("}");
 
                 // Record this sample
                 if (this.stats != null) {
                     stats.increment(SampleStructure.FUNCTION);
                 }
+
+                // Set the structure name so that it can be
+                // Used during recombination
+                code.setName(funcName);
 
                 return code;
             }

@@ -6,6 +6,8 @@ import org.antlr.v4.tool.LexerGrammar;
 import org.antlr.v4.tool.Rule;
 import org.antlr.v4.tool.ast.GrammarAST;
 import org.fuzzer.grammar.ast.*;
+import org.fuzzer.grammar.ast.structures.FunctionDecl;
+import org.fuzzer.grammar.ast.syntax.*;
 
 import java.util.*;
 

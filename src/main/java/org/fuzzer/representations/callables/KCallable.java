@@ -16,7 +16,7 @@ public abstract class KCallable implements Cloneable, Serializable {
     private KCallable owner;
     private List<KCallable> lastInput = new ArrayList<>();
 
-    private final boolean isGenerated;
+    private boolean isGenerated;
 
     public KCallable(String name, KType output) {
         this.name = name;
@@ -48,6 +48,10 @@ public abstract class KCallable implements Cloneable, Serializable {
 
     public boolean isGenerated() {
         return isGenerated;
+    }
+
+    public void markAsGenerated() {
+        this.isGenerated = true;
     }
 
     public List<KType> getInputTypes() {

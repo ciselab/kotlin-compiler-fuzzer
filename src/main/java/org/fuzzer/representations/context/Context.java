@@ -1,11 +1,9 @@
 package org.fuzzer.representations.context;
 
 import org.fuzzer.representations.callables.*;
+import org.fuzzer.representations.chromosome.CodeSnippet;
 import org.fuzzer.representations.types.*;
-import org.fuzzer.utils.KGrammarVocabulary;
-import org.fuzzer.utils.RandomNumberGenerator;
-import org.fuzzer.utils.FileUtilities;
-import org.fuzzer.utils.StringUtilities;
+import org.fuzzer.utils.*;
 import org.jetbrains.kotlin.spec.grammar.tools.*;
 
 
@@ -42,6 +40,10 @@ public class Context implements Cloneable, Serializable {
         this.idStore = new MapIdentifierStore(typeHierarchy, rng);
         this.rng = rng;
         this.scope = KScope.GLOBAL_SCOPE;
+    }
+
+    public RandomNumberGenerator getRNG() {
+        return rng;
     }
 
     public void updateRNG(RandomNumberGenerator rng) {
@@ -204,9 +206,7 @@ public class Context implements Cloneable, Serializable {
         return typeHierarchy.getTypeByName(typeName);
     }
 
-    public void addIdentifier(String id, KCallable callable) {
-        idStore.addIdentifier(id, callable);
-    }
+
 
     public KType getRandomType() {
         KClassifierType randomType = (KClassifierType) typeHierarchy.randomType();
@@ -252,6 +252,10 @@ public class Context implements Cloneable, Serializable {
         } while (containsIdentifier(newId) || forbiddenIdentifiers.contains(newId));
 
         return newId;
+    }
+
+    public void addIdentifier(String id, KCallable callable) {
+        idStore.addIdentifier(id, callable);
     }
 
     public void addIdentifier(String identifier, KCallable callable, KCallable owner) {
@@ -1356,6 +1360,67 @@ public class Context implements Cloneable, Serializable {
 
     private boolean isFunctionType(KType type) {
         return type instanceof KFuncType;
+    }
+
+    public List<Tuple<CodeSnippet, Set<KCallable>>> getAllSnippetCombinations(List<CodeSnippet> snippets) {
+        List<Tuple<CodeSnippet, Set<KCallable>>> res = new LinkedList<>();
+        Map<String, Set<KCallable>> dependencies = new HashMap<>();
+        Map<String, CodeSnippet> snippetTable = new HashMap<>();
+
+        for (CodeSnippet s : snippets) {
+            snippetTable.put(s.name(), s);
+        }
+
+        for (CodeSnippet snippet : snippets) {
+            getDependenciesOfSnippet(snippet, snippetTable, dependencies);
+        }
+
+        return snippets.stream().map(s -> new Tuple<>(s, dependencies.get(s.name()))).toList();
+    }
+
+    private void getDependenciesOfSnippet(CodeSnippet snippet,
+                                          Map<String, CodeSnippet> allSnippets,
+                                          Map<String, Set<KCallable>> dependencies) {
+
+        // The dependencies were found in the past
+        if (dependencies.containsKey(snippet.name())) {
+            return;
+        }
+
+        Set<String> dependencyNames = snippet.callableDependencies();
+
+        // No dependencies, skip recursive step
+        if (dependencyNames.isEmpty()) {
+            dependencies.put(snippet.name(), new HashSet<>());
+            return;
+        }
+
+        // Recursively resolve all dependencies
+        for (String dependencyName : dependencyNames) {
+            getDependenciesOfSnippet(allSnippets.get(dependencyName), allSnippets, dependencies);
+        }
+
+        Set<KCallable> dependenciesOfSnippet = new HashSet<>();
+        for (String dependencyName : dependencyNames) {
+            dependenciesOfSnippet.addAll(dependencies.get(dependencyName));
+            dependenciesOfSnippet.add(getCallableByName(snippet.name()));
+        }
+
+        dependencies.put(snippet.name(), dependenciesOfSnippet);
+    }
+
+    private KCallable getCallableByName(String name) {
+        // TODO: handle classes
+        return idStore.getIdentifier(name);
+    }
+
+    private void addDependency(KCallable callable) {
+        if (callable instanceof KFunction) {
+            KVoid voidType = (KVoid) KTypeWrapper.getVoidWrapper().toType();
+            callablesByOwner.get(voidType).add(callable);
+        } else {
+            throw new UnsupportedOperationException("Cannot non-function dependencies.");
+        }
     }
 
     @Override

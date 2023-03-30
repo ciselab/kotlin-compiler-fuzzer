@@ -21,10 +21,6 @@ public class ElvisOpExpression extends ExpressionNode {
     public CodeFragment getSample(RandomNumberGenerator rng, Context ctx, Set<String> generatedCallableDependencies) {
         KType sampledType = ctx.getRandomSamplableType();
 
-        if (this.stats != null) {
-            stats.increment(SampleStructure.ELVIS_OP);
-        }
-
         return getSampleOfType(rng, ctx, sampledType, true, generatedCallableDependencies).first();
     }
 

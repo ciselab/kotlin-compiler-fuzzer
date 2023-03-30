@@ -2,6 +2,7 @@ package org.fuzzer.dt;
 
 import org.fuzzer.grammar.SampleStructure;
 
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 public class FuzzerStatistics implements Cloneable {
@@ -15,6 +16,16 @@ public class FuzzerStatistics implements Cloneable {
         extendedGrammarVisitations = new HashMap<>();
         startTime = System.currentTimeMillis();
     }
+
+    public FuzzerStatistics(Map<SampleStructure, Long> extendedGrammarVisitations, Long startTime) {
+        this.extendedGrammarVisitations = extendedGrammarVisitations;
+        this.startTime = startTime;
+    }
+
+    public void start() {
+        this.startTime = System.currentTimeMillis();
+    }
+
     public void stop() {
         this.finishTime = System.currentTimeMillis();
     }
@@ -53,5 +64,16 @@ public class FuzzerStatistics implements Cloneable {
         }
 
         return statsData.toString();
+    }
+
+    public static FuzzerStatistics aggregate(List<FuzzerStatistics> statList) {
+        Map<SampleStructure, Long> cummalativeVisitations = new HashMap<>();
+        for (SampleStructure struct : SampleStructure.values()) {
+            cummalativeVisitations.put(struct, statList.stream()
+                    .map(stats -> stats.extendedGrammarVisitations.getOrDefault(struct, 0L))
+                    .reduce(0L, Long::sum));
+        }
+
+        return new FuzzerStatistics(cummalativeVisitations, statList.get(0).startTime);
     }
 }

@@ -32,7 +32,7 @@ public class TestMain {
                 compilerScriptPath,
                 0, 3, ctxFileName,
                 lexerGrammarFile, grammarFile,
-                false);
+                true);
 
         // 5 minutes
         runner.run(0L, 30000L);
