@@ -36,7 +36,7 @@ public class PlusNode extends SyntaxNode {
             newStats.stop();
 
             if (newCode.isStructure()) {
-                CodeSnippet snippet = new CodeSnippet(newCode, newCode.getName(), dependencyNames, stats);
+                CodeSnippet snippet = new CodeSnippet(newCode, newCode.getName(), dependencyNames, newStats);
                 snippets.add(snippet);
             }
         }

@@ -150,7 +150,7 @@ public class DTRunner {
         SyntaxNode nodeToSample = new PlusNode(List.of(functionNode));
 
 //        RandomSearch rs = new RandomSearch(nodeToSample, timeLimitMs, rootContext, seed);
-        DiversityGA ga = new DiversityGA(nodeToSample, timeLimitMs, rootContext, seed, 10);
+        DiversityGA ga = new DiversityGA(nodeToSample, timeLimitMs, rootContext, seed, 5);
 
         while (System.currentTimeMillis() - startTime < timeLimitMs) {
 

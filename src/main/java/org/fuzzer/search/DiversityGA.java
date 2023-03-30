@@ -56,8 +56,6 @@ public class DiversityGA extends Search {
 
             List<CodeSnippet> snippets = rootNode.getSnippets(ctx.getRNG(), ctx);
 
-            stats.stop();
-
             List<Tuple<CodeSnippet, Set<KCallable>>> snippetsAndDependencies = ctx.getAllSnippetCombinations(snippets);
 
             for (Tuple<CodeSnippet, Set<KCallable>> tup : snippetsAndDependencies) {
