@@ -13,6 +13,13 @@ import org.fuzzer.grammar.ast.syntax.SyntaxNode;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.search.DiversityGA;
 import org.fuzzer.search.RandomSearch;
+import org.fuzzer.search.fitness.DistanceMetric;
+import org.fuzzer.search.fitness.DiversityFitnessFunction;
+import org.fuzzer.search.fitness.FitnessFunction;
+import org.fuzzer.search.operators.recombination.RecombinationOperator;
+import org.fuzzer.search.operators.recombination.SimpleRecombinationOperator;
+import org.fuzzer.search.operators.selection.SelectionOperator;
+import org.fuzzer.search.operators.selection.TournamentSelection;
 import org.fuzzer.utils.FileUtilities;
 import org.fuzzer.utils.RandomNumberGenerator;
 import org.fuzzer.utils.Tuple;
@@ -150,7 +157,11 @@ public class DTRunner {
         SyntaxNode nodeToSample = new PlusNode(List.of(functionNode));
 
 //        RandomSearch rs = new RandomSearch(nodeToSample, timeLimitMs, rootContext, seed);
-        DiversityGA ga = new DiversityGA(nodeToSample, timeLimitMs, rootContext, seed, 5);
+        FitnessFunction f = new DiversityFitnessFunction(null, DistanceMetric.MANHATTAN);
+        SelectionOperator s = new TournamentSelection(4, 0.75,
+                new RandomNumberGenerator(seed), f);
+        RecombinationOperator r = new SimpleRecombinationOperator();
+        DiversityGA ga = new DiversityGA(nodeToSample, timeLimitMs, rootContext, seed, 5, f, s, r);
 
         while (System.currentTimeMillis() - startTime < timeLimitMs) {
 

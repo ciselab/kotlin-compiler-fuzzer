@@ -8,6 +8,7 @@ import org.fuzzer.representations.chromosome.CodeBlock;
 import org.fuzzer.representations.chromosome.CodeSnippet;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.search.fitness.FitnessFunction;
+import org.fuzzer.search.operators.recombination.RecombinationOperator;
 import org.fuzzer.search.operators.selection.SelectionOperator;
 import org.fuzzer.utils.RandomNumberGenerator;
 import org.fuzzer.utils.Tuple;
@@ -24,16 +25,21 @@ public class DiversityGA extends Search {
 
     private final SelectionOperator selectionOperator;
 
+    private final RecombinationOperator recombinationOperator;
+
     public DiversityGA(SyntaxNode nodeToSample, Long timeBudgetMilis,
                        Context rootContext, Long seed,
                        int populationSize,
-                       FitnessFunction fitnessFunction, SelectionOperator selectionOperator) {
+                       FitnessFunction fitnessFunction,
+                       SelectionOperator selectionOperator,
+                       RecombinationOperator recombinationOperator) {
         super(nodeToSample, timeBudgetMilis, rootContext, seed);
 
         this.populationSize = populationSize;
         this.seedGenerator = new RandomNumberGenerator(getSeed());
         this.globalStats = new FuzzerStatistics();
         this.selectionOperator = selectionOperator;
+        this.recombinationOperator = recombinationOperator;
     }
 
     private Context getNewContext() {
@@ -44,12 +50,12 @@ public class DiversityGA extends Search {
         return nextCtx;
     }
 
-    private List<CodeBlock> initialize() {
+    private List<CodeBlock> getRandomBlocks(int numberOfBlocks) {
         List<CodeBlock> population = new LinkedList<>();
 
         Map<String, Tuple<CodeSnippet, Set<KCallable>>> snippetTable = new HashMap<>();
 
-        for (int i = 0; i < populationSize; i++) {
+        for (int i = 0; i < numberOfBlocks; i++) {
             // Prepare a fresh context with a new seed
             Context ctx = getNewContext();
             SyntaxNode rootNode = (SyntaxNode) getNodeToSample();
@@ -69,6 +75,7 @@ public class DiversityGA extends Search {
         }
 
         for (String snippetName : snippetTable.keySet()) {
+            // Get the list of dependencies for the current snippet
             Set<String> dependencyNames = snippetTable.get(snippetName)
                     .second().stream().map(KCallable::getName).collect(Collectors.toSet());
 
@@ -90,7 +97,27 @@ public class DiversityGA extends Search {
     @Override
     public List<Tuple<CodeFragment, FuzzerStatistics>> search() {
         globalStats.start();
-        List<CodeBlock> pop = initialize();
+        List<CodeBlock> pop = getRandomBlocks(populationSize);
+
+        while (System.currentTimeMillis() - globalStats.getStartTime() < getTimeBudgetMilis()) {
+            List<CodeBlock> parents = selectionOperator.select(pop, populationSize / 2);
+            List<CodeBlock> children = new LinkedList<>();
+
+            for (int i = 0; i < parents.size(); i += 2) {
+                CodeBlock parent1 = parents.get(i);
+                CodeBlock parent2 = parents.get(i + 1);
+
+                CodeBlock child = recombinationOperator.combine(parent1, parent2);
+                children.add(child);
+            }
+
+            List<CodeBlock> newBlocks = getRandomBlocks(populationSize - children.size() - parents.size());
+
+            pop.clear();
+            pop.addAll(parents);
+            pop.addAll(children);
+            pop.addAll(newBlocks);
+        }
 
         return pop.stream().map(block -> new Tuple<>(block.getText(), block.getStats())).toList();
     }

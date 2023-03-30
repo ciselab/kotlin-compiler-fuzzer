@@ -14,6 +14,7 @@ public class SimpleRecombinationOperator implements RecombinationOperator {
     @Override
     public CodeBlock combine(CodeBlock b1, CodeBlock b2) {
         FuzzerStatistics combiedStatistics = FuzzerStatistics.aggregate(List.of(b1.getStats(), b2.getStats()));
+        combiedStatistics.stop();
 
         CodeFragment combinedText = new CodeFragment();
         combinedText.appendToText(b1.getText());

@@ -41,7 +41,7 @@ public class TournamentSelection implements SelectionOperator {
 
         for (int i = 0; i < numberOfSelections; i++) {
             LinkedList<CodeBlock> participants = new LinkedList<>();
-            PriorityQueue<Tuple<Double, Integer>> pq = new PriorityQueue<>();
+            PriorityQueue<Tuple<Double, Integer>> pq = new PriorityQueue<>(selectionComparator);
 
             for (int j = 0; j < tournamentSize; j++) {
                 CodeBlock randomBlock = population.get(rng.fromUniformDiscrete(0, population.size() - 1));

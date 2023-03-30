@@ -22,6 +22,10 @@ public class FuzzerStatistics implements Cloneable {
         this.startTime = startTime;
     }
 
+    public Long getStartTime() {
+        return startTime;
+    }
+
     public void start() {
         this.startTime = System.currentTimeMillis();
     }
