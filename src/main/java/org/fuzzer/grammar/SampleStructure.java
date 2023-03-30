@@ -1,6 +1,7 @@
 package org.fuzzer.grammar;
 
 public enum SampleStructure {
+    LOC,
     CLASS,
     ATTRIBUTE,
     FUNCTION,

@@ -2,12 +2,13 @@ package org.fuzzer.search;
 
 import org.fuzzer.dt.FuzzerStatistics;
 import org.fuzzer.generator.CodeFragment;
-import org.fuzzer.grammar.ast.ASTNode;
 import org.fuzzer.grammar.ast.syntax.SyntaxNode;
 import org.fuzzer.representations.callables.KCallable;
 import org.fuzzer.representations.chromosome.CodeBlock;
 import org.fuzzer.representations.chromosome.CodeSnippet;
 import org.fuzzer.representations.context.Context;
+import org.fuzzer.search.fitness.FitnessFunction;
+import org.fuzzer.search.operators.selection.SelectionOperator;
 import org.fuzzer.utils.RandomNumberGenerator;
 import org.fuzzer.utils.Tuple;
 
@@ -21,14 +22,18 @@ public class DiversityGA extends Search {
 
     private final FuzzerStatistics globalStats;
 
-    public DiversityGA(SyntaxNode nodeToSample,Long timeBudgetMilis,
+    private final SelectionOperator selectionOperator;
+
+    public DiversityGA(SyntaxNode nodeToSample, Long timeBudgetMilis,
                        Context rootContext, Long seed,
-                       int populationSize) {
+                       int populationSize,
+                       FitnessFunction fitnessFunction, SelectionOperator selectionOperator) {
         super(nodeToSample, timeBudgetMilis, rootContext, seed);
 
         this.populationSize = populationSize;
         this.seedGenerator = new RandomNumberGenerator(getSeed());
         this.globalStats = new FuzzerStatistics();
+        this.selectionOperator = selectionOperator;
     }
 
     private Context getNewContext() {

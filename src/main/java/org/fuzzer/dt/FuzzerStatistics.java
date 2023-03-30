@@ -76,4 +76,8 @@ public class FuzzerStatistics implements Cloneable {
 
         return new FuzzerStatistics(cummalativeVisitations, statList.get(0).startTime);
     }
+
+    public Long getNumberOfSamples(SampleStructure s) {
+        return extendedGrammarVisitations.getOrDefault(s, 0L);
+    }
 }
