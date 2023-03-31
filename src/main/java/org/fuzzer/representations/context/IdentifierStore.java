@@ -2,6 +2,7 @@ package org.fuzzer.representations.context;
 
 import org.fuzzer.representations.callables.KCallable;
 import org.fuzzer.representations.types.KType;
+import org.fuzzer.utils.RandomNumberGenerator;
 
 import java.io.Serializable;
 import java.util.List;
@@ -25,6 +26,8 @@ public interface IdentifierStore extends Serializable {
     KCallable getIdentifier(String identifier);
 
     String randomIdentifier();
+
+    void updateRNG(RandomNumberGenerator rng);
 
     void addIdentifier(String identifier, KCallable callable);
 

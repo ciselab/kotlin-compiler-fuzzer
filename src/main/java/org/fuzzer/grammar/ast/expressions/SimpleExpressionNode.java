@@ -2,9 +2,12 @@ package org.fuzzer.grammar.ast.expressions;
 
 import org.antlr.v4.tool.ast.GrammarAST;
 import org.fuzzer.generator.CodeFragment;
+import org.fuzzer.grammar.SampleStructure;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.representations.types.KType;
 import org.fuzzer.utils.RandomNumberGenerator;
+
+import java.util.Set;
 
 public class SimpleExpressionNode extends ExpressionNode {
 
@@ -13,8 +16,13 @@ public class SimpleExpressionNode extends ExpressionNode {
     }
 
     @Override
-    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx) {
+    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx, Set<String> generatedCallableDependencies) {
         KType sampledType = ctx.getRandomSamplableType();
-        return getSampleOfType(rng, ctx, sampledType, true).first();
+
+        if (this.stats != null) {
+            stats.increment(SampleStructure.SIMPLE_EXPR);
+        }
+
+        return getSampleOfType(rng, ctx, sampledType, true, generatedCallableDependencies).first();
     }
 }

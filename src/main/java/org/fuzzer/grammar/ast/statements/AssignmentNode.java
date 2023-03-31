@@ -2,12 +2,15 @@ package org.fuzzer.grammar.ast.statements;
 
 import org.antlr.v4.tool.ast.GrammarAST;
 import org.fuzzer.generator.CodeFragment;
+import org.fuzzer.grammar.SampleStructure;
 import org.fuzzer.grammar.ast.expressions.SimpleExpressionNode;
 import org.fuzzer.representations.callables.*;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.representations.types.KClassifierType;
 import org.fuzzer.representations.types.KType;
 import org.fuzzer.utils.RandomNumberGenerator;
+
+import java.util.Set;
 
 public class AssignmentNode extends StatementNode {
 
@@ -18,7 +21,7 @@ public class AssignmentNode extends StatementNode {
     }
 
     @Override
-    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx) {
+    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx, Set<String> generatedCallableDependencies) {
         KType type;
         String id;
         boolean sampleExisting = ctx.hasAssignableIdentifiers() && rng.randomBoolean();
@@ -32,7 +35,9 @@ public class AssignmentNode extends StatementNode {
         }
 
         SimpleExpressionNode expr = new SimpleExpressionNode(this.antlrNode, this.maxDepth);
-        var codeAndInstances = expr.getRandomExpressionNode(rng).getSampleOfType(rng, ctx, type, true);
+        expr.recordStatistics(stats);
+
+        var codeAndInstances = expr.getRandomExpressionNode(rng).getSampleOfType(rng, ctx, type, true, generatedCallableDependencies);
 
         String rhs = codeAndInstances.first().getText();
         String lhs = sampleExisting ? id : ("var " + id + ": " + ((KClassifierType) type).codeRepresentation(codeAndInstances.second().second()));
@@ -40,6 +45,10 @@ public class AssignmentNode extends StatementNode {
         if (!sampleExisting) {
             KType parameterizedTypeOfIdentifier = ((KClassifierType) type).withNewGenericInstances(codeAndInstances.second().second());
             ctx.addIdentifier(id, new KIdentifierCallable(id, parameterizedTypeOfIdentifier));
+        }
+
+        if (this.stats != null) {
+            stats.increment(SampleStructure.ASSIGNMENT);
         }
 
         return new CodeFragment(lhs + " = " + rhs);

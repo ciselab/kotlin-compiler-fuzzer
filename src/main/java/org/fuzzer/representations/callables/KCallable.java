@@ -16,11 +16,14 @@ public abstract class KCallable implements Cloneable, Serializable {
     private KCallable owner;
     private List<KCallable> lastInput = new ArrayList<>();
 
+    private boolean isGenerated;
+
     public KCallable(String name, KType output) {
         this.name = name;
         this.inputTypes = new ArrayList<>();
         this.returnType = output;
         this.owner = null;
+        this.isGenerated = false;
     }
 
     public KCallable(String name, List<KType> input, KType output) {
@@ -28,6 +31,7 @@ public abstract class KCallable implements Cloneable, Serializable {
         this.inputTypes = input;
         this.returnType = output;
         this.owner = null;
+        this.isGenerated = false;
     }
 
     public KCallable(String name, List<KType> input, KType output, KCallable owner) {
@@ -35,10 +39,19 @@ public abstract class KCallable implements Cloneable, Serializable {
         this.inputTypes = input;
         this.returnType = output;
         this.owner = owner;
+        this.isGenerated = false;
     }
 
     public String getName() {
         return name;
+    }
+
+    public boolean isGenerated() {
+        return isGenerated;
+    }
+
+    public void markAsGenerated() {
+        this.isGenerated = true;
     }
 
     public List<KType> getInputTypes() {

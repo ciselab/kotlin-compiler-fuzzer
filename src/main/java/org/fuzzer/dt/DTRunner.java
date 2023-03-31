@@ -8,21 +8,24 @@ import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.GrammarTransformer;
 import org.fuzzer.grammar.RuleHandler;
 import org.fuzzer.grammar.ast.ASTNode;
+import org.fuzzer.grammar.ast.syntax.PlusNode;
+import org.fuzzer.grammar.ast.syntax.SyntaxNode;
 import org.fuzzer.representations.context.Context;
+import org.fuzzer.search.DiversityGA;
+import org.fuzzer.search.RandomSearch;
+import org.fuzzer.search.fitness.DistanceMetric;
+import org.fuzzer.search.fitness.DiversityFitnessFunction;
+import org.fuzzer.search.fitness.FitnessFunction;
+import org.fuzzer.search.operators.recombination.RecombinationOperator;
+import org.fuzzer.search.operators.recombination.SimpleRecombinationOperator;
+import org.fuzzer.search.operators.selection.SelectionOperator;
+import org.fuzzer.search.operators.selection.TournamentSelection;
 import org.fuzzer.utils.FileUtilities;
 import org.fuzzer.utils.RandomNumberGenerator;
-import org.jetbrains.kotlin.spec.grammar.tools.KotlinGrammarToolsKt;
-import org.jetbrains.kotlin.spec.grammar.tools.KotlinParseTree;
+import org.fuzzer.utils.Tuple;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.UUID;
-
-import static org.fuzzer.utils.FileUtilities.compareByByte;
-import static org.jetbrains.kotlin.spec.grammar.tools.KotlinGrammarToolsKt.parseKotlinCode;
-import static org.jetbrains.kotlin.spec.grammar.tools.KotlinGrammarToolsKt.tokenizeKotlinCode;
+import java.util.*;
 
 public class DTRunner {
 
@@ -44,19 +47,26 @@ public class DTRunner {
 
     private final int maxDepth;
 
+    private String compilerScriptPath;
+
     private final String kotlinCompilerPath;
 
     private final List<String> args;
 
+    private final File statsFile;
+
     public DTRunner(int numberOfFiles, int numberOfStatements,
                     List<String> inputFileNames, String directoryOutput,
                     String kotlinCompilerPath, List<String> commandLineArgs,
+                    String compilerScriptPath,
                     int seed, int maxDepth, String contextFileName,
-                    String lexerFileName, String grammarFileName) throws IOException, RecognitionException, ClassNotFoundException {
+                    String lexerFileName, String grammarFileName,
+                    boolean serializeContext) throws IOException, RecognitionException, ClassNotFoundException {
         this.numberOfFiles = numberOfFiles;
         this.numberOfStatements = numberOfStatements;
         this.directoryOutput = directoryOutput;
         this.kotlinCompilerPath = kotlinCompilerPath;
+        this.compilerScriptPath = compilerScriptPath;
         this.args = commandLineArgs;
         this.maxDepth = maxDepth;
 
@@ -89,15 +99,16 @@ public class DTRunner {
             rootContext.addDefaultValue(rootContext.getTypeByName("String"), "\"fooBar\"");
             rootContext.addDefaultValue(rootContext.getTypeByName("Char"), "'w'");
 
-            FileOutputStream f = new FileOutputStream(contextFileName);
-            ObjectOutputStream o = new ObjectOutputStream(f);
+            if (serializeContext) {
+                FileOutputStream f = new FileOutputStream(contextFileName);
+                ObjectOutputStream o = new ObjectOutputStream(f);
 
-            // Serialize file
-            o.writeObject(rootContext);
+                // Serialize file
+                o.writeObject(rootContext);
 
-            o.close();
-            f.close();
-
+                o.close();
+                f.close();
+            }
         } else {
 
             // Deserialize
@@ -111,6 +122,16 @@ public class DTRunner {
             fi.close();
         }
 
+        this.statsFile = new File(directoryOutput + "/stats.csv");
+
+        if (!statsFile.exists()) {
+            statsFile.createNewFile();
+
+            BufferedWriter statsWriter = new BufferedWriter(new FileWriter(statsFile.getAbsolutePath()));
+            statsWriter.write("file,time,cls,attr,func,method,constr,simple_expr,do_while,assignment,try_catch,if_expr,elvis_op,simple_stmt,k1_exit,k1_time,k1_mem,k1_sz,k2_exit,k2_time,k2_mem,k2_sz,loc,sloc,lloc,cloc,mcc,cog,smells,cmm_ratio,mcckloc,smellskloc");
+            statsWriter.flush();
+            statsWriter.close();
+        }
     }
 
     private List<Context> createContexts() {
@@ -123,87 +144,49 @@ public class DTRunner {
         return ctxs;
     }
 
-    public void run() throws IOException, InterruptedException {
-        List<Context> contexts = createContexts();
+    public void run(Long seed, Long timeLimitMs) throws IOException {
+        Long startTime = System.currentTimeMillis();
+
+        BufferedWriter statsWriter = new BufferedWriter(new FileWriter(statsFile.getAbsolutePath(), true));
 
         ASTNode grammarRoot = new GrammarTransformer(lexerGrammar, parserGrammar).transformGrammar();
-        FuzzerStatistics stats = new FuzzerStatistics();
+        // Function declarations node
+        ASTNode functionNode = grammarRoot.getChildren().get(0).getChildren().get(5).getChildren().get(0).getChildren().get(0).getChildren().get(2);
 
-        grammarRoot.recordStatistics(stats);
+        // One or more functions
+        SyntaxNode nodeToSample = new PlusNode(List.of(functionNode));
 
-        for (int i = 0; i < numberOfFiles; i++) {
-            CodeFragment code = new CodeFragment();
+//        RandomSearch rs = new RandomSearch(nodeToSample, timeLimitMs, rootContext, seed);
+        FitnessFunction f = new DiversityFitnessFunction(null, DistanceMetric.MANHATTAN);
+        SelectionOperator s = new TournamentSelection(4, 0.75,
+                new RandomNumberGenerator(seed), f);
+        RecombinationOperator r = new SimpleRecombinationOperator();
+        DiversityGA ga = new DiversityGA(nodeToSample, timeLimitMs, rootContext, seed, 5, f, s, r);
 
-            for (int j = 0; j < numberOfStatements; j++) {
-                // Function declarations.
-                ASTNode nodeToSample = grammarRoot.getChildren().get(0).getChildren().get(5).getChildren().get(0).getChildren().get(0).getChildren().get(2);
+        while (System.currentTimeMillis() - startTime < timeLimitMs) {
 
-                CodeFragment newCode = nodeToSample.getSample(rng, contexts.get(i));
-                code.extend(newCode);
+//            List<Tuple<CodeFragment, FuzzerStatistics>> output = rs.search();
+            List<Tuple<CodeFragment, FuzzerStatistics>> output = ga.search();
+
+            for (Tuple<CodeFragment, FuzzerStatistics> tup : output) {
+                String randomFileName = UUID.randomUUID().toString();
+                String outputFileName = directoryOutput + randomFileName + ".kt";
+
+                String text = "fun main(args: Array<String>) {\n";
+                text += tup.first().getText();
+                text += "\n}";
+
+                BufferedWriter writer = new BufferedWriter(new FileWriter(outputFileName));
+                writer.write(text);
+                writer.close();
+
+                statsWriter.newLine();
+                statsWriter.write(randomFileName + "," + tup.second().csv());
             }
-            String randomFileName = UUID.randomUUID().toString();
-            String outputFileName = directoryOutput + randomFileName;
-
-            String text = "fun main(args: Array<String>) {\n";
-            text += code.getText();
-            text += "\n}";
-
-            String kotlinFile = outputFileName + ".kt";
-
-            BufferedWriter writer = new BufferedWriter(new FileWriter(kotlinFile));
-            writer.write(text);
-            writer.close();
-
-            KotlinParseTree parseTree = parseKotlinCode(tokenizeKotlinCode(text));
-            stats.record(parseTree);
-
-            int argNum = 0;
-            List<Long> compilertimes = new LinkedList<>();
-
-            // Run each of the compilers in series
-            for (String compilerArgs : args) {
-                argNum++;
-                List<String> command = new ArrayList<>();
-                File compilerOutputFile = new File(directoryOutput + "v" +  argNum + "/" + randomFileName + ".log");
-                compilerOutputFile.createNewFile();
-
-                command.add(kotlinCompilerPath);
-                command.add(kotlinFile);
-
-                List<String> inputArgs = compilerArgs.isEmpty() ? new ArrayList<>() : new ArrayList<>(List.of(compilerArgs.split(" ")));
-                inputArgs.add("-d");
-
-                // Manually define the jar output
-                inputArgs.add(directoryOutput + "v" +  argNum + "/" + randomFileName + ".jar");
-                command.addAll(inputArgs);
-
-                System.out.println(command);
-
-                ProcessBuilder pb = new ProcessBuilder(command);
-                pb.directory(new File(System.getProperty("user.dir")));
-                pb.redirectError(compilerOutputFile);
-
-                compilertimes.add(System.currentTimeMillis());
-
-                Process p = pb.start();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                StringBuilder builder = new StringBuilder();
-
-                String line;
-                while ( (line = reader.readLine()) != null) {
-                    builder.append(line);
-                    builder.append(System.getProperty("line.separator"));
-                }
-
-                p.waitFor();
-                compilertimes.set(compilertimes.size() - 1, System.currentTimeMillis() - compilertimes.get(compilertimes.size() - 1));
-            }
-
-            stats.record(compilertimes.get(0), compilertimes.get(1));
-
-            BufferedWriter statsWriter = new BufferedWriter(new FileWriter(directoryOutput + "/" + randomFileName + ".json"));
-            statsWriter.write(stats.toJson().toString());
-            statsWriter.close();
         }
+
+        statsWriter.newLine();
+        statsWriter.flush();
+        statsWriter.close();
     }
 }

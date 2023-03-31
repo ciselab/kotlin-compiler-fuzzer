@@ -7,6 +7,7 @@ import org.fuzzer.representations.context.Context;
 import org.fuzzer.utils.RandomNumberGenerator;
 
 import java.util.List;
+import java.util.Set;
 
 public abstract class ASTNode {
 
@@ -31,7 +32,7 @@ public abstract class ASTNode {
         this(antlrNode, null, children);
     }
 
-    public abstract CodeFragment getSample(RandomNumberGenerator rng, Context ctx);
+    public abstract CodeFragment getSample(RandomNumberGenerator rng, Context ctx, Set<String> generatedCallableDependencies);
 
     public void recordStatistics(FuzzerStatistics stats) {
         this.stats = stats;

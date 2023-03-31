@@ -9,6 +9,7 @@ import org.fuzzer.utils.RandomNumberGenerator;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 public class StatementNode extends ASTNode {
 
@@ -19,8 +20,8 @@ public class StatementNode extends ASTNode {
         this.maxDepth = maxDepth;
     }
     @Override
-    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx) {
-        return getRandomStatementNode(rng).getSample(rng, ctx);
+    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx, Set<String> generatedCallableDependencies) {
+        return getRandomStatementNode(rng).getSample(rng, ctx, generatedCallableDependencies);
     }
 
     public StatementNode getRandomStatementNode(RandomNumberGenerator rng) {
@@ -29,14 +30,16 @@ public class StatementNode extends ASTNode {
         alternatives.add(new DoWhileNode(antlrNode, maxDepth));
         alternatives.add(new SimpleStatementNode(antlrNode, maxDepth));
 
-        boolean returnSimpleStatement = rng.randomBoolean();
-
+        StatementNode selectedNode;
         // Forcibly simplify the sampling
-        if (rng.fromUniformContinuous(0.0, 1.0) < 0.8) {
-            return alternatives.get(alternatives.size() - 1);
+        if (rng.fromUniformContinuous(0.0, 1.0) < 0.4) {
+            selectedNode = alternatives.get(alternatives.size() - 1);
+        } else {
+            selectedNode = alternatives.get(rng.fromUniformDiscrete(0, alternatives.size() - 1));
         }
+        selectedNode.recordStatistics(stats);
 
-        return alternatives.get(rng.fromUniformDiscrete(0, alternatives.size() - 1));
+        return selectedNode;
     }
 
     @Override

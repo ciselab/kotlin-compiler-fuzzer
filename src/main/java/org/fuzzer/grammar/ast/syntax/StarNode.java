@@ -1,11 +1,13 @@
-package org.fuzzer.grammar.ast;
+package org.fuzzer.grammar.ast.syntax;
 
 import org.antlr.v4.tool.ast.GrammarAST;
 import org.fuzzer.generator.CodeFragment;
+import org.fuzzer.grammar.ast.ASTNode;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.utils.RandomNumberGenerator;
 
 import java.util.List;
+import java.util.Set;
 
 public class StarNode extends ASTNode {
 
@@ -17,8 +19,12 @@ public class StarNode extends ASTNode {
         super(antlrNode, children);
     }
 
+    public StarNode(List<ASTNode> children) {
+        super(null, children);
+    }
+
     @Override
-    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx) {
+    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx, Set<String> generatedCallableDependencies) {
         invariant();
 
         int numberOfSamples = rng.fromGeometric();
@@ -26,7 +32,7 @@ public class StarNode extends ASTNode {
         CodeFragment code = new CodeFragment();
 
         for (int sampleNumber = 0; sampleNumber < numberOfSamples; sampleNumber++) {
-            CodeFragment newCode = children.get(0).getSample(rng, ctx);
+            CodeFragment newCode = children.get(0).getSample(rng, ctx, generatedCallableDependencies);
             code.extend(newCode);
         }
 

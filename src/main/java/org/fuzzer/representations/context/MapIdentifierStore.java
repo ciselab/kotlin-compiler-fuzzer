@@ -18,7 +18,7 @@ public class MapIdentifierStore implements IdentifierStore {
     private final Map<String, KType> typeMap;
     private final TypeEnvironment typeEnvironment;
 
-    private final RandomNumberGenerator rng;
+    private RandomNumberGenerator rng;
 
     public MapIdentifierStore(TypeEnvironment typeEnvironment, RandomNumberGenerator rng) {
         this.identifierMap = new HashMap<>();
@@ -96,6 +96,11 @@ public class MapIdentifierStore implements IdentifierStore {
 
         List<String> identifierList = identifierMap.keySet().stream().toList();
         return identifierList.get(rng.fromUniformDiscrete(0, identifierList.size() - 1));
+    }
+
+    @Override
+    public void updateRNG(RandomNumberGenerator rng) {
+        this.rng = rng;
     }
 
     @Override

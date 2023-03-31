@@ -14,6 +14,7 @@ import org.fuzzer.utils.Tuple;
 
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public class ExpressionNode extends ASTNode {
 
@@ -25,8 +26,8 @@ public class ExpressionNode extends ASTNode {
     }
 
     @Override
-    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx) {
-        return getRandomExpressionNode(rng).getSample(rng, ctx);
+    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx, Set<String> generatedCallableDependencies) {
+        return getRandomExpressionNode(rng).getSample(rng, ctx, generatedCallableDependencies);
     }
 
     public ExpressionNode getRandomExpressionNode(RandomNumberGenerator rng) {
@@ -36,14 +37,21 @@ public class ExpressionNode extends ASTNode {
                         new ElvisOpExpression(antlrNode, maxDepth),
                         new SimpleExpressionNode(antlrNode, maxDepth)}));
 
-        if (rng.fromUniformContinuous(0.0, 1.0) < 0.8) {
-            return alternatives.get(alternatives.size() - 1);
+        ExpressionNode selectedNode;
+
+        if (rng.fromUniformContinuous(0.0, 1.0) < 0.4) {
+            selectedNode = alternatives.get(alternatives.size() - 1);
+        } else {
+             selectedNode = alternatives.get(rng.fromUniformDiscrete(0, alternatives.size() - 1));
         }
 
-        return alternatives.get(rng.fromUniformDiscrete(0, alternatives.size() - 1));
+        selectedNode.recordStatistics(stats);
+
+        return selectedNode;
     }
 
-    public Tuple<CodeFragment, Tuple<KType, List<KType>>> getSampleOfType(RandomNumberGenerator rng, Context ctx, KType type, boolean allowSubtypes) {
+    public Tuple<CodeFragment, Tuple<KType, List<KType>>> getSampleOfType(RandomNumberGenerator rng, Context ctx, KType type,
+                                                                          boolean allowSubtypes, Set<String> generatedCallableDependencies) {
         try {
             int depth = 0;
 
@@ -62,11 +70,13 @@ public class ExpressionNode extends ASTNode {
             verifyCallableCompatibility(rootNode, ctx, allowSubtypes);
             String expression = rootNode.getValue().call(ctx);
 
-            if (this.stats != null) {
-                stats.increment(SampleStructure.STATEMENT);
+            CodeFragment code = new CodeFragment(expression);
+
+            if (stats != null) {
+                stats.increment(SampleStructure.SIMPLE_EXPR);
             }
 
-            CodeFragment code = new CodeFragment(expression);
+            generatedCallableDependencies.addAll(getGeneratedCallableNames(rootNode));
 
             return new Tuple<>(code,
                     new Tuple<>(returnType, typeParameterInstances.stream()
@@ -165,6 +175,10 @@ public class ExpressionNode extends ASTNode {
         }
 
 
+    }
+
+    private Set<String> getGeneratedCallableNames(Tree<KCallable> callableTree) {
+        return callableTree.toList().stream().filter(KCallable::isGenerated).map(KCallable::getName).collect(Collectors.toSet());
     }
 
     private KCallable sampleOwnerCallableOfType(KType type, Context ctx, boolean allowSubtypes) throws CloneNotSupportedException {

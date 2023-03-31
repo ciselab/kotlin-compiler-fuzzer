@@ -1,7 +1,8 @@
-package org.fuzzer.grammar.ast;
+package org.fuzzer.grammar.ast.structures;
 
 import org.antlr.v4.tool.ast.GrammarAST;
 import org.fuzzer.generator.CodeFragment;
+import org.fuzzer.grammar.ast.ASTNode;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.representations.types.KType;
 import org.fuzzer.utils.RandomNumberGenerator;
@@ -9,6 +10,7 @@ import org.fuzzer.utils.StringUtilities;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class ParameterNode extends ASTNode {
 
@@ -40,7 +42,7 @@ public class ParameterNode extends ASTNode {
 
     // TODO inline functions
     @Override
-    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx) {
+    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx, Set<String> generatedCallableDependencies) {
         invariant();
 
         String id = ctx.getNewIdentifier();
