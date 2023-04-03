@@ -145,7 +145,6 @@ public class DTRunner {
     }
 
     public void run(Long seed, Long timeLimitMs) throws IOException {
-        Long startTime = System.currentTimeMillis();
 
         BufferedWriter statsWriter = new BufferedWriter(new FileWriter(statsFile.getAbsolutePath(), true));
 
@@ -161,28 +160,26 @@ public class DTRunner {
         SelectionOperator s = new TournamentSelection(4, 0.75,
                 new RandomNumberGenerator(seed), f);
         RecombinationOperator r = new SimpleRecombinationOperator();
-        DiversityGA ga = new DiversityGA(nodeToSample, timeLimitMs, rootContext, seed, 5, f, s, r);
+        DiversityGA ga = new DiversityGA(nodeToSample, timeLimitMs, rootContext, seed, 20, f, s, r);
 
-        while (System.currentTimeMillis() - startTime < timeLimitMs) {
 
 //            List<Tuple<CodeFragment, FuzzerStatistics>> output = rs.search();
-            List<Tuple<CodeFragment, FuzzerStatistics>> output = ga.search();
+        List<Tuple<CodeFragment, FuzzerStatistics>> output = ga.search();
 
-            for (Tuple<CodeFragment, FuzzerStatistics> tup : output) {
-                String randomFileName = UUID.randomUUID().toString();
-                String outputFileName = directoryOutput + randomFileName + ".kt";
+        for (Tuple<CodeFragment, FuzzerStatistics> tup : output) {
+            String randomFileName = UUID.randomUUID().toString();
+            String outputFileName = directoryOutput + randomFileName + ".kt";
 
-                String text = "fun main(args: Array<String>) {\n";
-                text += tup.first().getText();
-                text += "\n}";
+            String text = "fun main(args: Array<String>) {\n";
+            text += tup.first().getText();
+            text += "\n}";
 
-                BufferedWriter writer = new BufferedWriter(new FileWriter(outputFileName));
-                writer.write(text);
-                writer.close();
+            BufferedWriter writer = new BufferedWriter(new FileWriter(outputFileName));
+            writer.write(text);
+            writer.close();
 
-                statsWriter.newLine();
-                statsWriter.write(randomFileName + "," + tup.second().csv());
-            }
+            statsWriter.newLine();
+            statsWriter.write(randomFileName + "," + tup.second().csv());
         }
 
         statsWriter.newLine();

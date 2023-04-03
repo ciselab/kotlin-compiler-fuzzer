@@ -35,6 +35,6 @@ public class TestMain {
                 true);
 
         // 5 minutes
-        runner.run(0L, 30000L);
+        runner.run(0L, 300000L);
     }
 }

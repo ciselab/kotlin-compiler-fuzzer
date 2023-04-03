@@ -55,7 +55,7 @@ public class DiversityGA extends Search {
 
         Map<String, Tuple<CodeSnippet, Set<KCallable>>> snippetTable = new HashMap<>();
 
-        for (int i = 0; i < numberOfBlocks; i++) {
+        while(snippetTable.size() < numberOfBlocks) {
             // Prepare a fresh context with a new seed
             Context ctx = getNewContext();
             SyntaxNode rootNode = (SyntaxNode) getNodeToSample();
@@ -87,7 +87,7 @@ public class DiversityGA extends Search {
             // Add the generated snippet itself
             dependencySnippets.add(snippetTable.get(snippetName).first());
 
-            CodeBlock newIndividual = new CodeBlock(dependencySnippets, snippetTable.get(snippetName).second());
+            CodeBlock newIndividual = new CodeBlock(snippetName, dependencySnippets, snippetTable.get(snippetName).second());
             population.add(newIndividual);
         }
 

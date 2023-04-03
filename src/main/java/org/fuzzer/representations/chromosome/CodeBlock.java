@@ -16,10 +16,11 @@ public class CodeBlock {
 
     private final Set<KCallable> callables;
 
-    public CodeBlock(List<CodeSnippet> snippets, Set<KCallable> dependencies) {
+    public CodeBlock(String name, List<CodeSnippet> snippets, Set<KCallable> dependencies) {
         this.stats = FuzzerStatistics.aggregate(snippets.stream().map(CodeSnippet::stats).toList());
         this.callables = dependencies;
         this.text = snippets.stream().map(CodeSnippet::code).reduce(new CodeFragment(),  (x, y) -> { x.extend(y); return x; });
+        text.setName(name);
         this.stats.stop();
     }
 
