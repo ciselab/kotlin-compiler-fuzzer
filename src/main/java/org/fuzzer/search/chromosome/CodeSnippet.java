@@ -1,4 +1,4 @@
-package org.fuzzer.representations.chromosome;
+package org.fuzzer.search.chromosome;
 
 import org.fuzzer.dt.FuzzerStatistics;
 import org.fuzzer.generator.CodeFragment;

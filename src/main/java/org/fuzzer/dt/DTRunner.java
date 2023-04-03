@@ -123,15 +123,6 @@ public class DTRunner {
         }
 
         this.statsFile = new File(directoryOutput + "/stats.csv");
-
-        if (!statsFile.exists()) {
-            statsFile.createNewFile();
-
-            BufferedWriter statsWriter = new BufferedWriter(new FileWriter(statsFile.getAbsolutePath()));
-            statsWriter.write("file,time,cls,attr,func,method,constr,simple_expr,do_while,assignment,try_catch,if_expr,elvis_op,simple_stmt,k1_exit,k1_time,k1_mem,k1_sz,k2_exit,k2_time,k2_mem,k2_sz,loc,sloc,lloc,cloc,mcc,cog,smells,cmm_ratio,mcckloc,smellskloc");
-            statsWriter.flush();
-            statsWriter.close();
-        }
     }
 
     private List<Context> createContexts() {
@@ -145,9 +136,6 @@ public class DTRunner {
     }
 
     public void run(Long seed, Long timeLimitMs) throws IOException {
-
-        BufferedWriter statsWriter = new BufferedWriter(new FileWriter(statsFile.getAbsolutePath(), true));
-
         ASTNode grammarRoot = new GrammarTransformer(lexerGrammar, parserGrammar).transformGrammar();
         // Function declarations node
         ASTNode functionNode = grammarRoot.getChildren().get(0).getChildren().get(5).getChildren().get(0).getChildren().get(0).getChildren().get(2);
@@ -157,7 +145,7 @@ public class DTRunner {
 
 //        RandomSearch rs = new RandomSearch(nodeToSample, timeLimitMs, rootContext, seed);
         FitnessFunction f = new DiversityFitnessFunction(null, DistanceMetric.MANHATTAN);
-        SelectionOperator s = new TournamentSelection(4, 0.75,
+        SelectionOperator s = new TournamentSelection(4, 0.75, 100000L,
                 new RandomNumberGenerator(seed), f);
         RecombinationOperator r = new SimpleRecombinationOperator();
         DiversityGA ga = new DiversityGA(nodeToSample, timeLimitMs, rootContext, seed, 20, f, s, r);
@@ -165,6 +153,14 @@ public class DTRunner {
 
 //            List<Tuple<CodeFragment, FuzzerStatistics>> output = rs.search();
         List<Tuple<CodeFragment, FuzzerStatistics>> output = ga.search();
+
+        // Write the statistics of the run
+        BufferedWriter statsWriter = new BufferedWriter(new FileWriter(statsFile.getAbsolutePath(), true));
+        if (!statsFile.exists()) {
+            statsFile.createNewFile();
+            statsWriter.write("file,time,cls,attr,func,method,constr,simple_expr,do_while,assignment,try_catch,if_expr,elvis_op,simple_stmt,k1_exit,k1_time,k1_mem,k1_sz,k2_exit,k2_time,k2_mem,k2_sz,loc,sloc,lloc,cloc,mcc,cog,smells,cmm_ratio,mcckloc,smellskloc");
+            statsWriter.flush();
+        }
 
         for (Tuple<CodeFragment, FuzzerStatistics> tup : output) {
             String randomFileName = UUID.randomUUID().toString();

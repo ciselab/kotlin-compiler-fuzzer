@@ -3,7 +3,7 @@ package org.fuzzer.search.operators.recombination;
 import org.fuzzer.dt.FuzzerStatistics;
 import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.representations.callables.KCallable;
-import org.fuzzer.representations.chromosome.CodeBlock;
+import org.fuzzer.search.chromosome.CodeBlock;
 
 import java.util.HashSet;
 import java.util.List;
@@ -17,6 +17,9 @@ public class SimpleRecombinationOperator implements RecombinationOperator {
         combiedStatistics.stop();
 
         CodeFragment combinedText = new CodeFragment();
+
+        System.out.println("Combining blocks of lengths: " + b1.getText().getText().length() + " and " + b2.getText().getText().length());
+
         combinedText.appendToText(b1.getText());
         combinedText.extend(b2.getText());
 

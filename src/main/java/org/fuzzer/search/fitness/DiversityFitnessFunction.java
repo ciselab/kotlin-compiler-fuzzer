@@ -1,10 +1,9 @@
 package org.fuzzer.search.fitness;
 
 import org.fuzzer.grammar.SampleStructure;
-import org.fuzzer.representations.chromosome.CodeBlock;
+import org.fuzzer.search.chromosome.CodeBlock;
 
 import java.util.List;
-import java.util.Set;
 
 public class DiversityFitnessFunction implements FitnessFunction {
 

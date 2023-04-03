@@ -1,6 +1,6 @@
 package org.fuzzer.search.operators.selection;
 
-import org.fuzzer.representations.chromosome.CodeBlock;
+import org.fuzzer.search.chromosome.CodeBlock;
 
 import java.util.List;
 

@@ -1,7 +1,7 @@
 package org.fuzzer.representations.context;
 
 import org.fuzzer.representations.callables.*;
-import org.fuzzer.representations.chromosome.CodeSnippet;
+import org.fuzzer.search.chromosome.CodeSnippet;
 import org.fuzzer.representations.types.*;
 import org.fuzzer.utils.*;
 import org.jetbrains.kotlin.spec.grammar.tools.*;
@@ -1391,7 +1391,7 @@ public class Context implements Cloneable, Serializable {
 
         // No dependencies, skip recursive step
         if (dependencyNames.isEmpty()) {
-            dependencies.put(snippet.name(), new HashSet<>());
+            dependencies.put(snippet.name(), Collections.singleton(getCallableByName(snippet.name())));
             return;
         }
 
