@@ -5,5 +5,5 @@ import org.fuzzer.search.chromosome.CodeBlock;
 import java.util.List;
 
 public interface SelectionOperator {
-    List<CodeBlock> select(List<CodeBlock> population, int numberOfSelections);
+    List<CodeBlock> select(List<CodeBlock> population, long numberOfSelections);
 }

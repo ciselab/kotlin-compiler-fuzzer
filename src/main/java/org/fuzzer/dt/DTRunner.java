@@ -145,10 +145,10 @@ public class DTRunner {
 
 //        RandomSearch rs = new RandomSearch(nodeToSample, timeLimitMs, rootContext, seed);
         FitnessFunction f = new DiversityFitnessFunction(null, DistanceMetric.MANHATTAN);
-        SelectionOperator s = new TournamentSelection(4, 0.75, 100000L,
+        SelectionOperator s = new TournamentSelection(4L, 0.75, 100000L,
                 new RandomNumberGenerator(seed), f);
         RecombinationOperator r = new SimpleRecombinationOperator();
-        DiversityGA ga = new DiversityGA(nodeToSample, timeLimitMs, rootContext, seed, 20, f, s, r);
+        DiversityGA ga = new DiversityGA(nodeToSample, timeLimitMs, rootContext, seed, 20L, f, s, r);
 
 
 //            List<Tuple<CodeFragment, FuzzerStatistics>> output = rs.search();

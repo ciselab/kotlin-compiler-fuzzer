@@ -1,5 +1,7 @@
 package org.fuzzer.utils;
 
+import org.fuzzer.configuration.DistributionType;
+
 import java.io.Serializable;
 import java.util.List;
 import java.util.Random;
@@ -17,6 +19,26 @@ public class RandomNumberGenerator implements Serializable {
     }
     public Integer fromUniformDiscrete(int lowerBound, int upperBound) {
         return lowerBound + random.nextInt(1 + upperBound - lowerBound);
+    }
+
+    public Integer fromDiscreteDistribution(DistributionType distributionType, long lowerBound, long upperBound) {
+        switch (distributionType) {
+            case UNIFORM:
+                return fromUniformDiscrete((int) lowerBound, (int) upperBound);
+            case GEOMETRIC:
+                return Math.toIntExact(lowerBound + fromGeometric());
+            default:
+                throw new IllegalArgumentException("Cannot support distribution: " + distributionType);
+        }
+    }
+
+    public Double fromContinuousDistribution(DistributionType distributionType, double lowerBound, double upperBound) {
+        switch (distributionType) {
+            case UNIFORM:
+                return fromUniformContinuous(lowerBound, upperBound);
+            default:
+                throw new IllegalArgumentException("Cannot support distribution: " + distributionType);
+        }
     }
 
     public Long getNewSeed() {

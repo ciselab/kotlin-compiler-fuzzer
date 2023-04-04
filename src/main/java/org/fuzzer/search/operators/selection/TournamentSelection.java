@@ -8,7 +8,7 @@ import org.fuzzer.utils.Tuple;
 import java.util.*;
 
 public class TournamentSelection implements SelectionOperator {
-    private final int tournamentSize;
+    private final long tournamentSize;
 
     private final double selectionProbability;
 
@@ -25,7 +25,7 @@ public class TournamentSelection implements SelectionOperator {
 
     private final FitnessFunction fitnessFunction;
 
-    public TournamentSelection(int tournamentSize, double selectionProbability, Long maximumAllowedLength,
+    public TournamentSelection(Long tournamentSize, double selectionProbability, Long maximumAllowedLength,
                                RandomNumberGenerator rng, FitnessFunction fitnessFunction) {
         this.tournamentSize = tournamentSize;
         this.selectionProbability = selectionProbability;
@@ -35,7 +35,7 @@ public class TournamentSelection implements SelectionOperator {
     }
 
     @Override
-    public List<CodeBlock> select(List<CodeBlock> population, int numberOfSelections) {
+    public List<CodeBlock> select(List<CodeBlock> population, long numberOfSelections) {
         List<CodeBlock> selections = new LinkedList<>();
 
         // Filter heuristically on length to avoid out of memory exceptions

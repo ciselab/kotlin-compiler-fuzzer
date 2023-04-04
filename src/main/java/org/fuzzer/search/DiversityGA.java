@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 
 public class DiversityGA extends Search {
 
-    private final int populationSize;
+    private final long populationSize;
     private final RandomNumberGenerator seedGenerator;
 
     private final FuzzerStatistics globalStats;
@@ -31,7 +31,7 @@ public class DiversityGA extends Search {
 
     public DiversityGA(SyntaxNode nodeToSample, Long timeBudgetMilis,
                        Context rootContext, Long seed,
-                       int populationSize,
+                       Long populationSize,
                        FitnessFunction fitnessFunction,
                        SelectionOperator selectionOperator,
                        RecombinationOperator recombinationOperator) {
@@ -53,7 +53,7 @@ public class DiversityGA extends Search {
         return nextCtx;
     }
 
-    private List<CodeBlock> getRandomBlocks(int numberOfBlocks) {
+    private List<CodeBlock> getRandomBlocks(long numberOfBlocks) {
         List<CodeBlock> population = new LinkedList<>();
 
         Map<String, Tuple<CodeSnippet, Set<KCallable>>> snippetTable = new HashMap<>();
@@ -102,7 +102,7 @@ public class DiversityGA extends Search {
         List<CodeBlock> pop = getRandomBlocks(populationSize);
 
         while (System.currentTimeMillis() - globalStats.getStartTime() < getTimeBudgetMilis()) {
-            List<CodeBlock> parents = selectionOperator.select(pop, populationSize / 4);
+            List<CodeBlock> parents = selectionOperator.select(pop, populationSize / 4L);
             List<CodeBlock> children = new LinkedList<>();
 
             for (int i = 0; i < parents.size(); i ++) {
