@@ -1,0 +1,46 @@
+config:
+  heuristic:
+    type: random
+    population: 40
+    tournament-size: 4
+    selection-probability: 0.75
+    maximum-length: 500
+    new-blocks-generated: 20
+  grammar:
+    simplicity-bias: 0.4
+    plus-node-dist:
+        type: uniform
+        lower-bound: 1
+        upper-bound: 2
+    star-node-dist:
+        type: geometric
+        lower-bound: 0
+  language-features:
+    functions:
+        enable: true
+    expressions:
+        simple-expr:
+            enable: true
+            weight: 1.0
+        if-expr:
+            enable: true
+            weight: 1.0
+        elvis-expr:
+            enable: true
+            weight: 1.0
+        try-catch-expr:
+            enable: true
+            weight: 1.0
+    statements:
+        simple-stmt:
+            enable: true
+            weight: 1.0
+        do-while-stmt:
+            enable: true
+            weight: 1.0
+        assignment-stmt:
+            enable: true
+            weight: 1.0
+        loop-stmt:
+            enable: true
+            weight: 1.0
