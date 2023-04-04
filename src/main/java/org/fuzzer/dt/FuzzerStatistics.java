@@ -35,7 +35,11 @@ public class FuzzerStatistics implements Cloneable {
     }
 
     public void increment(SampleStructure sampledStruct) {
-        extendedGrammarVisitations.put(sampledStruct, extendedGrammarVisitations.getOrDefault(sampledStruct, 0L) + 1);
+        incrementBy(sampledStruct, 1L);
+    }
+
+    public void incrementBy(SampleStructure sampledStruct, Long value) {
+        extendedGrammarVisitations.put(sampledStruct, extendedGrammarVisitations.getOrDefault(sampledStruct, 0L) + value);
     }
 
     public void reset() {
@@ -63,6 +67,7 @@ public class FuzzerStatistics implements Cloneable {
 
     public String csv() {
         StringBuilder statsData = new StringBuilder(String.valueOf((finishTime - startTime)));
+        statsData.append(",");
         for (SampleStructure s : SampleStructure.values()) {
             statsData.append(extendedGrammarVisitations.getOrDefault(s, 0L)).append(",");
         }

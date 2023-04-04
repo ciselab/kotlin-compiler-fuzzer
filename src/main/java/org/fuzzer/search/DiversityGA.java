@@ -102,7 +102,7 @@ public class DiversityGA extends Search {
         List<CodeBlock> pop = getRandomBlocks(populationSize);
 
         while (System.currentTimeMillis() - globalStats.getStartTime() < getTimeBudgetMilis()) {
-            List<CodeBlock> parents = selectionOperator.select(pop, populationSize / 2);
+            List<CodeBlock> parents = selectionOperator.select(pop, populationSize / 4);
             List<CodeBlock> children = new LinkedList<>();
 
             for (int i = 0; i < parents.size(); i ++) {

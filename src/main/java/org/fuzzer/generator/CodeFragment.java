@@ -33,6 +33,10 @@ public class CodeFragment {
         return this.text;
     }
 
+    public Long size() {
+        return (long) this.text.length();
+    }
+
     public void appendToText(CodeFragment code) {
         appendToText(code.getText());
     }

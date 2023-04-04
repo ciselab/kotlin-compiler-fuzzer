@@ -98,10 +98,9 @@ public class FunctionDecl extends ASTNode {
                 code.extend("return " + returnStatementAndInstances.first());
                 code.extend("}");
 
-                // Record this sample
-                if (this.stats != null) {
-                    stats.increment(SampleStructure.FUNCTION);
-                }
+                stats.increment(SampleStructure.FUNCTION);
+                // TODO: do this for each node, not just functions.
+                stats.incrementBy(SampleStructure.CHARS, code.size());
 
                 // Set the structure name so that it can be
                 // Used during recombination

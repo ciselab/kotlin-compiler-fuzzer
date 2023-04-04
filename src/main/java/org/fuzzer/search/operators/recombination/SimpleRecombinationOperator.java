@@ -18,8 +18,6 @@ public class SimpleRecombinationOperator implements RecombinationOperator {
 
         CodeFragment combinedText = new CodeFragment();
 
-        System.out.println("Combining blocks of lengths: " + b1.getText().getText().length() + " and " + b2.getText().getText().length());
-
         combinedText.appendToText(b1.getText());
         combinedText.extend(b2.getText());
 

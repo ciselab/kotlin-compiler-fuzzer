@@ -158,9 +158,10 @@ public class DTRunner {
         BufferedWriter statsWriter = new BufferedWriter(new FileWriter(statsFile.getAbsolutePath(), true));
         if (!statsFile.exists()) {
             statsFile.createNewFile();
-            statsWriter.write("file,time,cls,attr,func,method,constr,simple_expr,do_while,assignment,try_catch,if_expr,elvis_op,simple_stmt,k1_exit,k1_time,k1_mem,k1_sz,k2_exit,k2_time,k2_mem,k2_sz,loc,sloc,lloc,cloc,mcc,cog,smells,cmm_ratio,mcckloc,smellskloc");
-            statsWriter.flush();
         }
+
+        statsWriter.write("file,time,chars,cls,attr,func,method,constr,simple_expr,do_while,assignment,try_catch,if_expr,elvis_op,simple_stmt,k1_exit,k1_time,k1_mem,k1_sz,k2_exit,k2_time,k2_mem,k2_sz,loc,sloc,lloc,cloc,mcc,cog,smells,cmm_ratio,mcckloc,smellskloc");
+        statsWriter.flush();
 
         for (Tuple<CodeFragment, FuzzerStatistics> tup : output) {
             String randomFileName = UUID.randomUUID().toString();
