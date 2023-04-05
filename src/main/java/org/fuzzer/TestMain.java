@@ -37,6 +37,7 @@ public class TestMain {
 //
 //        // 5 minutes
 //        runner.run(0L, 120000L);
-        Configuration cfg = new Configuration("./config.yaml", null, null, null, 0L);
+        Configuration cfg = new Configuration("./config.yaml");
+        cfg.getSearchStrategy(null, null, null, 0L);
     }
 }

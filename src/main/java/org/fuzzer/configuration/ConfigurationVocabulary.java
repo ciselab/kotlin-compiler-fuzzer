@@ -66,4 +66,8 @@ public class ConfigurationVocabulary {
     public static final String enable = "enable";
 
     public static final String weight = "weight";
+
+    public static final String uniform = "uniform";
+
+    public static final String geometric = "geometric";
 }

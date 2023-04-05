@@ -27,8 +27,6 @@ import java.util.Map;
 
 public class Configuration {
 
-    private final Search search;
-
     private final double simplicityBias;
 
     private final DistributionType plusNodeDist;
@@ -43,14 +41,26 @@ public class Configuration {
 
     private final Long starNodeUb;
 
+    private final SearchStrategy searchStrategy;
+
+    private final Long populationSize;
+
+    private final Long tournamentSize;
+
+    private final Double selectionProbability;
+
+    private final Long newBlocksGenerated;
+
+    private final DistanceMetric distanceMetric;
+
+    private final Long maxAllowedLength;
+
     private final Map<SampleStructure, Double> expressionStructureProbability;
 
     private final Map<SampleStructure, Double> statementStructureProbability;
 
 
-    public Configuration(String fullyQualifiedFileName,
-                         SyntaxNode nodeToSample, Long timeBudgetMilis,
-                         Context rootContext, Long seed) {
+    public Configuration(String fullyQualifiedFileName) {
         File configFile = new File(fullyQualifiedFileName);
 
         if (!configFile.exists() || !configFile.exists()) {
@@ -85,68 +95,60 @@ public class Configuration {
 
         // Parse the search algorithm parameters
         if (!data.containsKey(ConfigurationVocabulary.heuristic)) {
-            System.out.println("No search heuristic provided: defaulting to random search.");
+            throw new IllegalStateException("heuristic field must be provided.");
+        }
+        LinkedHashMap<String, Object> heuristicCfg = (LinkedHashMap<String, Object>) data.get(ConfigurationVocabulary.heuristic);
+        String heuristicName = (String) heuristicCfg.getOrDefault(ConfigurationVocabulary.type, "empty");
 
-            search = new RandomSearch(nodeToSample, timeBudgetMilis, rootContext, seed);
-        } else {
-            LinkedHashMap<String, Object> heuristicCfg = (LinkedHashMap<String, Object>) data.get(ConfigurationVocabulary.heuristic);
-            String heuristicName = (String) heuristicCfg.getOrDefault(ConfigurationVocabulary.type, "empty");
+        switch (heuristicName) {
+            case ConfigurationVocabulary.random -> {
+                searchStrategy = SearchStrategy.RANDOM;
+                populationSize = null;
+                tournamentSize = null;
+                selectionProbability = null;
+                newBlocksGenerated = null;
+                distanceMetric = null;
+                maxAllowedLength = null;
+            }
 
-            switch (heuristicName) {
-                case ConfigurationVocabulary.random -> {
-                    search = new RandomSearch(nodeToSample, timeBudgetMilis, rootContext, seed);
+            case ConfigurationVocabulary.diversityGA -> {
+                if (!heuristicCfg.containsKey(ConfigurationVocabulary.population)) {
+                    throw new IllegalStateException("population-size size must be provided for diversity search.");
                 }
 
-                case ConfigurationVocabulary.diversityGA -> {
-                    if (!heuristicCfg.containsKey(ConfigurationVocabulary.population)) {
-                        throw new IllegalStateException("population-size size must be provided for diversity search.");
-                    }
-
-                    if (!heuristicCfg.containsKey(ConfigurationVocabulary.tournamentSize)) {
-                        throw new IllegalStateException("tournament-size must be provided for diversity search.");
-                    }
-
-                    if (!heuristicCfg.containsKey(ConfigurationVocabulary.selectionProb)) {
-                        throw new IllegalStateException("selection-probability must be provided for diversity search.");
-                    }
-
-                    if (!heuristicCfg.containsKey(ConfigurationVocabulary.newBlocks)) {
-                        throw new IllegalStateException("new-blocks-generated must be provided for diversity search.");
-                    }
-
-                    if (!heuristicCfg.containsKey(ConfigurationVocabulary.distance)) {
-                        throw new IllegalStateException("distance-metric must be provided for diversity search.");
-                    }
-
-                    if (!heuristicCfg.containsKey(ConfigurationVocabulary.maxLen)) {
-                        throw new IllegalStateException("maximum-length must be provided for diversity search.");
-                    }
-
-                    Long populationSize = (Long) heuristicCfg.get(ConfigurationVocabulary.population);
-                    Long tournamentSize = (Long) heuristicCfg.get(ConfigurationVocabulary.tournamentSize);
-                    Double selectionProb = (Double) heuristicCfg.get(ConfigurationVocabulary.selectionProb);
-                    Long newBlocksGenerated = (Long) heuristicCfg.get(ConfigurationVocabulary.newBlocks);
-                    DistanceMetric distanceMetric = (DistanceMetric) heuristicCfg.get(ConfigurationVocabulary.distance);
-                    Long maximumAllowedLength = (Long) heuristicCfg.get(ConfigurationVocabulary.maxLen);
-
-
-                    RandomNumberGenerator selectionRng = new RandomNumberGenerator(seed);
-
-                    FitnessFunction f = new DiversityFitnessFunction(null, distanceMetric);
-                    SelectionOperator s = new TournamentSelection(tournamentSize, selectionProb, maximumAllowedLength,
-                            selectionRng, f);
-                    RecombinationOperator r = new SimpleRecombinationOperator();
-
-                    search = new DiversityGA(nodeToSample, timeBudgetMilis, rootContext, seed,
-                            populationSize, f, s, r);
+                if (!heuristicCfg.containsKey(ConfigurationVocabulary.tournamentSize)) {
+                    throw new IllegalStateException("tournament-size must be provided for diversity search.");
                 }
 
-                default -> {
-                    throw new IllegalStateException("Cannot support search heuristic: " + heuristicName);
+                if (!heuristicCfg.containsKey(ConfigurationVocabulary.selectionProb)) {
+                    throw new IllegalStateException("selection-probability must be provided for diversity search.");
                 }
+
+                if (!heuristicCfg.containsKey(ConfigurationVocabulary.newBlocks)) {
+                    throw new IllegalStateException("new-blocks-generated must be provided for diversity search.");
+                }
+
+                if (!heuristicCfg.containsKey(ConfigurationVocabulary.distance)) {
+                    throw new IllegalStateException("distance-metric must be provided for diversity search.");
+                }
+
+                if (!heuristicCfg.containsKey(ConfigurationVocabulary.maxLen)) {
+                    throw new IllegalStateException("maximum-length must be provided for diversity search.");
+                }
+
+                searchStrategy = SearchStrategy.DIVERSITY_GA;
+                populationSize = ((Integer) heuristicCfg.get(ConfigurationVocabulary.population)).longValue();
+                tournamentSize = ((Integer) heuristicCfg.get(ConfigurationVocabulary.tournamentSize)).longValue();
+                selectionProbability = (Double) heuristicCfg.get(ConfigurationVocabulary.selectionProb);
+                newBlocksGenerated = ((Integer) heuristicCfg.get(ConfigurationVocabulary.newBlocks)).longValue();
+                distanceMetric = nameToDistanceMetric((String) heuristicCfg.get(ConfigurationVocabulary.distance));
+                maxAllowedLength = ((Integer) heuristicCfg.get(ConfigurationVocabulary.maxLen)).longValue();
+            }
+
+            default -> {
+                throw new IllegalStateException("Cannot support search heuristic: " + heuristicName);
             }
         }
-
         // Parse the grammar parameters
         if (!data.containsKey(ConfigurationVocabulary.grammar)) {
             throw new IllegalStateException("grammar field must be provided.");
@@ -163,8 +165,6 @@ public class Configuration {
         if (!grammarCfg.containsKey(ConfigurationVocabulary.plusDist)) {
             throw new IllegalStateException("plus-node-dist field must be provided.");
         }
-
-
 
         LinkedHashMap<String, Object> plusDistCfg = (LinkedHashMap<String, Object>) grammarCfg.get(ConfigurationVocabulary.plusDist);
         plusNodeDist = nameToDistribution((String) plusDistCfg.get(ConfigurationVocabulary.type));
@@ -314,14 +314,52 @@ public class Configuration {
 
     private static DistributionType nameToDistribution(String distName) {
         switch (distName) {
-            case "uniform" -> {
+            case ConfigurationVocabulary.uniform -> {
                 return DistributionType.UNIFORM;
             }
-            case "geometric" -> {
+            case ConfigurationVocabulary.geometric -> {
                 return DistributionType.GEOMETRIC;
             }
             default -> {
                 throw new IllegalArgumentException("Distribution type " + distName + " not supported.");
+            }
+        }
+    }
+
+    private static DistanceMetric nameToDistanceMetric(String distanceMetricName) {
+        switch (distanceMetricName) {
+            case ConfigurationVocabulary.euclidean -> {
+                return DistanceMetric.EUCLIDEAN;
+            }
+            case ConfigurationVocabulary.manhattan -> {
+                return DistanceMetric.MANHATTAN;
+            }
+            default -> {
+                throw new IllegalArgumentException("Distance metric " + distanceMetricName + " not supported.");
+            }
+        }
+    }
+
+    public Search getSearchStrategy(SyntaxNode nodeToSample, Long timeBudgetMilis,
+                                    Context rootContext, Long seed) {
+
+        switch (searchStrategy) {
+            case RANDOM -> {
+                return new RandomSearch(nodeToSample, timeBudgetMilis, rootContext, seed);
+            }
+            case DIVERSITY_GA -> {
+                RandomNumberGenerator selectionRng = new RandomNumberGenerator(seed);
+
+                FitnessFunction f = new DiversityFitnessFunction(null, distanceMetric);
+                SelectionOperator s = new TournamentSelection(tournamentSize, selectionProbability,
+                        maxAllowedLength, selectionRng, f);
+                RecombinationOperator r = new SimpleRecombinationOperator();
+
+                return new DiversityGA(nodeToSample, timeBudgetMilis, rootContext, seed,
+                        populationSize, f, s, r);
+            }
+            default -> {
+                throw new IllegalStateException("Cannot support search strategy: " + searchStrategy);
             }
         }
     }
