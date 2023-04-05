@@ -1,11 +1,12 @@
 config:
   heuristic:
-    type: random
-    population: 40
+    type: diversity-ga
+    population-size: 40
     tournament-size: 4
     selection-probability: 0.75
     maximum-length: 500
     new-blocks-generated: 20
+    distance-metric: euclidean
   grammar:
     simplicity-bias: 0.4
     plus-node-dist:
