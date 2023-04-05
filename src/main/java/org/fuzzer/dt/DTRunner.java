@@ -4,6 +4,7 @@ package org.fuzzer.dt;
 import org.antlr.runtime.RecognitionException;
 import org.antlr.v4.tool.Grammar;
 import org.antlr.v4.tool.LexerGrammar;
+import org.fuzzer.configuration.Configuration;
 import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.GrammarTransformer;
 import org.fuzzer.grammar.RuleHandler;
@@ -11,15 +12,7 @@ import org.fuzzer.grammar.ast.ASTNode;
 import org.fuzzer.grammar.ast.syntax.PlusNode;
 import org.fuzzer.grammar.ast.syntax.SyntaxNode;
 import org.fuzzer.representations.context.Context;
-import org.fuzzer.search.DiversityGA;
-import org.fuzzer.search.RandomSearch;
-import org.fuzzer.search.fitness.DistanceMetric;
-import org.fuzzer.search.fitness.DiversityFitnessFunction;
-import org.fuzzer.search.fitness.FitnessFunction;
-import org.fuzzer.search.operators.recombination.RecombinationOperator;
-import org.fuzzer.search.operators.recombination.SimpleRecombinationOperator;
-import org.fuzzer.search.operators.selection.SelectionOperator;
-import org.fuzzer.search.operators.selection.TournamentSelection;
+import org.fuzzer.search.Search;
 import org.fuzzer.utils.FileUtilities;
 import org.fuzzer.utils.RandomNumberGenerator;
 import org.fuzzer.utils.Tuple;
@@ -49,6 +42,8 @@ public class DTRunner {
 
     private String compilerScriptPath;
 
+    private final Configuration cfg;
+
     private final String kotlinCompilerPath;
 
     private final List<String> args;
@@ -58,7 +53,7 @@ public class DTRunner {
     public DTRunner(int numberOfFiles, int numberOfStatements,
                     List<String> inputFileNames, String directoryOutput,
                     String kotlinCompilerPath, List<String> commandLineArgs,
-                    String compilerScriptPath,
+                    String compilerScriptPath, String configFilePath,
                     int seed, int maxDepth, String contextFileName,
                     String lexerFileName, String grammarFileName,
                     boolean serializeContext) throws IOException, RecognitionException, ClassNotFoundException {
@@ -122,6 +117,7 @@ public class DTRunner {
             fi.close();
         }
 
+        this.cfg = new Configuration(configFilePath);
         this.statsFile = new File(directoryOutput + "/stats.csv");
     }
 
@@ -143,16 +139,10 @@ public class DTRunner {
         // One or more functions
         SyntaxNode nodeToSample = new PlusNode(List.of(functionNode));
 
-//        RandomSearch rs = new RandomSearch(nodeToSample, timeLimitMs, rootContext, seed);
-        FitnessFunction f = new DiversityFitnessFunction(null, DistanceMetric.MANHATTAN);
-        SelectionOperator s = new TournamentSelection(4L, 0.75, 100000L,
-                new RandomNumberGenerator(seed), f);
-        RecombinationOperator r = new SimpleRecombinationOperator();
-        DiversityGA ga = new DiversityGA(nodeToSample, timeLimitMs, rootContext, seed, 20L, f, s, r);
+        nodeToSample.useConfiguration(cfg);
 
-
-//            List<Tuple<CodeFragment, FuzzerStatistics>> output = rs.search();
-        List<Tuple<CodeFragment, FuzzerStatistics>> output = ga.search();
+        Search searchAlgorithm = cfg.getSearchStrategy(nodeToSample, timeLimitMs, rootContext, seed);
+        List<Tuple<CodeFragment, FuzzerStatistics>> output = searchAlgorithm.search();
 
         // Write the statistics of the run
         BufferedWriter statsWriter = new BufferedWriter(new FileWriter(statsFile.getAbsolutePath(), true));
