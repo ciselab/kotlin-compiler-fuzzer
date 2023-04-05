@@ -4,6 +4,7 @@ import org.fuzzer.configuration.DistributionType;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 public class RandomNumberGenerator implements Serializable {
     private final Random random;
@@ -39,6 +40,29 @@ public class RandomNumberGenerator implements Serializable {
             default:
                 throw new IllegalArgumentException("Cannot support distribution: " + distributionType);
         }
+    }
+
+    /**
+     * Selects an index from a probability table.
+     * @param probabilityTable A with keys consisting of objects values consisting of probabilities.
+     * @param <T> The type of the keys.
+     * @return The selected key.
+     *
+     * The function assumes probabilities are discrete and add up to 1.0.
+     */
+    public <T> T fromProbabilityTable(Map<T, Double> probabilityTable) {
+        double p = random.nextDouble();
+        double cumulativeProbability = 0.0;
+
+        for (Map.Entry<T, Double> entry : probabilityTable.entrySet()) {
+            cumulativeProbability += entry.getValue();
+
+            if (p <= cumulativeProbability) {
+                return entry.getKey();
+            }
+        }
+
+        throw new IllegalStateException("Could not select from probability table.");
     }
 
     public Long getNewSeed() {

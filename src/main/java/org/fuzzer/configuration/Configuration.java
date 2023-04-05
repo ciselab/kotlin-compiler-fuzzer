@@ -340,6 +340,14 @@ public class Configuration {
         return starNodeUb;
     }
 
+    public Map<SampleStructure, Double> getExpressionProbabilityTable() {
+        return expressionStructureProbability;
+    }
+
+    public Map<SampleStructure, Double> getStatementProbabilityTable() {
+        return statementStructureProbability;
+    }
+
     private static DistributionType nameToDistribution(String distName) {
         switch (distName) {
             case ConfigurationVocabulary.uniform -> {

@@ -2,8 +2,9 @@ package org.fuzzer.grammar.ast.statements;
 
 import org.antlr.v4.tool.ast.GrammarAST;
 import org.fuzzer.generator.CodeFragment;
+import org.fuzzer.grammar.SampleStructure;
 import org.fuzzer.grammar.ast.ASTNode;
-import org.fuzzer.grammar.ast.expressions.SimpleExpressionNode;
+import org.fuzzer.grammar.ast.expressions.*;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.utils.RandomNumberGenerator;
 
@@ -25,21 +26,29 @@ public class StatementNode extends ASTNode {
     }
 
     public StatementNode getRandomStatementNode(RandomNumberGenerator rng) {
-        List<StatementNode> alternatives = new LinkedList<>();
-        alternatives.add(new AssignmentNode(antlrNode, this.maxDepth));
-        alternatives.add(new DoWhileNode(antlrNode, maxDepth));
-        alternatives.add(new SimpleStatementNode(antlrNode, maxDepth));
-
-        StatementNode selectedNode;
-        // Forcibly simplify the sampling
-        if (rng.fromUniformContinuous(0.0, 1.0) < 0.4) {
-            selectedNode = alternatives.get(alternatives.size() - 1);
+        if (rng.fromUniformContinuous(0.0, 1.0) < cfg.getSimplicityBias()) {
+            return createStatementNodeFromStructure(SampleStructure.SIMPLE_STMT);
         } else {
-            selectedNode = alternatives.get(rng.fromUniformDiscrete(0, alternatives.size() - 1));
+            SampleStructure selectedNode = rng.fromProbabilityTable(cfg.getStatementProbabilityTable());
+            return createStatementNodeFromStructure(selectedNode);
         }
-        selectedNode.recordStatistics(stats);
+    }
 
-        return selectedNode;
+    private StatementNode createStatementNodeFromStructure(SampleStructure structure) {
+        StatementNode node;
+
+        switch (structure) {
+            case ASSIGNMENT -> node = new AssignmentNode(antlrNode, maxDepth);
+            case DO_WHILE -> node = new DoWhileNode(antlrNode, maxDepth);
+            case SIMPLE_STMT -> node = new SimpleStatementNode(antlrNode, maxDepth);
+            default ->
+                    throw new IllegalArgumentException("Cannot create statement node of structure: " + structure);
+        }
+
+        node.useConfiguration(cfg);
+        node.recordStatistics(stats);
+
+        return node;
     }
 
     @Override
