@@ -10,9 +10,8 @@ config:
   grammar:
     simplicity-bias: 0.4
     plus-node-dist:
-        type: uniform
-        lower-bound: 1
-        upper-bound: 2
+        type: geometric
+        lower-bound: 0
     star-node-dist:
         type: geometric
         lower-bound: 0
