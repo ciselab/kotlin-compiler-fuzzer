@@ -45,3 +45,4 @@ output*
 META-INF/
 detekt/
 context.ser
+**__pycache__**
