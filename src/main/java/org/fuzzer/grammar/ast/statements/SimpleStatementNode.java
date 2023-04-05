@@ -22,6 +22,7 @@ public class SimpleStatementNode extends StatementNode {
 
         ExpressionNode expressionNode = new ExpressionNode(antlrNode, maxDepth);
         expressionNode.recordStatistics(stats);
+        expressionNode.useConfiguration(cfg);
 
         return expressionNode.getSample(rng, ctx, generatedCallableDependencies);
     }

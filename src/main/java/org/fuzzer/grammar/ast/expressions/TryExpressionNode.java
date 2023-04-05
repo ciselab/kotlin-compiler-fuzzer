@@ -31,6 +31,8 @@ public class TryExpressionNode extends ExpressionNode {
 
         CodeFragment tryCode = new CodeFragment();
         StatementNode stmtNode = new StatementNode(antlrNode, maxDepth);
+        stmtNode.recordStatistics(stats);
+        stmtNode.useConfiguration(cfg);
 
         // Sample some statements in the try block
         int numberOfStatements = rng.fromGeometric();

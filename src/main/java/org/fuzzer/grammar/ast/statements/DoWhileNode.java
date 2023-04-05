@@ -27,12 +27,16 @@ public class DoWhileNode extends StatementNode {
 
         ExpressionNode conditionNode = new ExpressionNode(antlrNode, maxDepth);
         conditionNode.recordStatistics(stats);
+        conditionNode.useConfiguration(cfg);
 
         CodeFragment conditionCode = conditionNode.getRandomExpressionNode(rng).getSampleOfType(rng, ctx, boolType, true, generatedCallableDependencies).first();
 
         int numberOfStatements = rng.fromGeometric();
-        StatementNode stmtNode = new StatementNode(antlrNode, maxDepth).getRandomStatementNode(rng);
+        StatementNode stmtNode = new StatementNode(antlrNode, maxDepth);
         stmtNode.recordStatistics(stats);
+        stmtNode.useConfiguration(cfg);
+
+        stmtNode = stmtNode.getRandomStatementNode(rng);
 
         Context innerContext = ctx.clone();
 

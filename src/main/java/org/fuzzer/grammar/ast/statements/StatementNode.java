@@ -45,8 +45,8 @@ public class StatementNode extends ASTNode {
                     throw new IllegalArgumentException("Cannot create statement node of structure: " + structure);
         }
 
-        node.useConfiguration(cfg);
         node.recordStatistics(stats);
+        node.useConfiguration(cfg);
 
         return node;
     }

@@ -191,7 +191,8 @@ public class Configuration {
 
                 plusNodeLb = Long.valueOf((Integer) plusDistCfg.get(ConfigurationVocabulary.lb));
 
-                plusNodeUb = null;
+                // This will remain unused
+                plusNodeUb = Long.MAX_VALUE;
             }
 
             default -> {
@@ -224,7 +225,8 @@ public class Configuration {
 
                 starNodeLb = Long.valueOf((Integer) starDistCfg.get(ConfigurationVocabulary.lb));
 
-                starNodeUb = null;
+                // This will remain unused
+                starNodeUb = Long.MAX_VALUE;
             }
 
             default -> {
