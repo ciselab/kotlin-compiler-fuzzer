@@ -312,6 +312,34 @@ public class Configuration {
         }
     }
 
+    public double getSimplicityBias() {
+        return simplicityBias;
+    }
+
+    public DistributionType getPlusNodeDist() {
+        return plusNodeDist;
+    }
+
+    public Long getPlusNodeLb() {
+        return plusNodeLb;
+    }
+
+    public Long getPlusNodeUb() {
+        return plusNodeUb;
+    }
+
+    public DistributionType getStarNodeDist() {
+        return starNodeDist;
+    }
+
+    public Long getStarNodeLb() {
+        return starNodeLb;
+    }
+
+    public Long getStarNodeUb() {
+        return starNodeUb;
+    }
+
     private static DistributionType nameToDistribution(String distName) {
         switch (distName) {
             case ConfigurationVocabulary.uniform -> {

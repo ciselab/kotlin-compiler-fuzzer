@@ -1,6 +1,7 @@
 package org.fuzzer.grammar.ast;
 
 import org.antlr.v4.tool.ast.GrammarAST;
+import org.fuzzer.configuration.Configuration;
 import org.fuzzer.dt.FuzzerStatistics;
 import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.representations.context.Context;
@@ -19,6 +20,8 @@ public abstract class ASTNode {
 
     protected FuzzerStatistics stats;
 
+    protected Configuration cfg;
+
     public ASTNode(GrammarAST antlrNode,
                    ASTNode parent,
                    List<ASTNode> children) {
@@ -26,6 +29,7 @@ public abstract class ASTNode {
         this.parent = parent;
         this.children = children;
         this.stats = null;
+        this.cfg = null;
     }
 
     public ASTNode(GrammarAST antlrNode, List<ASTNode> children) {
@@ -38,6 +42,13 @@ public abstract class ASTNode {
         this.stats = stats;
         for (ASTNode child : children) {
             child.recordStatistics(stats);
+        }
+    }
+
+    public void useConfiguration(Configuration cfg) {
+        this.cfg = cfg;
+        for (ASTNode child : children) {
+            child.useConfiguration(cfg);
         }
     }
 
