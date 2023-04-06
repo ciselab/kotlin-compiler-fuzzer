@@ -1,5 +1,4 @@
 import argparse
-import os
 import sys
 
 from data_handling import append_cummulative_bugs, get_data_from_dir, get_dirs, get_total_bugs
