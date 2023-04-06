@@ -19,7 +19,7 @@ public class Main {
         Long seed = Long.parseLong(System.getProperty("seed"));
         Long time = Long.parseLong(System.getProperty("time"));
         String output = System.getProperty("output");
-        String configPath = System.getProperty("configPath"); // "./config.yaml"
+        String configPath = System.getProperty("configFile"); // "./config.yaml"
 
         System.out.println(output);
 
