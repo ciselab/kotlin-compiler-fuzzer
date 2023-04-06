@@ -11,7 +11,7 @@ config:
     simplicity-bias: 0.4
     plus-node-dist:
         type: geometric
-        lower-bound: 0
+        lower-bound: 1
     star-node-dist:
         type: geometric
         lower-bound: 0
