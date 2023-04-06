@@ -5,7 +5,7 @@
 # Third and fourth args determine the output subdirectories for k1 and k2, respectively
 # Fifth arg is the (shared) csv feature file
 # Example:
-# bash src/scripts/extract_compiler_features.sh output 877fa2c6-9fa7-48c0-98b9-668d7cd74161 v1 v2 out.csv
+# bash src/scripts/utils/extract_compiler_features.sh output 877fa2c6-9fa7-48c0-98b9-668d7cd74161 v1 v2 out.csv
 
 wd=$(pwd)
 compiler_command="$wd/src/main/resources/kotlinc/bin/kotlinc $wd/$1/$2.kt -Xrender-internal-diagnostic-names"
