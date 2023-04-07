@@ -1,6 +1,6 @@
 package org.fuzzer.search.fitness;
 
-import org.fuzzer.representations.chromosome.CodeBlock;
+import org.fuzzer.search.chromosome.CodeBlock;
 
 import java.util.List;
 

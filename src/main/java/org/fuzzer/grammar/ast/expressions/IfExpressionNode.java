@@ -35,6 +35,7 @@ public class IfExpressionNode extends ExpressionNode {
 
         StatementNode stmtNode = new StatementNode(antlrNode, maxDepth);
         stmtNode.recordStatistics(stats);
+        stmtNode.useConfiguration(cfg);
 
         // Sample some statements in the true branch
         int numberOfStatements = rng.fromGeometric();

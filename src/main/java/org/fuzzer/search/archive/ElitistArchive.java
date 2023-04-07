@@ -1,9 +1,7 @@
 package org.fuzzer.search.archive;
 
 import org.fuzzer.grammar.SampleStructure;
-import org.fuzzer.grammar.ast.syntax.BlockNode;
-import org.fuzzer.representations.chromosome.CodeBlock;
-import org.fuzzer.utils.Tuple;
+import org.fuzzer.search.chromosome.CodeBlock;
 
 import java.util.HashSet;
 import java.util.List;

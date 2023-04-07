@@ -4,6 +4,7 @@ package org.fuzzer.dt;
 import org.antlr.runtime.RecognitionException;
 import org.antlr.v4.tool.Grammar;
 import org.antlr.v4.tool.LexerGrammar;
+import org.fuzzer.configuration.Configuration;
 import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.GrammarTransformer;
 import org.fuzzer.grammar.RuleHandler;
@@ -11,15 +12,7 @@ import org.fuzzer.grammar.ast.ASTNode;
 import org.fuzzer.grammar.ast.syntax.PlusNode;
 import org.fuzzer.grammar.ast.syntax.SyntaxNode;
 import org.fuzzer.representations.context.Context;
-import org.fuzzer.search.DiversityGA;
-import org.fuzzer.search.RandomSearch;
-import org.fuzzer.search.fitness.DistanceMetric;
-import org.fuzzer.search.fitness.DiversityFitnessFunction;
-import org.fuzzer.search.fitness.FitnessFunction;
-import org.fuzzer.search.operators.recombination.RecombinationOperator;
-import org.fuzzer.search.operators.recombination.SimpleRecombinationOperator;
-import org.fuzzer.search.operators.selection.SelectionOperator;
-import org.fuzzer.search.operators.selection.TournamentSelection;
+import org.fuzzer.search.Search;
 import org.fuzzer.utils.FileUtilities;
 import org.fuzzer.utils.RandomNumberGenerator;
 import org.fuzzer.utils.Tuple;
@@ -49,6 +42,8 @@ public class DTRunner {
 
     private String compilerScriptPath;
 
+    private final Configuration cfg;
+
     private final String kotlinCompilerPath;
 
     private final List<String> args;
@@ -58,7 +53,7 @@ public class DTRunner {
     public DTRunner(int numberOfFiles, int numberOfStatements,
                     List<String> inputFileNames, String directoryOutput,
                     String kotlinCompilerPath, List<String> commandLineArgs,
-                    String compilerScriptPath,
+                    String compilerScriptPath, String configFilePath,
                     int seed, int maxDepth, String contextFileName,
                     String lexerFileName, String grammarFileName,
                     boolean serializeContext) throws IOException, RecognitionException, ClassNotFoundException {
@@ -122,16 +117,8 @@ public class DTRunner {
             fi.close();
         }
 
+        this.cfg = new Configuration(configFilePath);
         this.statsFile = new File(directoryOutput + "/stats.csv");
-
-        if (!statsFile.exists()) {
-            statsFile.createNewFile();
-
-            BufferedWriter statsWriter = new BufferedWriter(new FileWriter(statsFile.getAbsolutePath()));
-            statsWriter.write("file,time,cls,attr,func,method,constr,simple_expr,do_while,assignment,try_catch,if_expr,elvis_op,simple_stmt,k1_exit,k1_time,k1_mem,k1_sz,k2_exit,k2_time,k2_mem,k2_sz,loc,sloc,lloc,cloc,mcc,cog,smells,cmm_ratio,mcckloc,smellskloc");
-            statsWriter.flush();
-            statsWriter.close();
-        }
     }
 
     private List<Context> createContexts() {
@@ -145,10 +132,6 @@ public class DTRunner {
     }
 
     public void run(Long seed, Long timeLimitMs) throws IOException {
-        Long startTime = System.currentTimeMillis();
-
-        BufferedWriter statsWriter = new BufferedWriter(new FileWriter(statsFile.getAbsolutePath(), true));
-
         ASTNode grammarRoot = new GrammarTransformer(lexerGrammar, parserGrammar).transformGrammar();
         // Function declarations node
         ASTNode functionNode = grammarRoot.getChildren().get(0).getChildren().get(5).getChildren().get(0).getChildren().get(0).getChildren().get(2);
@@ -156,33 +139,34 @@ public class DTRunner {
         // One or more functions
         SyntaxNode nodeToSample = new PlusNode(List.of(functionNode));
 
-//        RandomSearch rs = new RandomSearch(nodeToSample, timeLimitMs, rootContext, seed);
-        FitnessFunction f = new DiversityFitnessFunction(null, DistanceMetric.MANHATTAN);
-        SelectionOperator s = new TournamentSelection(4, 0.75,
-                new RandomNumberGenerator(seed), f);
-        RecombinationOperator r = new SimpleRecombinationOperator();
-        DiversityGA ga = new DiversityGA(nodeToSample, timeLimitMs, rootContext, seed, 5, f, s, r);
+        nodeToSample.useConfiguration(cfg);
 
-        while (System.currentTimeMillis() - startTime < timeLimitMs) {
+        Search searchAlgorithm = cfg.getSearchStrategy(nodeToSample, timeLimitMs, rootContext, seed);
+        List<Tuple<CodeFragment, FuzzerStatistics>> output = searchAlgorithm.search();
 
-//            List<Tuple<CodeFragment, FuzzerStatistics>> output = rs.search();
-            List<Tuple<CodeFragment, FuzzerStatistics>> output = ga.search();
+        // Write the statistics of the run
+        BufferedWriter statsWriter = new BufferedWriter(new FileWriter(statsFile.getAbsolutePath(), true));
+        if (!statsFile.exists()) {
+            statsFile.createNewFile();
+        }
 
-            for (Tuple<CodeFragment, FuzzerStatistics> tup : output) {
-                String randomFileName = UUID.randomUUID().toString();
-                String outputFileName = directoryOutput + randomFileName + ".kt";
+        statsWriter.write("file,time,chars,cls,attr,func,method,constr,simple_expr,do_while,assignment,try_catch,if_expr,elvis_op,simple_stmt,k1_exit,k1_time,k1_mem,k1_sz,k2_exit,k2_time,k2_mem,k2_sz,loc,sloc,lloc,cloc,mcc,cog,smells,cmm_ratio,mcckloc,smellskloc");
+        statsWriter.flush();
 
-                String text = "fun main(args: Array<String>) {\n";
-                text += tup.first().getText();
-                text += "\n}";
+        for (Tuple<CodeFragment, FuzzerStatistics> tup : output) {
+            String randomFileName = UUID.randomUUID().toString();
+            String outputFileName = directoryOutput + randomFileName + ".kt";
 
-                BufferedWriter writer = new BufferedWriter(new FileWriter(outputFileName));
-                writer.write(text);
-                writer.close();
+            String text = "fun main(args: Array<String>) {\n";
+            text += tup.first().getText();
+            text += "\n}";
 
-                statsWriter.newLine();
-                statsWriter.write(randomFileName + "," + tup.second().csv());
-            }
+            BufferedWriter writer = new BufferedWriter(new FileWriter(outputFileName));
+            writer.write(text);
+            writer.close();
+
+            statsWriter.newLine();
+            statsWriter.write(randomFileName + "," + tup.second().csv());
         }
 
         statsWriter.newLine();

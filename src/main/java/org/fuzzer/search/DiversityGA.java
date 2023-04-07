@@ -4,8 +4,8 @@ import org.fuzzer.dt.FuzzerStatistics;
 import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.ast.syntax.SyntaxNode;
 import org.fuzzer.representations.callables.KCallable;
-import org.fuzzer.representations.chromosome.CodeBlock;
-import org.fuzzer.representations.chromosome.CodeSnippet;
+import org.fuzzer.search.chromosome.CodeBlock;
+import org.fuzzer.search.chromosome.CodeSnippet;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.search.fitness.FitnessFunction;
 import org.fuzzer.search.operators.recombination.RecombinationOperator;
@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 
 public class DiversityGA extends Search {
 
-    private final int populationSize;
+    private final long populationSize;
     private final RandomNumberGenerator seedGenerator;
 
     private final FuzzerStatistics globalStats;
@@ -27,9 +27,11 @@ public class DiversityGA extends Search {
 
     private final RecombinationOperator recombinationOperator;
 
+    private final RandomNumberGenerator choiceGenerator;
+
     public DiversityGA(SyntaxNode nodeToSample, Long timeBudgetMilis,
                        Context rootContext, Long seed,
-                       int populationSize,
+                       Long populationSize,
                        FitnessFunction fitnessFunction,
                        SelectionOperator selectionOperator,
                        RecombinationOperator recombinationOperator) {
@@ -40,6 +42,7 @@ public class DiversityGA extends Search {
         this.globalStats = new FuzzerStatistics();
         this.selectionOperator = selectionOperator;
         this.recombinationOperator = recombinationOperator;
+        this.choiceGenerator = new RandomNumberGenerator(getSeed());
     }
 
     private Context getNewContext() {
@@ -50,12 +53,12 @@ public class DiversityGA extends Search {
         return nextCtx;
     }
 
-    private List<CodeBlock> getRandomBlocks(int numberOfBlocks) {
+    private List<CodeBlock> getRandomBlocks(long numberOfBlocks) {
         List<CodeBlock> population = new LinkedList<>();
 
         Map<String, Tuple<CodeSnippet, Set<KCallable>>> snippetTable = new HashMap<>();
 
-        for (int i = 0; i < numberOfBlocks; i++) {
+        while(snippetTable.size() < numberOfBlocks) {
             // Prepare a fresh context with a new seed
             Context ctx = getNewContext();
             SyntaxNode rootNode = (SyntaxNode) getNodeToSample();
@@ -79,15 +82,14 @@ public class DiversityGA extends Search {
             Set<String> dependencyNames = snippetTable.get(snippetName)
                     .second().stream().map(KCallable::getName).collect(Collectors.toSet());
 
+
+            // The snippet itself is also in the dependency set.
             List<CodeSnippet> dependencySnippets = new ArrayList<>(snippetTable.entrySet()
                     .stream().filter(entry -> dependencyNames.contains(entry.getKey()))
                     .map(entry -> entry.getValue().first())
                     .toList());
 
-            // Add the generated snippet itself
-            dependencySnippets.add(snippetTable.get(snippetName).first());
-
-            CodeBlock newIndividual = new CodeBlock(dependencySnippets, snippetTable.get(snippetName).second());
+            CodeBlock newIndividual = new CodeBlock(snippetName, dependencySnippets, snippetTable.get(snippetName).second());
             population.add(newIndividual);
         }
 
@@ -100,12 +102,18 @@ public class DiversityGA extends Search {
         List<CodeBlock> pop = getRandomBlocks(populationSize);
 
         while (System.currentTimeMillis() - globalStats.getStartTime() < getTimeBudgetMilis()) {
-            List<CodeBlock> parents = selectionOperator.select(pop, populationSize / 2);
+            List<CodeBlock> parents = selectionOperator.select(pop, populationSize / 4L);
             List<CodeBlock> children = new LinkedList<>();
 
-            for (int i = 0; i < parents.size(); i += 2) {
+            for (int i = 0; i < parents.size(); i ++) {
                 CodeBlock parent1 = parents.get(i);
-                CodeBlock parent2 = parents.get(i + 1);
+                List<CodeBlock> compatibleParents = parents.stream().filter(parent1::isCompatible).toList();
+
+                if (compatibleParents.isEmpty()) {
+                    continue;
+                }
+
+                CodeBlock parent2 = compatibleParents.get(choiceGenerator.fromUniformDiscrete(0, compatibleParents.size() - 1));
 
                 CodeBlock child = recombinationOperator.combine(parent1, parent2);
                 children.add(child);

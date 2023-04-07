@@ -1,11 +1,9 @@
 package org.fuzzer.grammar.ast.syntax;
 
-import org.antlr.v4.tool.ast.GrammarAST;
 import org.fuzzer.dt.FuzzerStatistics;
 import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.ast.ASTNode;
-import org.fuzzer.grammar.ast.statements.StatementNode;
-import org.fuzzer.representations.chromosome.CodeSnippet;
+import org.fuzzer.search.chromosome.CodeSnippet;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.utils.RandomNumberGenerator;
 
@@ -19,7 +17,7 @@ public class PlusNode extends SyntaxNode {
     public List<CodeSnippet> getSnippets(RandomNumberGenerator rng, Context ctx) {
         invariant();
 
-        int numberOfSamples = 1 + rng.fromGeometric();
+        int numberOfSamples = rng.fromDiscreteDistribution(cfg.getPlusNodeDist(), cfg.getPlusNodeLb(), cfg.getPlusNodeUb());
 
         ASTNode nodeToSample = children.get(0);
 
@@ -30,6 +28,7 @@ public class PlusNode extends SyntaxNode {
 
             FuzzerStatistics newStats = stats.clone();
             nodeToSample.recordStatistics(newStats);
+            nodeToSample.useConfiguration(cfg);
 
             CodeFragment newCode = nodeToSample.getSample(rng, ctx, dependencyNames);
 
@@ -52,7 +51,7 @@ public class PlusNode extends SyntaxNode {
     public CodeFragment getSample(RandomNumberGenerator rng, Context ctx, Set<String> generatedCallableDependencies) {
         invariant();
 
-        int numberOfSamples = 1 + rng.fromGeometric();
+        int numberOfSamples = rng.fromDiscreteDistribution(cfg.getPlusNodeDist(), cfg.getPlusNodeLb(), cfg.getPlusNodeUb());
 
         CodeFragment code = new CodeFragment();
 

@@ -1,6 +1,7 @@
 package org.fuzzer;
 
 import org.antlr.runtime.RecognitionException;
+import org.fuzzer.configuration.Configuration;
 import org.fuzzer.dt.DTRunner;
 
 import java.io.IOException;
@@ -16,6 +17,8 @@ public class TestMain {
         String grammarFile = "./src/main/resources/KotlinParser.g4";
         String compilerPath = "src/main/resources/kotlinc/bin/kotlinc";
         String classPath = "src/test/resources/kotlin/";
+        String outputDir = "output/";
+        String configPath = "./config.yaml";
 
         List<String> classes = new ArrayList<>(List.of("Any.kt", "Comparable.kt", "Throwable.kt",
                 "Array.kt", "Enum.kt", "Iterator.kt", "Library.kt", "Collections.kt", "Unit.kt", "ExceptionsH.kt",
@@ -26,15 +29,17 @@ public class TestMain {
         compilerArgs.add("false");
         compilerArgs.add("true");
 
+        Configuration cfg = new Configuration("./config.yaml");
+
         DTRunner runner = new DTRunner(10000, 5,
-                fileNames, "output/",
+                fileNames, outputDir,
                 compilerPath, compilerArgs,
-                compilerScriptPath,
+                compilerScriptPath, configPath,
                 0, 3, ctxFileName,
                 lexerGrammarFile, grammarFile,
                 true);
 
         // 5 minutes
-        runner.run(0L, 30000L);
+        runner.run(0L, 120000L);
     }
 }

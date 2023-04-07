@@ -33,6 +33,7 @@ configurations {
 dependencies {
     // Regex generator
     implementation 'com.github.mifmif:generex:1.0.1'
+    implementation 'org.yaml:snakeyaml:2.0'
     implementation 'org.jetbrains.kotlin.spec.grammar.tools:kotlin-grammar-tools:0.1'
     implementation 'org.json:json:20220320'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'

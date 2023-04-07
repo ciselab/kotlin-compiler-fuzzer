@@ -1,10 +1,9 @@
 package org.fuzzer.search.fitness;
 
 import org.fuzzer.grammar.SampleStructure;
-import org.fuzzer.representations.chromosome.CodeBlock;
+import org.fuzzer.search.chromosome.CodeBlock;
 
 import java.util.List;
-import java.util.Set;
 
 public class DiversityFitnessFunction implements FitnessFunction {
 
@@ -30,13 +29,13 @@ public class DiversityFitnessFunction implements FitnessFunction {
         switch (distanceMetric) {
             case EUCLIDEAN -> {
                 for (SampleStructure feature : features) {
-                    double diff = b1.getNumberOfSamples(feature) - b1.getNumberOfSamples(feature);
+                    double diff = b1.getNumberOfSamples(feature) - b2.getNumberOfSamples(feature);
                     sum += Math.sqrt(diff * diff);
                 }
             }
             case MANHATTAN -> {
                 for (SampleStructure feature : features) {
-                    sum += Math.abs(b1.getNumberOfSamples(feature) - b1.getNumberOfSamples(feature));
+                    sum += Math.abs(b1.getNumberOfSamples(feature) - b2.getNumberOfSamples(feature));
                 }
             }
         }

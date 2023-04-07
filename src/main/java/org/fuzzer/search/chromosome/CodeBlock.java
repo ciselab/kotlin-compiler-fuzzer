@@ -1,4 +1,4 @@
-package org.fuzzer.representations.chromosome;
+package org.fuzzer.search.chromosome;
 
 import org.fuzzer.dt.FuzzerStatistics;
 import org.fuzzer.generator.CodeFragment;
@@ -16,10 +16,11 @@ public class CodeBlock {
 
     private final Set<KCallable> callables;
 
-    public CodeBlock(List<CodeSnippet> snippets, Set<KCallable> dependencies) {
+    public CodeBlock(String name, List<CodeSnippet> snippets, Set<KCallable> dependencies) {
         this.stats = FuzzerStatistics.aggregate(snippets.stream().map(CodeSnippet::stats).toList());
         this.callables = dependencies;
         this.text = snippets.stream().map(CodeSnippet::code).reduce(new CodeFragment(),  (x, y) -> { x.extend(y); return x; });
+        text.setName(name);
         this.stats.stop();
     }
 
@@ -27,6 +28,14 @@ public class CodeBlock {
         this.stats = stats;
         this.text = text;
         this.callables = callables;
+    }
+
+    public String getName() {
+        return text.getName();
+    }
+
+    public Long size() {
+        return (long) text.getText().length();
     }
 
     public FuzzerStatistics getStats() {
@@ -43,6 +52,14 @@ public class CodeBlock {
 
     public Long getNumberOfSamples(SampleStructure s) {
         return stats.getNumberOfSamples(s);
+    }
+
+    public boolean isCompatible(CodeBlock other) {
+        List<String> callableNames = callables.stream().map(KCallable::getName).toList();
+
+        // Code blocks are only compatible if they have no overlapping names
+        // TODO generalize this by having each block retain the snippets that compose it
+        return other.getCallables().stream().noneMatch(kCallable -> callableNames.contains(kCallable.getName()));
     }
 
     @Override

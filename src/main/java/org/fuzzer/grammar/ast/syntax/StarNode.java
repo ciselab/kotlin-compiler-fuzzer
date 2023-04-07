@@ -27,7 +27,7 @@ public class StarNode extends ASTNode {
     public CodeFragment getSample(RandomNumberGenerator rng, Context ctx, Set<String> generatedCallableDependencies) {
         invariant();
 
-        int numberOfSamples = rng.fromGeometric();
+        int numberOfSamples = rng.fromDiscreteDistribution(cfg.getStarNodeDist(), cfg.getStarNodeLb(), cfg.getStarNodeUb());
 
         CodeFragment code = new CodeFragment();
 

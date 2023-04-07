@@ -19,6 +19,7 @@ public class Main {
         Long seed = Long.parseLong(System.getProperty("seed"));
         Long time = Long.parseLong(System.getProperty("time"));
         String output = System.getProperty("output");
+        String configPath = System.getProperty("configFile"); // "./config.yaml"
 
         System.out.println(output);
 
@@ -34,7 +35,7 @@ public class Main {
         DTRunner runner = new DTRunner(10000, 5,
                 fileNames, output,
                 compilerPath, compilerArgs,
-                compilerScriptPath,
+                compilerScriptPath, configPath,
                 0, 3, ctxFileName,
                 lexerGrammarFile, grammarFile,
                 false);

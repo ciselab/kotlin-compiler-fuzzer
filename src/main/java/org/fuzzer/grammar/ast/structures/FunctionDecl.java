@@ -46,8 +46,7 @@ public class FunctionDecl extends ASTNode {
                 // Sample a consistently-types return statement
                 ExpressionNode returnNode = new ExpressionNode(antlrNode, 3);
                 returnNode.recordStatistics(stats);
-
-
+                returnNode.useConfiguration(cfg);
 
                 var returnStatementAndInstances = returnNode.getRandomExpressionNode(rng)
                         .getSampleOfType(rng, ctx, returnType, true, dependentVariableNames);
@@ -82,6 +81,7 @@ public class FunctionDecl extends ASTNode {
 
                 StatementNode stmtNode = new StatementNode(antlrNode, 3);
                 stmtNode.recordStatistics(this.stats);
+                stmtNode.useConfiguration(cfg);
 
                 // TODO: adapt this
                 boolean allowSubtypes = true;
@@ -98,10 +98,9 @@ public class FunctionDecl extends ASTNode {
                 code.extend("return " + returnStatementAndInstances.first());
                 code.extend("}");
 
-                // Record this sample
-                if (this.stats != null) {
-                    stats.increment(SampleStructure.FUNCTION);
-                }
+                stats.increment(SampleStructure.FUNCTION);
+                // TODO: do this for each node, not just functions.
+                stats.incrementBy(SampleStructure.CHARS, code.size());
 
                 // Set the structure name so that it can be
                 // Used during recombination

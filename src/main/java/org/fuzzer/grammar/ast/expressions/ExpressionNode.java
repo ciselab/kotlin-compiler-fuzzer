@@ -1,6 +1,8 @@
 package org.fuzzer.grammar.ast.expressions;
 
 import org.antlr.v4.tool.ast.GrammarAST;
+import org.fuzzer.configuration.Configuration;
+import org.fuzzer.dt.FuzzerStatistics;
 import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.SampleStructure;
 import org.fuzzer.grammar.ast.ASTNode;
@@ -31,23 +33,30 @@ public class ExpressionNode extends ASTNode {
     }
 
     public ExpressionNode getRandomExpressionNode(RandomNumberGenerator rng) {
-        List<ExpressionNode> alternatives = new ArrayList<>(List.of(
-                new ExpressionNode[]{new IfExpressionNode(antlrNode, maxDepth),
-                        new TryExpressionNode(antlrNode, maxDepth),
-                        new ElvisOpExpression(antlrNode, maxDepth),
-                        new SimpleExpressionNode(antlrNode, maxDepth)}));
-
-        ExpressionNode selectedNode;
-
-        if (rng.fromUniformContinuous(0.0, 1.0) < 0.4) {
-            selectedNode = alternatives.get(alternatives.size() - 1);
+        if (rng.fromUniformContinuous(0.0, 1.0) < cfg.getSimplicityBias()) {
+            return createExpressionNodeFromStructure(SampleStructure.SIMPLE_EXPR);
         } else {
-             selectedNode = alternatives.get(rng.fromUniformDiscrete(0, alternatives.size() - 1));
+            SampleStructure selectedStructure = rng.fromProbabilityTable(cfg.getExpressionProbabilityTable());
+            return createExpressionNodeFromStructure(selectedStructure);
+        }
+    }
+
+    private ExpressionNode createExpressionNodeFromStructure(SampleStructure structure) {
+        ExpressionNode node;
+
+        switch (structure) {
+            case IF_EXPR -> node = new IfExpressionNode(antlrNode, maxDepth);
+            case SIMPLE_EXPR -> node = new SimpleExpressionNode(antlrNode, maxDepth);
+            case TRY_CATCH -> node = new TryExpressionNode(antlrNode, maxDepth);
+            case ELVIS_OP -> node = new ElvisOpExpression(antlrNode, maxDepth);
+            default ->
+                throw new IllegalArgumentException("Cannot create expression node of structure: " + structure);
         }
 
-        selectedNode.recordStatistics(stats);
+        node.useConfiguration(cfg);
+        node.recordStatistics(stats);
 
-        return selectedNode;
+        return node;
     }
 
     public Tuple<CodeFragment, Tuple<KType, List<KType>>> getSampleOfType(RandomNumberGenerator rng, Context ctx, KType type,

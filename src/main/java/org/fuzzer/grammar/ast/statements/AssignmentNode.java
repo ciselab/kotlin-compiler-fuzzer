@@ -36,6 +36,7 @@ public class AssignmentNode extends StatementNode {
 
         SimpleExpressionNode expr = new SimpleExpressionNode(this.antlrNode, this.maxDepth);
         expr.recordStatistics(stats);
+        expr.useConfiguration(cfg);
 
         var codeAndInstances = expr.getRandomExpressionNode(rng).getSampleOfType(rng, ctx, type, true, generatedCallableDependencies);
 
