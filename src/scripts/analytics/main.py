@@ -2,6 +2,7 @@ import argparse
 import sys
 
 from data_handling import append_cummulative_bugs, get_data_from_dir, get_dirs, get_total_bugs
+from metrics import diversity_dfs
 from statistical_tests import a12_effectiveness_dfs, a12_efficiency_dfs, auc_trapezoid_dfs, wilcoxon_effectiveness_dfs, wilcoxon_efficiency_dfs
 
 import numpy as np
@@ -14,6 +15,17 @@ def analyze_results(directories_alg1, directories_alg2, p_thresh = 0.05):
     df1s = [append_cummulative_bugs(get_data_from_dir(output_dir)) for output_dir in directories_alg1]
     df2s = [append_cummulative_bugs(get_data_from_dir(output_dir)) for output_dir in directories_alg2]
     
+    print("=== Files ===")
+    print(f"Algorithm 1 generates on average {np.mean([len(d.index) for d in df1s])} files")
+    print(f"Algorithm 2 generates on average {np.mean([len(d.index) for d in df2s])} files")
+
+    mean_diversity_df1s, std_diversity_df1s = diversity_dfs(df1s)
+    mean_diversity_df2s, std_diversity_df2s = diversity_dfs(df2s)
+
+    print("=== Diversity ===")
+    print(f"Algorithm 1 mean distance %.2f with stddev %.2f" % (mean_diversity_df1s, std_diversity_df1s))
+    print(f"Algorithm 2 mean distance %.2f with stddev %.2f" % (mean_diversity_df2s, std_diversity_df2s))
+
     print("=== Effectiveness ===")
     print(f"Algorithm 1 causes on average {np.mean(get_total_bugs(df1s))} crashes")
     print(f"Algorithm 2 causes on average {np.mean(get_total_bugs(df2s))} crashes")
@@ -31,7 +43,6 @@ def analyze_results(directories_alg1, directories_alg2, p_thresh = 0.05):
 
             
     print("=== Efficiency ===")
-    
     auc_d1 = auc_trapezoid_dfs(df1s)
     auc_d2 = auc_trapezoid_dfs(df2s)
     
