@@ -5,6 +5,7 @@ from data_handling import append_cummulative_bugs, get_data_from_dir, get_dirs, 
 from metrics import diversity_dfs
 from statistical_tests import a12_effectiveness_dfs, a12_efficiency_dfs, auc_trapezoid_dfs, wilcoxon_effectiveness_dfs, wilcoxon_efficiency_dfs
 
+import pandas as pd
 import numpy as np
 
 def analyze_results(directories_alg1, directories_alg2, p_thresh = 0.05):
@@ -70,7 +71,9 @@ if __name__ == "__main__":
     
     parser.add_argument('-d','--dirs', nargs='+', help='The list of directories to analyze. Full paths are expected.', required=True)
     parser.add_argument('-n','--names', nargs='+', help='The names corresponding to the algorithms that were used to generate the paths.', required=True)
-    
+    parser.add_argument('-o --output-concat', dest='output', default=False, action='store_true')
+
+
     args = parser.parse_args()
 
     dirs = args.dirs
@@ -86,4 +89,13 @@ if __name__ == "__main__":
             print(f'==== In directories {d1} and {d2} ====')
 
             analyze_results(get_dirs(d1), get_dirs(d2))
+    
+    if (args.output):
+        for c, d in enumerate(dirs):
+            df = pd.concat([append_cummulative_bugs(get_data_from_dir(output_dir)) for output_dir in get_dirs(d)])
+
+            df['crash'] = df[['k1_exit', 'k2_exit']].apply(np.sum, axis=1, result_type='expand')
+            df['crash'] = df.crash.apply(lambda x: x % 2)
+
+            df.to_csv(f'{names[c]}.csv')
     
