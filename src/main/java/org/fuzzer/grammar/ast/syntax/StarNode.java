@@ -1,15 +1,19 @@
 package org.fuzzer.grammar.ast.syntax;
 
 import org.antlr.v4.tool.ast.GrammarAST;
+import org.fuzzer.dt.FuzzerStatistics;
 import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.ast.ASTNode;
 import org.fuzzer.representations.context.Context;
+import org.fuzzer.search.chromosome.CodeSnippet;
 import org.fuzzer.utils.RandomNumberGenerator;
 
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-public class StarNode extends ASTNode {
+public class StarNode extends SyntaxNode {
 
     public StarNode(GrammarAST antlrNode, ASTNode parent, List<ASTNode> children) {
         super(antlrNode, parent, children);
@@ -24,10 +28,40 @@ public class StarNode extends ASTNode {
     }
 
     @Override
+    public List<CodeSnippet> getSnippets(RandomNumberGenerator rng, Context ctx) {
+        invariant();
+
+        int numberOfSamples = rng.fromDiscreteDistribution(cfg.getStarNodeDist());
+
+        ASTNode nodeToSample = children.get(0);
+
+        List<CodeSnippet> snippets = new LinkedList<>();
+
+        for (int sampleNumber = 0; sampleNumber < numberOfSamples; sampleNumber++) {
+            Set<String> dependencyNames = new HashSet<>();
+
+            FuzzerStatistics newStats = stats.clone();
+            nodeToSample.recordStatistics(newStats);
+            nodeToSample.useConfiguration(cfg);
+
+            CodeFragment newCode = nodeToSample.getSample(rng, ctx, dependencyNames);
+
+            newStats.stop();
+
+            if (newCode.isStructure()) {
+                CodeSnippet snippet = new CodeSnippet(newCode, newCode.getName(), dependencyNames, newStats);
+                snippets.add(snippet);
+            }
+        }
+
+        return snippets;
+    }
+
+    @Override
     public CodeFragment getSample(RandomNumberGenerator rng, Context ctx, Set<String> generatedCallableDependencies) {
         invariant();
 
-        int numberOfSamples = rng.fromDiscreteDistribution(cfg.getStarNodeDist(), cfg.getStarNodeLb(), cfg.getStarNodeUb());
+        int numberOfSamples = rng.fromDiscreteDistribution(cfg.getStarNodeDist());
 
         CodeFragment code = new CodeFragment();
 

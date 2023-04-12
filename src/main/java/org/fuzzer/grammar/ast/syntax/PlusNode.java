@@ -17,7 +17,7 @@ public class PlusNode extends SyntaxNode {
     public List<CodeSnippet> getSnippets(RandomNumberGenerator rng, Context ctx) {
         invariant();
 
-        int numberOfSamples = rng.fromDiscreteDistribution(cfg.getPlusNodeDist(), cfg.getPlusNodeLb(), cfg.getPlusNodeUb());
+        int numberOfSamples = rng.fromDiscreteDistribution(cfg.getPlusNodeDist());
 
         ASTNode nodeToSample = children.get(0);
 
@@ -51,7 +51,7 @@ public class PlusNode extends SyntaxNode {
     public CodeFragment getSample(RandomNumberGenerator rng, Context ctx, Set<String> generatedCallableDependencies) {
         invariant();
 
-        int numberOfSamples = rng.fromDiscreteDistribution(cfg.getPlusNodeDist(), cfg.getPlusNodeLb(), cfg.getPlusNodeUb());
+        int numberOfSamples = rng.fromDiscreteDistribution(cfg.getPlusNodeDist());
 
         CodeFragment code = new CodeFragment();
 

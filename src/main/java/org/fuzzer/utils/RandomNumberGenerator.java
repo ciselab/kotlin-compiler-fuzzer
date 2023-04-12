@@ -1,5 +1,6 @@
 package org.fuzzer.utils;
 
+import org.fuzzer.configuration.Distribution;
 import org.fuzzer.configuration.DistributionType;
 
 import java.io.Serializable;
@@ -20,6 +21,10 @@ public class RandomNumberGenerator implements Serializable {
     }
     public Integer fromUniformDiscrete(int lowerBound, int upperBound) {
         return lowerBound + random.nextInt(1 + upperBound - lowerBound);
+    }
+
+    public Integer fromDiscreteDistribution(Distribution<Long> dist) {
+        return fromDiscreteDistribution(dist.distributionType(), dist.lowerBound(), dist.upperBound());
     }
 
     public Integer fromDiscreteDistribution(DistributionType distributionType, long lowerBound, long upperBound) {
