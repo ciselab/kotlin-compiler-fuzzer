@@ -53,7 +53,8 @@ public class FunctionDecl extends ASTNode {
                 returnType = returnType.withNewGenericInstances(returnStatementAndInstances.second().second());
 
                 // Sample some parameters
-                int numberOfParams = rng.fromGeometric();
+                int numberOfParams = rng.fromDiscreteDistribution(cfg.getFuncParamsDist());
+
                 ParameterNode parameterNode = new ParameterNode(this.antlrNode);
                 List<KType> sampledTypes = new ArrayList<>();
                 List<String> sampledIds = new ArrayList<>();
@@ -83,12 +84,10 @@ public class FunctionDecl extends ASTNode {
                 stmtNode.recordStatistics(this.stats);
                 stmtNode.useConfiguration(cfg);
 
-                // TODO: adapt this
-                boolean allowSubtypes = true;
                 code.appendToText(") : " + returnType.codeRepresentation(returnStatementAndInstances.second().second()) + " {" + System.lineSeparator());
 
                 // Sample some expressions in the function body
-                int numberOfStatements = rng.fromGeometric();
+                int numberOfStatements = rng.fromDiscreteDistribution(cfg.getFuncStmtsDist());
 
                 for (int i = 0; i < numberOfStatements; i++) {
                     CodeFragment sampleExpr = stmtNode.getSample(rng, clone, dependentVariableNames);

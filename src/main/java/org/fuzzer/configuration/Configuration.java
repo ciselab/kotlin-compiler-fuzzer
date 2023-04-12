@@ -43,13 +43,19 @@ public class Configuration {
 
     private final Distribution<Long> tryDist;
 
-    private final Distribution<Long> catchDist;
+    private final Distribution<Long> catchNumberDist;
+
+    private final Distribution<Long> catchStmtDist;
 
     private final Distribution<Long> finallyDist;
+
+    private final Double finallyProbability;
 
     private final Distribution<Long> ifDist;
 
     private final Distribution<Long> elseDist;
+
+    private final Double elseProbability;
 
     private final SearchStrategy searchStrategy;
 
@@ -175,7 +181,8 @@ public class Configuration {
         checkExistence(grammarCfg, ConfigurationVocabulary.doWhileDist);
         checkExistence(grammarCfg, ConfigurationVocabulary.loopDist);
         checkExistence(grammarCfg, ConfigurationVocabulary.tryDist);
-        checkExistence(grammarCfg, ConfigurationVocabulary.catchDist);
+        checkExistence(grammarCfg, ConfigurationVocabulary.catchNumberDist);
+        checkExistence(grammarCfg, ConfigurationVocabulary.catchStmtDist);
         checkExistence(grammarCfg, ConfigurationVocabulary.finallyDist);
         checkExistence(grammarCfg, ConfigurationVocabulary.ifDist);
         checkExistence(grammarCfg, ConfigurationVocabulary.elseDist);
@@ -201,17 +208,26 @@ public class Configuration {
         LinkedHashMap<String, Object> tryCfg = (LinkedHashMap<String, Object>) grammarCfg.get(ConfigurationVocabulary.tryDist);
         tryDist = parseDistribution(tryCfg);
 
-        LinkedHashMap<String, Object> catchCfg = (LinkedHashMap<String, Object>) grammarCfg.get(ConfigurationVocabulary.catchDist);
-        catchDist = parseDistribution(catchCfg);
+        LinkedHashMap<String, Object> catchNumberCfg = (LinkedHashMap<String, Object>) grammarCfg.get(ConfigurationVocabulary.catchNumberDist);
+        catchNumberDist = parseDistribution(catchNumberCfg);
+
+        LinkedHashMap<String, Object> catchCfg = (LinkedHashMap<String, Object>) grammarCfg.get(ConfigurationVocabulary.catchStmtDist);
+        catchStmtDist = parseDistribution(catchCfg);
 
         LinkedHashMap<String, Object> finallyCfg = (LinkedHashMap<String, Object>) grammarCfg.get(ConfigurationVocabulary.finallyDist);
         finallyDist = parseDistribution(finallyCfg);
+
+        checkExistence(finallyCfg, ConfigurationVocabulary.probability);
+        finallyProbability = (Double) finallyCfg.get(ConfigurationVocabulary.probability);
 
         LinkedHashMap<String, Object> ifCfg = (LinkedHashMap<String, Object>) grammarCfg.get(ConfigurationVocabulary.ifDist);
         ifDist = parseDistribution(ifCfg);
 
         LinkedHashMap<String, Object> elseCfg = (LinkedHashMap<String, Object>) grammarCfg.get(ConfigurationVocabulary.elseDist);
         elseDist = parseDistribution(elseCfg);
+
+        checkExistence(elseCfg, ConfigurationVocabulary.probability);
+        elseProbability = (Double) finallyCfg.get(ConfigurationVocabulary.probability);
 
         // Parse the language feature parameters
         if (!data.containsKey(ConfigurationVocabulary.language)) {
@@ -317,6 +333,42 @@ public class Configuration {
 
     public Distribution<Long> getDoWhileDist() {
         return doWhileDist;
+    }
+
+    public Distribution<Long> getLoopDist() {
+        return loopDist;
+    }
+
+    public Distribution<Long> getTryDist() {
+        return tryDist;
+    }
+
+    public Distribution<Long> getCatchNumberDist() {
+        return catchNumberDist;
+    }
+
+    public Distribution<Long> getCatchStmtDist() {
+        return catchStmtDist;
+    }
+
+    public Distribution<Long> getFinallyDist() {
+        return finallyDist;
+    }
+
+    public Double getFinallyProbability() {
+        return finallyProbability;
+    }
+
+    public Distribution<Long> getIfDist() {
+        return ifDist;
+    }
+
+    public Distribution<Long> getElseDist() {
+        return elseDist;
+    }
+
+    public Double getElseProbability() {
+        return elseProbability;
     }
 
     public double getSimplicityBias() {

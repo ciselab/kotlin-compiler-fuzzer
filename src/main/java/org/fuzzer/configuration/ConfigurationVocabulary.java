@@ -23,6 +23,8 @@ public class ConfigurationVocabulary {
 
     public static final String diversityGA = "diversity-ga";
 
+    public static final String probability = "probability";
+
     public static final String tournamentSize = "tournament-size";
 
     public static final String selectionProb = "selection-probability";
@@ -45,7 +47,9 @@ public class ConfigurationVocabulary {
 
     public static final String tryDist = "try-block-dist";
 
-    public static final String catchDist = "catch-block-dist";
+    public static final String catchNumberDist = "catch-block-dist";
+
+    public static final String catchStmtDist = "catch-block-dist";
 
     public static final String finallyDist = "finally-block-dist";
 

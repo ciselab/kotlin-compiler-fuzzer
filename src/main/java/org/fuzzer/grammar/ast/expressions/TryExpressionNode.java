@@ -35,7 +35,7 @@ public class TryExpressionNode extends ExpressionNode {
         stmtNode.useConfiguration(cfg);
 
         // Sample some statements in the try block
-        int numberOfStatements = rng.fromGeometric();
+        int numberOfStatements = rng.fromDiscreteDistribution(cfg.getTryDist());
 
         Context tryContext = ctx.clone();
 
@@ -59,7 +59,7 @@ public class TryExpressionNode extends ExpressionNode {
         KType returnType = tryCodeAndTypeParams.second().first();
         List<KType> parameterList = tryCodeAndTypeParams.second().second();
 
-        int numberOfCatchBlocks = rng.fromGeometric();
+        int numberOfCatchBlocks = rng.fromDiscreteDistribution(cfg.getCatchNumberDist());
 
         // Sample some catch blocks
         for (int i = 0; i < numberOfCatchBlocks; i ++) {
@@ -68,7 +68,7 @@ public class TryExpressionNode extends ExpressionNode {
             CodeFragment catchCode = new CodeFragment("catch (" + ctx.getNewIdentifier() + ": " + exceptionToCatch.name() + ") {");
 
             // Sample some statements in the catch block
-            numberOfStatements = rng.fromGeometric();
+            numberOfStatements = rng.fromDiscreteDistribution(cfg.getCatchStmtDist());
 
             for (int j = 0; j < numberOfStatements; j++) {
                 CodeFragment sampleExpr = stmtNode.getSample(rng, catchContext, generatedCallableDependencies);
@@ -83,11 +83,11 @@ public class TryExpressionNode extends ExpressionNode {
         }
 
         // Sample a finally block
-        if (rng.randomBoolean() || numberOfCatchBlocks == 0) {
+        if (numberOfCatchBlocks == 0 || rng.randomBoolean(cfg.getFinallyProbability())) {
             Context finallyContext = ctx.clone();
             CodeFragment finallyCode = new CodeFragment("finally {");
 
-            numberOfStatements = rng.fromGeometric();
+            numberOfStatements = rng.fromDiscreteDistribution(cfg.getFinallyDist());
 
             for (int j = 0; j < numberOfStatements; j++) {
                 CodeFragment sampleExpr = stmtNode.getSample(rng, finallyContext, generatedCallableDependencies);

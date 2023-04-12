@@ -38,7 +38,7 @@ public class IfExpressionNode extends ExpressionNode {
         stmtNode.useConfiguration(cfg);
 
         // Sample some statements in the true branch
-        int numberOfStatements = rng.fromGeometric();
+        int numberOfStatements = rng.fromDiscreteDistribution(cfg.getIfDist());
 
         Context trueBranchContext = ctx.clone();
         Context falseBranchContext = ctx.clone();
@@ -53,7 +53,7 @@ public class IfExpressionNode extends ExpressionNode {
         trueBranchCode.extend(trueCodeAndTypeParams.first());
 
         // Sample some statements in the false branch
-        numberOfStatements = rng.fromGeometric();
+        numberOfStatements = rng.fromDiscreteDistribution(cfg.getElseDist());
 
         for (int i = 0; i < numberOfStatements; i++) {
             CodeFragment sampleExpr = stmtNode.getSample(rng, falseBranchContext, generatedCallableDependencies);

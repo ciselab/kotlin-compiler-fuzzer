@@ -31,7 +31,7 @@ public class DoWhileNode extends StatementNode {
 
         CodeFragment conditionCode = conditionNode.getRandomExpressionNode(rng).getSampleOfType(rng, ctx, boolType, true, generatedCallableDependencies).first();
 
-        int numberOfStatements = rng.fromGeometric();
+        int numberOfStatements = rng.fromDiscreteDistribution(cfg.getDoWhileDist());
         StatementNode stmtNode = new StatementNode(antlrNode, maxDepth);
         stmtNode.recordStatistics(stats);
         stmtNode.useConfiguration(cfg);
