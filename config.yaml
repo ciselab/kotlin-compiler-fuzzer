@@ -10,37 +10,70 @@ config:
   grammar:
     simplicity-bias: 0.4
     plus-node-dist:
-        type: geometric
-        lower-bound: 1
+      type: geometric
+      lower-bound: 1
     star-node-dist:
-        type: geometric
-        lower-bound: 0
+      type: geometric
+      lower-bound: 0
+    func-stmts-dist:
+      type: geometric
+      lower-bound: 0
+    func-params-dist:
+      type: geometric
+      lower-bound: 0
+    do-while-stmts-dist:
+      type: geometric
+      lower-bound: 0
+    loop-stmts-dist:
+      type: geometric
+      lower-bound: 0
+    try-block-dist:
+      type: geometric
+      lower-bound: 0
+    catch-block-dist:
+      type: geometric
+      lower-bound: 0
+    catch-block-stmt-dist:
+      type: geometric
+      lower-bound: 0
+    finally-block-dist:
+      probability: 0.5
+      type: geometric
+      lower-bound: 0
+    if-block-dist:
+      type: geometric
+      lower-bound: 0
+    else-block-dist:
+      # The else block probability is discarded at the moment.
+      probability: 1.0
+      type: geometric
+      lower-bound: 0
   language-features:
     functions:
-        enable: true
+      enable: true
     expressions:
-        simple-expr:
-            enable: true
-            weight: 1.0
-        if-expr:
-            enable: true
-            weight: 1.0
-        elvis-expr:
-            enable: true
-            weight: 1.0
-        try-catch-expr:
-            enable: true
-            weight: 1.0
+      simple-expr:
+        enable: true
+        weight: 1.0
+      if-expr:
+        enable: true
+        weight: 1.0
+      elvis-expr:
+        enable: true
+        weight: 1.0
+      try-catch-expr:
+        enable: true
+        weight: 1.0
     statements:
-        simple-stmt:
-            enable: true
-            weight: 1.0
-        do-while-stmt:
-            enable: true
-            weight: 1.0
-        assignment-stmt:
-            enable: true
-            weight: 1.0
-        loop-stmt:
-            enable: true
-            weight: 1.0
+      simple-stmt:
+        enable: true
+        weight: 1.0
+      do-while-stmt:
+        enable: true
+        weight: 1.0
+      assignment-stmt:
+        enable: true
+        weight: 1.0
+      loop-stmt:
+        enable: false
+        weight: 1.0
