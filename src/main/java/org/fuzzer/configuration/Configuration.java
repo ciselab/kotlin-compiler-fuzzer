@@ -29,17 +29,17 @@ public class Configuration {
 
     private final double simplicityBias;
 
-    private final DistributionType plusNodeDist;
+    private DistributionType plusNodeDist;
 
-    private final Long plusNodeLb;
+    private Long plusNodeLb;
 
-    private final Long plusNodeUb;
+    private Long plusNodeUb;
 
-    private final DistributionType starNodeDist;
+    private DistributionType starNodeDist;
 
-    private final Long starNodeLb;
+    private Long starNodeLb;
 
-    private final Long starNodeUb;
+    private Long starNodeUb;
 
     private final SearchStrategy searchStrategy;
 
@@ -201,38 +201,13 @@ public class Configuration {
         }
 
         LinkedHashMap<String, Object> starDistCfg = (LinkedHashMap<String, Object>) grammarCfg.get(ConfigurationVocabulary.starDist);
-        starNodeDist = nameToDistribution((String) starDistCfg.get(ConfigurationVocabulary.type));
+        Distribution<Long> starDist = parseDistribution(starDistCfg);
 
-        switch (starNodeDist) {
-            case UNIFORM -> {
-                if (!starDistCfg.containsKey(ConfigurationVocabulary.lb)) {
-                    throw new IllegalStateException("Uniform distributions should contain a lower-bound field.");
-                }
+        starNodeDist = starDist.distributionType();
+        starNodeLb = starDist.lowerBound();
+        starNodeUb = starDist.upperBound();
 
-                starNodeLb = Long.valueOf((Integer) starDistCfg.get(ConfigurationVocabulary.lb));
 
-                if (!starDistCfg.containsKey(ConfigurationVocabulary.ub)) {
-                    throw new IllegalStateException("Uniform distributions should contain an upper-bound field.");
-                }
-
-                starNodeUb = Long.valueOf((Integer) starDistCfg.get(ConfigurationVocabulary.ub));
-            }
-
-            case GEOMETRIC -> {
-                if (!starDistCfg.containsKey(ConfigurationVocabulary.lb)) {
-                    throw new IllegalStateException("Geometric distributions should contain a lower-bound field.");
-                }
-
-                starNodeLb = Long.valueOf((Integer) starDistCfg.get(ConfigurationVocabulary.lb));
-
-                // This will remain unused
-                starNodeUb = Long.MAX_VALUE;
-            }
-
-            default -> {
-                throw new IllegalStateException("Cannot support distribution type: " + starNodeDist);
-            }
-        }
 
         // Parse the language feature parameters
         if (!data.containsKey(ConfigurationVocabulary.language)) {
@@ -348,6 +323,46 @@ public class Configuration {
 
     public Map<SampleStructure, Double> getStatementProbabilityTable() {
         return statementStructureProbability;
+    }
+
+    private <T extends Number> Distribution<T> parseDistribution(LinkedHashMap<String, Object> distCfg) {
+
+        T lb, ub;
+
+        DistributionType dist = nameToDistribution((String) distCfg.get(ConfigurationVocabulary.type));
+
+        switch (dist) {
+            case UNIFORM -> {
+                if (!distCfg.containsKey(ConfigurationVocabulary.lb)) {
+                    throw new IllegalStateException("Uniform distributions should contain a lower-bound field.");
+                }
+
+                lb = (T) Long.valueOf((Integer) distCfg.get(ConfigurationVocabulary.lb));
+
+                if (!distCfg.containsKey(ConfigurationVocabulary.ub)) {
+                    throw new IllegalStateException("Uniform distributions should contain an upper-bound field.");
+                }
+
+                ub = (T) Long.valueOf((Integer) distCfg.get(ConfigurationVocabulary.ub));
+            }
+
+            case GEOMETRIC -> {
+                if (!distCfg.containsKey(ConfigurationVocabulary.lb)) {
+                    throw new IllegalStateException("Geometric distributions should contain a lower-bound field.");
+                }
+
+                lb = (T) Long.valueOf((Integer) distCfg.get(ConfigurationVocabulary.lb));
+
+                // This will remain unused
+                ub = (T) Long.valueOf(Integer.MAX_VALUE);
+            }
+
+            default -> {
+                throw new IllegalStateException("Cannot support distribution type: " + starNodeDist);
+            }
+        }
+
+        return new Distribution<>(dist, lb, ub);
     }
 
     private static DistributionType nameToDistribution(String distName) {

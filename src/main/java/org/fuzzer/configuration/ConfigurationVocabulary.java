@@ -35,6 +35,11 @@ public class ConfigurationVocabulary {
 
     public static final String starDist = "star-node-dist";
 
+    public static final String funcStmtsDist = "func-stmts-dist";
+
+    public static final String funcParamsDIst = "func-params-dist";
+
+    public static final String doWhileDIst = "do-while-stmts-dist";
     public static final String funcs = "functions";
 
     public static final String exprs = "expressions";
