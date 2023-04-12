@@ -29,17 +29,15 @@ public class Configuration {
 
     private final double simplicityBias;
 
-    private DistributionType plusNodeDist;
+    private final Distribution<Long> plusNodeDist;
 
-    private Long plusNodeLb;
+    private final Distribution<Long> starNodeDist;
 
-    private Long plusNodeUb;
+    private final Distribution<Long> funcStmtsDist;
 
-    private DistributionType starNodeDist;
+    private final Distribution<Long> funcParamsDist;
 
-    private Long starNodeLb;
-
-    private Long starNodeUb;
+    private final Distribution<Long> doWhileDist;
 
     private final SearchStrategy searchStrategy;
 
@@ -85,7 +83,7 @@ public class Configuration {
 
         Yaml yaml = new Yaml();
 
-        Map<String, Object> data = yaml.load(configInputStream);
+        LinkedHashMap<String, Object> data = yaml.load(configInputStream);
 
         if (!data.containsKey(ConfigurationVocabulary.config)) {
             throw new IllegalStateException("Configuration file must start with a config field.");
@@ -94,9 +92,8 @@ public class Configuration {
         data = (LinkedHashMap<String, Object>) data.get(ConfigurationVocabulary.config);
 
         // Parse the search algorithm parameters
-        if (!data.containsKey(ConfigurationVocabulary.heuristic)) {
-            throw new IllegalStateException("heuristic field must be provided.");
-        }
+        checkExistence(data, ConfigurationVocabulary.heuristic);
+
         LinkedHashMap<String, Object> heuristicCfg = (LinkedHashMap<String, Object>) data.get(ConfigurationVocabulary.heuristic);
         String heuristicName = (String) heuristicCfg.getOrDefault(ConfigurationVocabulary.type, "empty");
 
@@ -149,64 +146,36 @@ public class Configuration {
                 throw new IllegalStateException("Cannot support search heuristic: " + heuristicName);
             }
         }
+
         // Parse the grammar parameters
-        if (!data.containsKey(ConfigurationVocabulary.grammar)) {
-            throw new IllegalStateException("grammar field must be provided.");
-        }
+        checkExistence(data, ConfigurationVocabulary.grammar);
 
         LinkedHashMap<String, Object> grammarCfg = (LinkedHashMap<String, Object>) data.get(ConfigurationVocabulary.grammar);
 
-        if (!grammarCfg.containsKey(ConfigurationVocabulary.simplicity)) {
-            throw new IllegalStateException("simplicity-bias field must be provided.");
-        }
+        checkExistence(grammarCfg, ConfigurationVocabulary.simplicity);
 
         simplicityBias = (Double) grammarCfg.get(ConfigurationVocabulary.simplicity);
 
-        if (!grammarCfg.containsKey(ConfigurationVocabulary.plusDist)) {
-            throw new IllegalStateException("plus-node-dist field must be provided.");
-        }
+        checkExistence(grammarCfg, ConfigurationVocabulary.plusDist);
+        checkExistence(grammarCfg, ConfigurationVocabulary.starDist);
+        checkExistence(grammarCfg, ConfigurationVocabulary.funcStmtsDist);
+        checkExistence(grammarCfg, ConfigurationVocabulary.funcParamsDist);
+        checkExistence(grammarCfg, ConfigurationVocabulary.doWhileDist);
 
         LinkedHashMap<String, Object> plusDistCfg = (LinkedHashMap<String, Object>) grammarCfg.get(ConfigurationVocabulary.plusDist);
-        plusNodeDist = nameToDistribution((String) plusDistCfg.get(ConfigurationVocabulary.type));
-
-        switch (plusNodeDist) {
-            case UNIFORM -> {
-                if (!plusDistCfg.containsKey(ConfigurationVocabulary.lb)) {
-                    throw new IllegalStateException("Uniform distributions should contain a lower-bound field.");
-                }
-
-                plusNodeLb = Long.valueOf((Integer) plusDistCfg.get(ConfigurationVocabulary.lb));
-
-                if (!plusDistCfg.containsKey(ConfigurationVocabulary.ub)) {
-                    throw new IllegalStateException("Uniform distributions should contain an upper-bound field.");
-                }
-
-                plusNodeUb = Long.valueOf((Integer) plusDistCfg.get(ConfigurationVocabulary.ub));
-            }
-
-            case GEOMETRIC -> {
-                if (!plusDistCfg.containsKey(ConfigurationVocabulary.lb)) {
-                    throw new IllegalStateException("Geometric distributions should contain a lower-bound field.");
-                }
-
-                plusNodeLb = Long.valueOf((Integer) plusDistCfg.get(ConfigurationVocabulary.lb));
-
-                // This will remain unused
-                plusNodeUb = Long.MAX_VALUE;
-            }
-
-            default -> {
-                throw new IllegalStateException("Cannot support distribution type: " + plusNodeDist);
-            }
-        }
+        plusNodeDist = parseDistribution(plusDistCfg);
 
         LinkedHashMap<String, Object> starDistCfg = (LinkedHashMap<String, Object>) grammarCfg.get(ConfigurationVocabulary.starDist);
-        Distribution<Long> starDist = parseDistribution(starDistCfg);
+        starNodeDist = parseDistribution(starDistCfg);
 
-        starNodeDist = starDist.distributionType();
-        starNodeLb = starDist.lowerBound();
-        starNodeUb = starDist.upperBound();
+        LinkedHashMap<String, Object> funcStmtsCfg = (LinkedHashMap<String, Object>) grammarCfg.get(ConfigurationVocabulary.funcStmtsDist);
+        funcStmtsDist = parseDistribution(funcStmtsCfg);
 
+        LinkedHashMap<String, Object> funcParamsCfg = (LinkedHashMap<String, Object>) grammarCfg.get(ConfigurationVocabulary.funcParamsDist);
+        funcParamsDist = parseDistribution(funcParamsCfg);
+
+        LinkedHashMap<String, Object> doWhileCfg = (LinkedHashMap<String, Object>) grammarCfg.get(ConfigurationVocabulary.doWhileDist);
+        doWhileDist = parseDistribution(doWhileCfg);
 
 
         // Parse the language feature parameters
@@ -289,32 +258,34 @@ public class Configuration {
         }
     }
 
-    public double getSimplicityBias() {
-        return simplicityBias;
+    private void checkExistence(LinkedHashMap<String, Object> cfg, String field) {
+        if (!cfg.containsKey(field)) {
+            throw new IllegalStateException(field + " field must be provided.");
+        }
     }
 
-    public DistributionType getPlusNodeDist() {
+    public Distribution<Long> getPlusNodeDist() {
         return plusNodeDist;
     }
 
-    public Long getPlusNodeLb() {
-        return plusNodeLb;
-    }
-
-    public Long getPlusNodeUb() {
-        return plusNodeUb;
-    }
-
-    public DistributionType getStarNodeDist() {
+    public Distribution<Long> getStarNodeDist() {
         return starNodeDist;
     }
 
-    public Long getStarNodeLb() {
-        return starNodeLb;
+    public Distribution<Long> getFuncStmtsDist() {
+        return funcStmtsDist;
     }
 
-    public Long getStarNodeUb() {
-        return starNodeUb;
+    public Distribution<Long> getFuncParamsDist() {
+        return funcParamsDist;
+    }
+
+    public Distribution<Long> getDoWhileDist() {
+        return doWhileDist;
+    }
+
+    public double getSimplicityBias() {
+        return simplicityBias;
     }
 
     public Map<SampleStructure, Double> getExpressionProbabilityTable() {
