@@ -39,6 +39,18 @@ public class Configuration {
 
     private final Distribution<Long> doWhileDist;
 
+    private final Distribution<Long> loopDist;
+
+    private final Distribution<Long> tryDist;
+
+    private final Distribution<Long> catchDist;
+
+    private final Distribution<Long> finallyDist;
+
+    private final Distribution<Long> ifDist;
+
+    private final Distribution<Long> elseDist;
+
     private final SearchStrategy searchStrategy;
 
     private final Long populationSize;
@@ -161,6 +173,12 @@ public class Configuration {
         checkExistence(grammarCfg, ConfigurationVocabulary.funcStmtsDist);
         checkExistence(grammarCfg, ConfigurationVocabulary.funcParamsDist);
         checkExistence(grammarCfg, ConfigurationVocabulary.doWhileDist);
+        checkExistence(grammarCfg, ConfigurationVocabulary.loopDist);
+        checkExistence(grammarCfg, ConfigurationVocabulary.tryDist);
+        checkExistence(grammarCfg, ConfigurationVocabulary.catchDist);
+        checkExistence(grammarCfg, ConfigurationVocabulary.finallyDist);
+        checkExistence(grammarCfg, ConfigurationVocabulary.ifDist);
+        checkExistence(grammarCfg, ConfigurationVocabulary.elseDist);
 
         LinkedHashMap<String, Object> plusDistCfg = (LinkedHashMap<String, Object>) grammarCfg.get(ConfigurationVocabulary.plusDist);
         plusNodeDist = parseDistribution(plusDistCfg);
@@ -177,6 +195,23 @@ public class Configuration {
         LinkedHashMap<String, Object> doWhileCfg = (LinkedHashMap<String, Object>) grammarCfg.get(ConfigurationVocabulary.doWhileDist);
         doWhileDist = parseDistribution(doWhileCfg);
 
+        LinkedHashMap<String, Object> loopCfg = (LinkedHashMap<String, Object>) grammarCfg.get(ConfigurationVocabulary.loopDist);
+        loopDist = parseDistribution(loopCfg);
+
+        LinkedHashMap<String, Object> tryCfg = (LinkedHashMap<String, Object>) grammarCfg.get(ConfigurationVocabulary.tryDist);
+        tryDist = parseDistribution(tryCfg);
+
+        LinkedHashMap<String, Object> catchCfg = (LinkedHashMap<String, Object>) grammarCfg.get(ConfigurationVocabulary.catchDist);
+        catchDist = parseDistribution(catchCfg);
+
+        LinkedHashMap<String, Object> finallyCfg = (LinkedHashMap<String, Object>) grammarCfg.get(ConfigurationVocabulary.finallyDist);
+        finallyDist = parseDistribution(finallyCfg);
+
+        LinkedHashMap<String, Object> ifCfg = (LinkedHashMap<String, Object>) grammarCfg.get(ConfigurationVocabulary.ifDist);
+        ifDist = parseDistribution(ifCfg);
+
+        LinkedHashMap<String, Object> elseCfg = (LinkedHashMap<String, Object>) grammarCfg.get(ConfigurationVocabulary.elseDist);
+        elseDist = parseDistribution(elseCfg);
 
         // Parse the language feature parameters
         if (!data.containsKey(ConfigurationVocabulary.language)) {

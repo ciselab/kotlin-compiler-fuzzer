@@ -40,6 +40,19 @@ public class ConfigurationVocabulary {
     public static final String funcParamsDist = "func-params-dist";
 
     public static final String doWhileDist = "do-while-stmts-dist";
+
+    public static final String loopDist = "loop-stmts-dist";
+
+    public static final String tryDist = "try-block-dist";
+
+    public static final String catchDist = "catch-block-dist";
+
+    public static final String finallyDist = "finally-block-dist";
+
+    public static final String ifDist = "if-block-dist";
+
+    public static final String elseDist = "else-block-dist";
+
     public static final String funcs = "functions";
 
     public static final String exprs = "expressions";
