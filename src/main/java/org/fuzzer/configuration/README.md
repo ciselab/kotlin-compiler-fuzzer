@@ -15,6 +15,9 @@ One can configure the fuzzer using a `yaml` file. A sample configuration is prov
     - `type`: one of `uniform` or `geometric` for the corresponding distribution.
     - `lower-bound`: the integer lower bound of the distribution.
     - `upper-bound`: the integer upper type of the distribution (only used for uniform at the moment).
+  - `func-stmts-dist`, `do-while-stmts-dist`, `loop-stmts-dist`, `try-block-dist`, `catch-block-dist`, `finally-block-dist`, `if-block-dist`, and `else-block-dist` allow the same customization as `plus-node-dist` and `star-node-dist`, for their respective statement blocks.
+  - `simple-expr-dist`, `if-expr-dist`, `elvis-expr-dist`, and `try-catch-expr-dist` allow the same customization as `plus-node-dist` and `star-node-dist`, for their respective expression blocks.
+    - `else-block-dist` and `finally-block-dist` contain an additional `probability` field, which signals the likelihood of sampling such a block in the first place.
 - `language-features`: Contains information about the frequency with which to favor individual language features. Contains the following fields:
   - `functions`, with the subfield `enabled`, which should always be set to `true`.
   - `expressions`: Contains the frequency information about expressions. Expressions have the following subfields: `simple-expr`, `if-expr`, `elivs-expr`, and `try-catch-expr`, for their corresponding Kotlin language features. Each expression contains the following fields:
