@@ -20,6 +20,9 @@ def analyze_results(directories_alg1, directories_alg2, p_thresh = 0.05):
     print(f"Algorithm 1 generates on average {np.mean([len(d.index) for d in df1s])} files")
     print(f"Algorithm 2 generates on average {np.mean([len(d.index) for d in df2s])} files")
 
+    print(f"Algorithm 1 files are on average {np.mean([d['chars'].mean() for d in df1s])} chars long")
+    print(f"Algorithm 2 files are on average {np.mean([d['chars'].mean() for d in df2s])} chars long")
+
     mean_diversity_df1s, std_diversity_df1s = diversity_dfs(df1s)
     mean_diversity_df2s, std_diversity_df2s = diversity_dfs(df2s)
 
@@ -89,6 +92,8 @@ if __name__ == "__main__":
             print(f'==== In directories {d1} and {d2} ====')
 
             analyze_results(get_dirs(d1), get_dirs(d2))
+
+
     
     if (args.output):
         for c, d in enumerate(dirs):

@@ -4,7 +4,8 @@ from data_handling import get_total_bugs
 from metrics import auc_trapezoid_dfs
 
 def wilcoxon(l1, l2):
-    return stats.wilcoxon(l1, l2, alternative='two-sided')
+    min_d = min(len(l1), len(l2))
+    return stats.wilcoxon(l1[:min_d], l2[:min_d], alternative='two-sided')
 
 def wilcoxon_effectiveness_dfs(df1s, df2s):    
     return wilcoxon(get_total_bugs(df1s), get_total_bugs(df2s))
