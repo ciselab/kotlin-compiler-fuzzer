@@ -1,14 +1,18 @@
 config:
   heuristic:
-    type: diversity-ga
+    type: moga
     population-size: 40
-    tournament-size: 4
-    selection-probability: 0.75
-    maximum-length: 500
     new-blocks-generated: 20
     distance-metric: euclidean
+    selection:
+      mo-selection: domination-rank
+      so-selection : tournament
+      tournament-size: 4
+      tournament-selection-probability: 0.75
+      truncation-proportion: 0.3
+      maximum-length: 500
   grammar:
-    simplicity-bias: 0.4
+    simplicity-bias: 0.6
     plus-node-dist:
       type: geometric
       lower-bound: 1
@@ -57,23 +61,23 @@ config:
         weight: 1.0
       if-expr:
         enable: true
-        weight: 1.0
+        weight: 19.0
       elvis-expr:
         enable: true
-        weight: 1.0
+        weight: 14.0
       try-catch-expr:
         enable: true
-        weight: 1.0
+        weight: 13.0
     statements:
       simple-stmt:
         enable: true
         weight: 1.0
       do-while-stmt:
         enable: true
-        weight: 1.0
+        weight: 16.0
       assignment-stmt:
         enable: true
-        weight: 1.0
+        weight: 18.0
       loop-stmt:
         enable: false
         weight: 1.0
