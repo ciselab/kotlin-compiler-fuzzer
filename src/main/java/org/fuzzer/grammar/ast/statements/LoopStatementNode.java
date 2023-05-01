@@ -1,6 +1,8 @@
 package org.fuzzer.grammar.ast.statements;
 
 import org.antlr.v4.tool.ast.GrammarAST;
+import org.fuzzer.configuration.Configuration;
+import org.fuzzer.dt.FuzzerStatistics;
 import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.ast.ASTNode;
 import org.fuzzer.representations.context.Context;
@@ -12,12 +14,13 @@ import java.util.Set;
 
 public class LoopStatementNode extends ASTNode {
 
-    public LoopStatementNode(GrammarAST antlrNode, ASTNode parent, List<ASTNode> children) {
-        super(antlrNode, parent, children);
+    public LoopStatementNode(GrammarAST antlrNode, ASTNode parent, List<ASTNode> children,
+                             FuzzerStatistics stats, Configuration cfg) {
+        super(antlrNode, parent, children, stats, cfg);
     }
 
-    public LoopStatementNode(GrammarAST anltrNode, int maxDepth) {
-        super(anltrNode, new LinkedList<>());
+    public LoopStatementNode(GrammarAST anltrNode, FuzzerStatistics stats, Configuration cfg) {
+        super(anltrNode, new LinkedList<>(), stats, cfg);
         List<ASTNode> children = new LinkedList<>();
         // TODO
         this.children = children;

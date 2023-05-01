@@ -9,6 +9,7 @@ import org.fuzzer.utils.RandomNumberGenerator;
 import org.fuzzer.utils.StringUtilities;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -19,7 +20,7 @@ public class ParameterNode extends ASTNode {
     private KType sampledType;
 
     public ParameterNode(GrammarAST antlrNode) {
-        super(antlrNode, new ArrayList<>());
+        super(antlrNode, new LinkedList<>(), null, null);
         sampledId = null;
         sampledType = null;
     }

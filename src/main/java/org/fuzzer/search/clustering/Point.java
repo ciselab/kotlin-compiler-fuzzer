@@ -30,6 +30,10 @@ public record Point<T>(T data, double [] coordinates) {
         }
     }
 
+    public double getCoordinate(int i) {
+        return coordinates[i];
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

@@ -1,6 +1,8 @@
 package org.fuzzer.grammar.ast.structures;
 
 import org.antlr.v4.tool.ast.GrammarAST;
+import org.fuzzer.configuration.Configuration;
+import org.fuzzer.dt.FuzzerStatistics;
 import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.RuleName;
 import org.fuzzer.grammar.SampleStructure;
@@ -22,8 +24,8 @@ import java.util.List;
 import java.util.Set;
 
 public class FunctionDecl extends ASTNode {
-    public FunctionDecl(GrammarAST antlrNode, List<ASTNode> children) {
-        super(antlrNode, children);
+    public FunctionDecl(GrammarAST antlrNode, List<ASTNode> children, FuzzerStatistics stats, Configuration cfg) {
+        super(antlrNode, children, stats, cfg);
     }
 
     @Override
@@ -44,9 +46,7 @@ public class FunctionDecl extends ASTNode {
                 KClassifierType returnType = (KClassifierType) ctx.getRandomSamplableType();
 
                 // Sample a consistently-types return statement
-                ExpressionNode returnNode = new ExpressionNode(antlrNode, 3);
-                returnNode.recordStatistics(stats);
-                returnNode.useConfiguration(cfg);
+                ExpressionNode returnNode = new ExpressionNode(antlrNode, 3, stats, cfg);
 
                 var returnStatementAndInstances = returnNode.getRandomExpressionNode(rng)
                         .getSampleOfType(rng, ctx, returnType, true, dependentVariableNames);
@@ -80,9 +80,7 @@ public class FunctionDecl extends ASTNode {
                 // Change the scope to a function
                 clone.updateScope(KScope.FUNCTION_SCOPE);
 
-                StatementNode stmtNode = new StatementNode(antlrNode, 3);
-                stmtNode.recordStatistics(this.stats);
-                stmtNode.useConfiguration(cfg);
+                StatementNode stmtNode = new StatementNode(antlrNode, 3, stats, cfg);
 
                 code.appendToText(") : " + returnType.codeRepresentation(returnStatementAndInstances.second().second()) + " {" + System.lineSeparator());
 

@@ -5,10 +5,10 @@ import org.fuzzer.search.fitness.DistanceMetric;
 import java.util.ArrayList;
 import java.util.List;
 
-public class HierarchicalClustering<T> extends ClusteringEngine<T> {
+public class AgglomerativeClustering<T> extends ClusteringEngine<T> {
 
-    public HierarchicalClustering(List<Point<T>> points, DistanceMetric distanceMetric) {
-        super(points, distanceMetric);
+    public AgglomerativeClustering(List<Point<T>> points, DistanceMetric distanceMetric, Linkage linkage) {
+        super(points, distanceMetric, linkage);
     }
 
     @Override

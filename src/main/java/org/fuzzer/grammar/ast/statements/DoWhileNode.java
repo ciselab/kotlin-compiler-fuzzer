@@ -1,6 +1,8 @@
 package org.fuzzer.grammar.ast.statements;
 
 import org.antlr.v4.tool.ast.GrammarAST;
+import org.fuzzer.configuration.Configuration;
+import org.fuzzer.dt.FuzzerStatistics;
 import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.SampleStructure;
 import org.fuzzer.grammar.ast.ASTNode;
@@ -15,8 +17,8 @@ import java.util.Set;
 
 public class DoWhileNode extends StatementNode {
 
-    public DoWhileNode(GrammarAST antlrNode, int maxDepth) {
-        super(antlrNode, maxDepth);
+    public DoWhileNode(GrammarAST antlrNode, int maxDepth, FuzzerStatistics stats, Configuration cfg) {
+        super(antlrNode, maxDepth, stats, cfg);
     }
 
     @Override
@@ -25,16 +27,12 @@ public class DoWhileNode extends StatementNode {
         CodeFragment code = new CodeFragment();
         code.appendToText("do {");
 
-        ExpressionNode conditionNode = new ExpressionNode(antlrNode, maxDepth);
-        conditionNode.recordStatistics(stats);
-        conditionNode.useConfiguration(cfg);
+        ExpressionNode conditionNode = new ExpressionNode(antlrNode, maxDepth, stats, cfg);
 
         CodeFragment conditionCode = conditionNode.getRandomExpressionNode(rng).getSampleOfType(rng, ctx, boolType, true, generatedCallableDependencies).first();
 
         int numberOfStatements = rng.fromDiscreteDistribution(cfg.getDoWhileDist());
-        StatementNode stmtNode = new StatementNode(antlrNode, maxDepth);
-        stmtNode.recordStatistics(stats);
-        stmtNode.useConfiguration(cfg);
+        StatementNode stmtNode = new StatementNode(antlrNode, maxDepth, stats, cfg);
 
         stmtNode = stmtNode.getRandomStatementNode(rng);
 

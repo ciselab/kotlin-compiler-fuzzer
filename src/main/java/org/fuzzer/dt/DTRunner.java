@@ -137,9 +137,7 @@ public class DTRunner {
         ASTNode functionNode = grammarRoot.getChildren().get(0).getChildren().get(5).getChildren().get(0).getChildren().get(0).getChildren().get(2);
 
         // One or more functions
-        SyntaxNode nodeToSample = new PlusNode(List.of(functionNode));
-
-        nodeToSample.useConfiguration(cfg);
+        SyntaxNode nodeToSample = new PlusNode(List.of(functionNode), cfg);
 
         Search searchAlgorithm = cfg.getSearchStrategy(nodeToSample, timeLimitMs, rootContext, seed);
         List<Tuple<CodeFragment, FuzzerStatistics>> output = searchAlgorithm.search();

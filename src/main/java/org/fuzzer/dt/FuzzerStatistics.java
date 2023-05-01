@@ -8,22 +8,30 @@ import java.util.*;
 public class FuzzerStatistics implements Cloneable {
     private Map<SampleStructure, Long> extendedGrammarVisitations;
 
+    private Long depth;
+
     private Long startTime;
 
     private Long finishTime;
 
     public FuzzerStatistics() {
-        extendedGrammarVisitations = new HashMap<>();
-        startTime = System.currentTimeMillis();
+        this.extendedGrammarVisitations = new HashMap<>();
+        this.startTime = System.currentTimeMillis();
+        this.depth = 0L;
     }
 
-    public FuzzerStatistics(Map<SampleStructure, Long> extendedGrammarVisitations, Long startTime) {
+    public FuzzerStatistics(Map<SampleStructure, Long> extendedGrammarVisitations, Long startTime, Long depth) {
         this.extendedGrammarVisitations = extendedGrammarVisitations;
         this.startTime = startTime;
+        this.depth = depth;
     }
 
     public Long getStartTime() {
         return startTime;
+    }
+
+    public Long getDepth() {
+        return depth;
     }
 
     public void start() {
@@ -32,6 +40,10 @@ public class FuzzerStatistics implements Cloneable {
 
     public void stop() {
         this.finishTime = System.currentTimeMillis();
+    }
+
+    public void incrementDepth() {
+        this.depth++;
     }
 
     public void increment(SampleStructure sampledStruct) {
@@ -58,6 +70,7 @@ public class FuzzerStatistics implements Cloneable {
             clone.extendedGrammarVisitations = new HashMap<>(extendedGrammarVisitations);
             clone.startTime = startTime;
             clone.finishTime = finishTime;
+            clone.depth = depth;
 
             return clone;
         } catch (CloneNotSupportedException e) {
@@ -77,13 +90,28 @@ public class FuzzerStatistics implements Cloneable {
 
     public static FuzzerStatistics aggregate(List<FuzzerStatistics> statList) {
         Map<SampleStructure, Long> cummalativeVisitations = new HashMap<>();
+        Long totalDepth = 0L;
+
+        for (FuzzerStatistics stats : statList) {
+            totalDepth += stats.depth;
+        }
+
         for (SampleStructure struct : SampleStructure.values()) {
             cummalativeVisitations.put(struct, statList.stream()
                     .map(stats -> stats.extendedGrammarVisitations.getOrDefault(struct, 0L))
                     .reduce(0L, Long::sum));
         }
 
-        return new FuzzerStatistics(cummalativeVisitations, statList.get(0).startTime);
+        return new FuzzerStatistics(cummalativeVisitations, statList.get(0).startTime, totalDepth);
+    }
+
+    public double[] getVisitations() {
+        double[] visitations = new double[SampleStructure.values().length];
+        for (int i = 0; i < SampleStructure.values().length; i++) {
+            visitations[i] = extendedGrammarVisitations.getOrDefault(SampleStructure.values()[i], 0L);
+        }
+
+        return visitations;
     }
 
     public Long getNumberOfSamples(SampleStructure s) {

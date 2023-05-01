@@ -1,6 +1,8 @@
 package org.fuzzer.grammar.ast.expressions;
 
 import org.antlr.v4.tool.ast.GrammarAST;
+import org.fuzzer.configuration.Configuration;
+import org.fuzzer.dt.FuzzerStatistics;
 import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.SampleStructure;
 import org.fuzzer.grammar.ast.statements.StatementNode;
@@ -14,8 +16,8 @@ import java.util.List;
 import java.util.Set;
 
 public class IfExpressionNode extends ExpressionNode {
-    public IfExpressionNode(GrammarAST antlrNode, int maxDepth) {
-        super(antlrNode, maxDepth);
+    public IfExpressionNode(GrammarAST antlrNode, int maxDepth, FuzzerStatistics stats, Configuration cfg) {
+        super(antlrNode, maxDepth, stats, cfg);
     }
 
     @Override
@@ -33,10 +35,7 @@ public class IfExpressionNode extends ExpressionNode {
         CodeFragment trueBranchCode = new CodeFragment();
         CodeFragment falseBranchCode = new CodeFragment();
 
-        StatementNode stmtNode = new StatementNode(antlrNode, maxDepth);
-        stmtNode.recordStatistics(stats);
-        stmtNode.useConfiguration(cfg);
-
+        StatementNode stmtNode = new StatementNode(antlrNode, maxDepth, stats, cfg);
         // Sample some statements in the true branch
         int numberOfStatements = rng.fromDiscreteDistribution(cfg.getIfDist());
 

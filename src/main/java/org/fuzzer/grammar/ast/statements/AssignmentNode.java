@@ -1,6 +1,8 @@
 package org.fuzzer.grammar.ast.statements;
 
 import org.antlr.v4.tool.ast.GrammarAST;
+import org.fuzzer.configuration.Configuration;
+import org.fuzzer.dt.FuzzerStatistics;
 import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.SampleStructure;
 import org.fuzzer.grammar.ast.expressions.SimpleExpressionNode;
@@ -15,8 +17,8 @@ import java.util.Set;
 public class AssignmentNode extends StatementNode {
 
     private final int maxDepth;
-    public AssignmentNode(GrammarAST antlrNode, int maxDepth) {
-        super(antlrNode, maxDepth);
+    public AssignmentNode(GrammarAST antlrNode, int maxDepth, FuzzerStatistics stats, Configuration cfg) {
+        super(antlrNode, maxDepth, stats, cfg);
         this.maxDepth = maxDepth;
     }
 
@@ -34,9 +36,7 @@ public class AssignmentNode extends StatementNode {
             type = ctx.getRandomAssignableType();
         }
 
-        SimpleExpressionNode expr = new SimpleExpressionNode(this.antlrNode, this.maxDepth);
-        expr.recordStatistics(stats);
-        expr.useConfiguration(cfg);
+        SimpleExpressionNode expr = new SimpleExpressionNode(antlrNode, maxDepth, stats, cfg);
 
         var codeAndInstances = expr.getRandomExpressionNode(rng).getSampleOfType(rng, ctx, type, true, generatedCallableDependencies);
 

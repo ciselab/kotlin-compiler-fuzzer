@@ -5,16 +5,15 @@ import org.fuzzer.grammar.SampleStructure;
 import org.fuzzer.grammar.ast.syntax.SyntaxNode;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.search.DiversityGA;
+import org.fuzzer.search.MOGA;
 import org.fuzzer.search.RandomSearch;
 import org.fuzzer.search.Search;
-import org.fuzzer.search.fitness.DistanceMetric;
-import org.fuzzer.search.fitness.DiversityFitnessFunction;
-import org.fuzzer.search.fitness.FitnessFunction;
+import org.fuzzer.search.fitness.*;
 import org.fuzzer.search.operators.recombination.RecombinationOperator;
 import org.fuzzer.search.operators.recombination.SimpleRecombinationOperator;
-import org.fuzzer.search.operators.selection.SelectionOperator;
-import org.fuzzer.search.operators.selection.TournamentSelection;
+import org.fuzzer.search.operators.selection.*;
 import org.fuzzer.utils.RandomNumberGenerator;
+import org.fuzzer.utils.Tuple;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;
@@ -61,20 +60,15 @@ public class Configuration {
 
     private final Long populationSize;
 
-    private final Long tournamentSize;
-
-    private final Double selectionProbability;
-
     private final Long newBlocksGenerated;
 
     private final DistanceMetric distanceMetric;
-
-    private final Long maxAllowedLength;
 
     private final Map<SampleStructure, Double> expressionStructureProbability;
 
     private final Map<SampleStructure, Double> statementStructureProbability;
 
+    private final Tuple<SOSelectionOperator, SelectionStrategy> selectionData;
 
     public Configuration(String fullyQualifiedFileName) {
         File configFile = new File(fullyQualifiedFileName);
@@ -119,51 +113,40 @@ public class Configuration {
             case ConfigurationVocabulary.random -> {
                 searchStrategy = SearchStrategy.RANDOM;
                 populationSize = null;
-                tournamentSize = null;
-                selectionProbability = null;
                 newBlocksGenerated = null;
                 distanceMetric = null;
-                maxAllowedLength = null;
             }
 
             case ConfigurationVocabulary.diversityGA -> {
-                if (!heuristicCfg.containsKey(ConfigurationVocabulary.population)) {
-                    throw new IllegalStateException("population-size size must be provided for diversity search.");
-                }
-
-                if (!heuristicCfg.containsKey(ConfigurationVocabulary.tournamentSize)) {
-                    throw new IllegalStateException("tournament-size must be provided for diversity search.");
-                }
-
-                if (!heuristicCfg.containsKey(ConfigurationVocabulary.selectionProb)) {
-                    throw new IllegalStateException("selection-probability must be provided for diversity search.");
-                }
-
-                if (!heuristicCfg.containsKey(ConfigurationVocabulary.newBlocks)) {
-                    throw new IllegalStateException("new-blocks-generated must be provided for diversity search.");
-                }
+                checkGAConfiguration(heuristicCfg);
 
                 if (!heuristicCfg.containsKey(ConfigurationVocabulary.distance)) {
                     throw new IllegalStateException("distance-metric must be provided for diversity search.");
                 }
 
-                if (!heuristicCfg.containsKey(ConfigurationVocabulary.maxLen)) {
-                    throw new IllegalStateException("maximum-length must be provided for diversity search.");
-                }
-
                 searchStrategy = SearchStrategy.DIVERSITY_GA;
                 populationSize = ((Integer) heuristicCfg.get(ConfigurationVocabulary.population)).longValue();
-                tournamentSize = ((Integer) heuristicCfg.get(ConfigurationVocabulary.tournamentSize)).longValue();
-                selectionProbability = (Double) heuristicCfg.get(ConfigurationVocabulary.selectionProb);
                 newBlocksGenerated = ((Integer) heuristicCfg.get(ConfigurationVocabulary.newBlocks)).longValue();
                 distanceMetric = nameToDistanceMetric((String) heuristicCfg.get(ConfigurationVocabulary.distance));
-                maxAllowedLength = ((Integer) heuristicCfg.get(ConfigurationVocabulary.maxLen)).longValue();
+            }
+
+            case ConfigurationVocabulary.moga -> {
+                checkGAConfiguration(heuristicCfg);
+
+                searchStrategy = SearchStrategy.MOGA;
+                populationSize = ((Integer) heuristicCfg.get(ConfigurationVocabulary.population)).longValue();
+                newBlocksGenerated = ((Integer) heuristicCfg.get(ConfigurationVocabulary.newBlocks)).longValue();
+                distanceMetric = null;
             }
 
             default -> {
                 throw new IllegalStateException("Cannot support search heuristic: " + heuristicName);
             }
         }
+
+
+        LinkedHashMap<String, Object> selectionCfg = (LinkedHashMap<String, Object>) heuristicCfg.get(ConfigurationVocabulary.selection);
+        selectionData = getSelectionOperator(selectionCfg);
 
         // Parse the grammar parameters
         checkExistence(data, ConfigurationVocabulary.grammar);
@@ -383,6 +366,56 @@ public class Configuration {
         return statementStructureProbability;
     }
 
+    private Tuple<SOSelectionOperator, SelectionStrategy> getSelectionOperator(LinkedHashMap<String, Object> selectionCfg) {
+        checkExistence(selectionCfg, ConfigurationVocabulary.moSelection);
+        checkExistence(selectionCfg, ConfigurationVocabulary.soSelection);
+        checkExistence(selectionCfg, ConfigurationVocabulary.maxLen);
+
+        Long maxSize = ((Integer) selectionCfg.get(ConfigurationVocabulary.maxLen)).longValue();
+
+        String moSelection = (String) selectionCfg.get(ConfigurationVocabulary.moSelection);
+        String soSelection = (String) selectionCfg.get(ConfigurationVocabulary.soSelection);
+
+        SOSelectionOperator soSelectionOperator;
+        SelectionStrategy moSelectionIndicator;
+
+        switch (soSelection) {
+            case ConfigurationVocabulary.tournament -> {
+                checkExistence(selectionCfg, ConfigurationVocabulary.tournamentSize);
+                checkExistence(selectionCfg, ConfigurationVocabulary.tournamentSelectionProb);
+
+                Long tournamentSize = ((Integer) selectionCfg.get(ConfigurationVocabulary.tournamentSize)).longValue();
+                double tournamentSelectionProb = (Double) selectionCfg.get(ConfigurationVocabulary.tournamentSelectionProb);
+
+                soSelectionOperator = new TournamentSelection(tournamentSize, tournamentSelectionProb, maxSize, null, null);
+            }
+            case ConfigurationVocabulary.truncated -> {
+                checkExistence(selectionCfg, ConfigurationVocabulary.truncationProp);
+
+                double truncationProp = (Double) selectionCfg.get(ConfigurationVocabulary.truncationProp);
+
+                soSelectionOperator = new TruncatedSelection(truncationProp, maxSize, null);
+            }
+            default -> {
+                throw new IllegalStateException("Unknown SO selection operator: " + soSelection);
+            }
+        }
+
+        switch (moSelection) {
+            case ConfigurationVocabulary.domRank -> {
+                moSelectionIndicator = SelectionStrategy.DOMINATION_RANK;
+            }
+            case ConfigurationVocabulary.domCount -> {
+                moSelectionIndicator = SelectionStrategy.DOMINATION_COUNT;
+            }
+            default -> {
+                throw new IllegalStateException("Unknown MO selection operator: " + moSelection);
+            }
+        }
+
+        return new Tuple<>(soSelectionOperator, moSelectionIndicator);
+    }
+
     private <T extends Number> Distribution<T> parseDistribution(LinkedHashMap<String, Object> distCfg) {
 
         T lb, ub;
@@ -461,17 +494,103 @@ public class Configuration {
             case DIVERSITY_GA -> {
                 RandomNumberGenerator selectionRng = new RandomNumberGenerator(seed);
 
-                FitnessFunction f = new DiversityFitnessFunction(null, distanceMetric);
-                SelectionOperator s = new TournamentSelection(tournamentSize, selectionProbability,
-                        maxAllowedLength, selectionRng, f);
+                SOFitnessFunction f = new DiversityFitnessFunction(null, distanceMetric);
+                SOSelectionOperator s = selectionData.first();
+
+                if (s instanceof TournamentSelection) {
+                    ((TournamentSelection) s).setFitnessFunction(f);
+                    ((TournamentSelection) s).setRng(selectionRng);
+                } else if (s instanceof TruncatedSelection) {
+                    ((TruncatedSelection) s).setFitnessFunction(f);
+                } else {
+                    throw new IllegalStateException("Cannot support selection operator: " + s);
+                }
+
                 RecombinationOperator r = new SimpleRecombinationOperator();
 
                 return new DiversityGA(nodeToSample, timeBudgetMilis, rootContext, seed,
-                        populationSize, f, s, r);
+                        populationSize, f, s, r, null);
+            }
+            case MOGA -> {
+                RandomNumberGenerator selectionRng = new RandomNumberGenerator(seed);
+
+                MOFitnessFunction f = new StructureMOFitness();
+                SOFitnessFunction selectionFitness = null;
+
+                SOSelectionOperator soSelector = selectionData.first();
+
+                if (soSelector instanceof TournamentSelection) {
+                    ((TournamentSelection) soSelector).setFitnessFunction(selectionFitness);
+                    ((TournamentSelection) soSelector).setRng(selectionRng);
+                } else if (soSelector instanceof TruncatedSelection) {
+                    ((TruncatedSelection) soSelector).setFitnessFunction(selectionFitness);
+                } else {
+                    throw new IllegalStateException("Cannot support selection operator: " + soSelector);
+                }
+
+                MOSelectionOperator moSelector;
+
+                // TODO: make this configurable
+                boolean[] shouldMinimize = new boolean[13];
+                shouldMinimize[0] = true;
+
+                for (int i = 1; i < 12; i++) {
+                    shouldMinimize[i] = false;
+                }
+
+
+                switch (selectionData.second()) {
+                    case DOMINATION_RANK -> {
+                        moSelector = new DominationRankSelection(soSelector.getSizeMaxAllowedSize(), f, soSelector, shouldMinimize);
+                    }
+                    case DOMINATION_COUNT -> {
+                        moSelector = new DominationCountSelection(soSelector.getSizeMaxAllowedSize(), f, soSelector, shouldMinimize);
+                    }
+                    default -> {
+                        throw new IllegalStateException("Cannot support selection strategy: " + selectionData.second());
+                    }
+                }
+
+                RecombinationOperator r = new SimpleRecombinationOperator();
+
+                return new MOGA(nodeToSample, timeBudgetMilis, rootContext, seed,
+                        populationSize, f, moSelector, r, null, shouldMinimize);
             }
             default -> {
                 throw new IllegalStateException("Cannot support search strategy: " + searchStrategy);
             }
+        }
+    }
+
+    private void checkGAConfiguration(LinkedHashMap<String, Object> heuristicCfg) {
+        if (!heuristicCfg.containsKey(ConfigurationVocabulary.population)) {
+            throw new IllegalStateException("population-size size must be provided for GAs.");
+        }
+
+        if (!heuristicCfg.containsKey(ConfigurationVocabulary.type)) {
+            throw new IllegalStateException("maximum-length must be provided for diversity search.");
+        }
+
+        if (!heuristicCfg.containsKey(ConfigurationVocabulary.newBlocks)) {
+            throw new IllegalStateException("new-blocks-generated must be provided for GAs search.");
+        }
+
+        if (!heuristicCfg.containsKey(ConfigurationVocabulary.selection)) {
+            throw new IllegalStateException("selection must be provided for GAs.");
+        }
+    }
+
+    private void checkSelectionConfiguration(LinkedHashMap<String, Object> selectionCfg) {
+        if (!selectionCfg.containsKey(ConfigurationVocabulary.tournamentSize)) {
+            throw new IllegalStateException("tournament-size must be provided for diversity search.");
+        }
+
+        if (!selectionCfg.containsKey(ConfigurationVocabulary.tournamentSelectionProb)) {
+            throw new IllegalStateException("selection-probability must be provided for diversity search.");
+        }
+
+        if (!selectionCfg.containsKey(ConfigurationVocabulary.maxLen)) {
+            throw new IllegalStateException("maximum-length must be provided for diversity search.");
         }
     }
 }

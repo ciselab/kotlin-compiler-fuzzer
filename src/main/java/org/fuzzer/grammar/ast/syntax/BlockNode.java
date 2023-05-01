@@ -1,6 +1,8 @@
 package org.fuzzer.grammar.ast.syntax;
 
 import org.antlr.v4.tool.ast.GrammarAST;
+import org.fuzzer.configuration.Configuration;
+import org.fuzzer.dt.FuzzerStatistics;
 import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.ast.ASTNode;
 import org.fuzzer.representations.context.Context;
@@ -11,8 +13,8 @@ import java.util.Set;
 
 public class BlockNode extends ASTNode {
 
-    public BlockNode(GrammarAST antlrNode, List<ASTNode> children) {
-        super(antlrNode, children);
+    public BlockNode(GrammarAST antlrNode, List<ASTNode> children, FuzzerStatistics stats, Configuration cfg) {
+        super(antlrNode, children, stats, cfg);
     }
 
     @Override

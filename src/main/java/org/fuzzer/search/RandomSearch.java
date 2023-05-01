@@ -27,7 +27,7 @@ public class RandomSearch extends Search {
         FuzzerStatistics statistics = new FuzzerStatistics();
 
         while (System.currentTimeMillis() - startTime < getTimeBudgetMilis()) {
-
+//            System.out.println("Time elapsed: " + (System.currentTimeMillis() - startTime) + " ms");
             // Prepare a fresh context with a new seed
             Context nextCtx = getRootContext().clone();
             RandomNumberGenerator nextRNG = new RandomNumberGenerator(seedGenerator.getNewSeed());

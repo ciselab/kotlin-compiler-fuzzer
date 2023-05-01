@@ -1,32 +1,25 @@
 package org.fuzzer.search.operators.selection;
 
 import org.fuzzer.search.chromosome.CodeBlock;
-import org.fuzzer.search.fitness.FitnessFunction;
+import org.fuzzer.search.fitness.SOFitnessFunction;
 import org.fuzzer.utils.RandomNumberGenerator;
 import org.fuzzer.utils.Tuple;
 
 import java.util.*;
 
-public class TournamentSelection implements SelectionOperator {
+public class TournamentSelection extends SOSelectionOperator {
     private final long tournamentSize;
 
     private final double selectionProbability;
 
     private final Long maximumAllowedLength;
 
-    private final RandomNumberGenerator rng;
+    private RandomNumberGenerator rng;
 
-    private static final Comparator<Tuple<Double, Integer>> selectionComparator = new Comparator<Tuple<Double, Integer>>() {
-        @Override
-        public int compare(Tuple<Double, Integer> t1, Tuple<Double, Integer> t2) {
-            return Double.compare(t1.first(), t2.first());
-        }
-    };
-
-    private final FitnessFunction fitnessFunction;
+    private SOFitnessFunction fitnessFunction;
 
     public TournamentSelection(Long tournamentSize, double selectionProbability, Long maximumAllowedLength,
-                               RandomNumberGenerator rng, FitnessFunction fitnessFunction) {
+                               RandomNumberGenerator rng, SOFitnessFunction fitnessFunction) {
         this.tournamentSize = tournamentSize;
         this.selectionProbability = selectionProbability;
         this.maximumAllowedLength = maximumAllowedLength;
@@ -35,34 +28,42 @@ public class TournamentSelection implements SelectionOperator {
     }
 
     @Override
-    public List<CodeBlock> select(List<CodeBlock> population, long numberOfSelections) {
+    SOFitnessFunction getSOFitnessFunction() {
+        return fitnessFunction;
+    }
+
+    @Override
+    long getMaxAllowedSize() {
+        return maximumAllowedLength;
+    }
+
+    @Override
+    public List<CodeBlock> select(List<CodeBlock> triagedPopulation, long numberOfSelections, PriorityQueue<Tuple<Double, Integer>> populationFitness) {
         List<CodeBlock> selections = new LinkedList<>();
+        List<Tuple<Double, Integer>> populationFitnessList = new LinkedList<>();
 
-        // Filter heuristically on length to avoid out of memory exceptions
-        List<CodeBlock> feasibleSelections = population.stream().filter(x -> x.size() <= maximumAllowedLength).toList();
-
-        if (feasibleSelections.isEmpty()) {
-            throw new IllegalStateException("No feasible selections found in population.");
+        while (!populationFitness.isEmpty()) {
+            populationFitnessList.add(populationFitness.poll());
         }
 
-        fitnessFunction.updatePopulation(feasibleSelections);
-
         for (int i = 0; i < numberOfSelections; i++) {
-            LinkedList<CodeBlock> participants = new LinkedList<>();
-            PriorityQueue<Tuple<Double, Integer>> pq = new PriorityQueue<>(selectionComparator);
+            PriorityQueue<Tuple<Double, Integer>> pq = new PriorityQueue<>(new Comparator<Tuple<Double, Integer>>() {
+                @Override
+                public int compare(Tuple<Double, Integer> t1, Tuple<Double, Integer> t2) {
+                    return t1.first().compareTo(t2.first());
+                }
+            });
 
             for (int j = 0; j < tournamentSize; j++) {
-                CodeBlock randomBlock = feasibleSelections.get(rng.fromUniformDiscrete(0, feasibleSelections.size() - 1));
-
-                participants.add(randomBlock);
-                pq.add(new Tuple<>(fitnessFunction.evaluate(randomBlock), j));
+                Tuple<Double, Integer> randomTuple = rng.selectFromList(populationFitnessList);
+                pq.add(randomTuple);
             }
 
             double p = selectionProbability;
 
             while (!pq.isEmpty()) {
                 if (pq.size() == 1 || p < rng.fromUniformContinuous(0.0, 1.0)) {
-                    CodeBlock selection = participants.get(pq.poll().second());
+                    CodeBlock selection = triagedPopulation.get(pq.poll().second());
                     selections.add(selection);
                     break;
                 }
@@ -73,5 +74,18 @@ public class TournamentSelection implements SelectionOperator {
         }
 
         return selections;
+    }
+
+    @Override
+    public Long getSizeMaxAllowedSize() {
+        return maximumAllowedLength;
+    }
+
+    public void setRng(RandomNumberGenerator rng) {
+        this.rng = rng;
+    }
+
+    public void setFitnessFunction(SOFitnessFunction fitnessFunction) {
+        this.fitnessFunction = fitnessFunction;
     }
 }

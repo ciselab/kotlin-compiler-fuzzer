@@ -29,8 +29,6 @@ public class TestMain {
         compilerArgs.add("false");
         compilerArgs.add("true");
 
-        Configuration cfg = new Configuration("./config.yaml");
-
         DTRunner runner = new DTRunner(10000, 5,
                 fileNames, outputDir,
                 compilerPath, compilerArgs,

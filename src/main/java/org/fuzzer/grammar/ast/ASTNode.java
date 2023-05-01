@@ -24,16 +24,23 @@ public abstract class ASTNode {
 
     public ASTNode(GrammarAST antlrNode,
                    ASTNode parent,
-                   List<ASTNode> children) {
+                   List<ASTNode> children,
+                   FuzzerStatistics stats,
+                   Configuration cfg) {
         this.antlrNode = antlrNode;
         this.parent = parent;
         this.children = children;
-        this.stats = null;
-        this.cfg = null;
+        this.stats = stats;
+        this.cfg = cfg;
+
+        for (ASTNode child : children) {
+            child.recordStatistics(stats);
+            child.useConfiguration(cfg);
+        }
     }
 
-    public ASTNode(GrammarAST antlrNode, List<ASTNode> children) {
-        this(antlrNode, null, children);
+    public ASTNode(GrammarAST antlrNode, List<ASTNode> children, FuzzerStatistics stats, Configuration cfg) {
+        this(antlrNode, null, children, stats, cfg);
     }
 
     public abstract CodeFragment getSample(RandomNumberGenerator rng, Context ctx, Set<String> generatedCallableDependencies);
@@ -45,7 +52,7 @@ public abstract class ASTNode {
         }
     }
 
-    public void useConfiguration(Configuration cfg) {
+    protected void useConfiguration(Configuration cfg) {
         this.cfg = cfg;
         for (ASTNode child : children) {
             child.useConfiguration(cfg);

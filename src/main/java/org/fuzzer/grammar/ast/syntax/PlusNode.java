@@ -1,5 +1,6 @@
 package org.fuzzer.grammar.ast.syntax;
 
+import org.fuzzer.configuration.Configuration;
 import org.fuzzer.dt.FuzzerStatistics;
 import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.ast.ASTNode;
@@ -28,7 +29,6 @@ public class PlusNode extends SyntaxNode {
 
             FuzzerStatistics newStats = stats.clone();
             nodeToSample.recordStatistics(newStats);
-            nodeToSample.useConfiguration(cfg);
 
             CodeFragment newCode = nodeToSample.getSample(rng, ctx, dependencyNames);
 
@@ -43,8 +43,8 @@ public class PlusNode extends SyntaxNode {
         return snippets;
     }
 
-    public PlusNode(List<ASTNode> children) {
-        super(null, children);
+    public PlusNode(List<ASTNode> children, Configuration cfg) {
+        super(null, children, null, cfg);
     }
 
     @Override

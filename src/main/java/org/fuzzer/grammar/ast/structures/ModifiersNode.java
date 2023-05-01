@@ -12,7 +12,7 @@ import java.util.Set;
 
 public class ModifiersNode extends ASTNode {
     public ModifiersNode(GrammarAST antlrNode) {
-        super(antlrNode, new ArrayList<>());
+        super(antlrNode, new ArrayList<>(), null, null);
     }
 
     @Override

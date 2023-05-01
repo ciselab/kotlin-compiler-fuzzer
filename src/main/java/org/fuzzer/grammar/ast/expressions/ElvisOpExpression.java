@@ -1,6 +1,8 @@
 package org.fuzzer.grammar.ast.expressions;
 
 import org.antlr.v4.tool.ast.GrammarAST;
+import org.fuzzer.configuration.Configuration;
+import org.fuzzer.dt.FuzzerStatistics;
 import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.SampleStructure;
 import org.fuzzer.grammar.ast.statements.StatementNode;
@@ -13,8 +15,8 @@ import java.util.List;
 import java.util.Set;
 
 public class ElvisOpExpression extends ExpressionNode {
-    public ElvisOpExpression(GrammarAST antlrNode, int maxDepth) {
-        super(antlrNode, maxDepth);
+    public ElvisOpExpression(GrammarAST antlrNode, int maxDepth, FuzzerStatistics stats, Configuration cfg) {
+        super(antlrNode, maxDepth, stats, cfg);
     }
 
     @Override

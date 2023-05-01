@@ -1,6 +1,7 @@
 package org.fuzzer.grammar.ast.syntax;
 
 import org.antlr.v4.tool.ast.GrammarAST;
+import org.fuzzer.configuration.Configuration;
 import org.fuzzer.dt.FuzzerStatistics;
 import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.ast.ASTNode;
@@ -15,16 +16,12 @@ import java.util.Set;
 
 public class StarNode extends SyntaxNode {
 
-    public StarNode(GrammarAST antlrNode, ASTNode parent, List<ASTNode> children) {
-        super(antlrNode, parent, children);
+    public StarNode(GrammarAST antlrNode, ASTNode parent, List<ASTNode> children, FuzzerStatistics stats, Configuration cfg) {
+        super(antlrNode, parent, children, null, null);
     }
 
-    public StarNode(GrammarAST antlrNode, List<ASTNode> children) {
-        super(antlrNode, children);
-    }
-
-    public StarNode(List<ASTNode> children) {
-        super(null, children);
+    public StarNode(GrammarAST antlrNode, List<ASTNode> children, FuzzerStatistics stats, Configuration cfg) {
+        super(antlrNode, children, null, null);
     }
 
     @Override
@@ -42,7 +39,6 @@ public class StarNode extends SyntaxNode {
 
             FuzzerStatistics newStats = stats.clone();
             nodeToSample.recordStatistics(newStats);
-            nodeToSample.useConfiguration(cfg);
 
             CodeFragment newCode = nodeToSample.getSample(rng, ctx, dependencyNames);
 

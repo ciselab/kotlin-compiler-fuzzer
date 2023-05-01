@@ -22,8 +22,8 @@ public class ExpressionNode extends ASTNode {
 
     protected final int maxDepth;
 
-    public ExpressionNode(GrammarAST antlrNode, int maxDepth) {
-        super(antlrNode, new ArrayList<>());
+    public ExpressionNode(GrammarAST antlrNode, int maxDepth, FuzzerStatistics stats, Configuration cfg) {
+        super(antlrNode, new ArrayList<>(), stats, cfg);
         this.maxDepth = maxDepth;
     }
 
@@ -45,10 +45,10 @@ public class ExpressionNode extends ASTNode {
         ExpressionNode node;
 
         switch (structure) {
-            case IF_EXPR -> node = new IfExpressionNode(antlrNode, maxDepth);
-            case SIMPLE_EXPR -> node = new SimpleExpressionNode(antlrNode, maxDepth);
-            case TRY_CATCH -> node = new TryExpressionNode(antlrNode, maxDepth);
-            case ELVIS_OP -> node = new ElvisOpExpression(antlrNode, maxDepth);
+            case IF_EXPR -> node = new IfExpressionNode(antlrNode, maxDepth, stats, cfg);
+            case SIMPLE_EXPR -> node = new SimpleExpressionNode(antlrNode, maxDepth, stats, cfg);
+            case TRY_CATCH -> node = new TryExpressionNode(antlrNode, maxDepth, stats, cfg);
+            case ELVIS_OP -> node = new ElvisOpExpression(antlrNode, maxDepth, stats, cfg);
             default ->
                 throw new IllegalArgumentException("Cannot create expression node of structure: " + structure);
         }

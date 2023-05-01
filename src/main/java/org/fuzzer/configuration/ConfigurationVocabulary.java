@@ -23,11 +23,29 @@ public class ConfigurationVocabulary {
 
     public static final String diversityGA = "diversity-ga";
 
+    public static final String moga = "moga";
+
+    public static final String selection = "selection";
+
     public static final String probability = "probability";
 
     public static final String tournamentSize = "tournament-size";
 
-    public static final String selectionProb = "selection-probability";
+    public static final String moSelection = "mo-selection";
+
+    public static final String soSelection = "so-selection";
+
+    public static final String tournament = "tournament";
+
+    public static final String truncated = "truncated";
+
+    public static final String truncationProp = "truncation-proportion";
+
+    public static final String domCount = "domination-count";
+
+    public static final String domRank = "domination-rank";
+
+    public static final String tournamentSelectionProb = "tournament-selection-probability";
 
     public static final String newBlocks = "new-blocks-generated";
 
