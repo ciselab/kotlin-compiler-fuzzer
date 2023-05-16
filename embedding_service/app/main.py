@@ -1,11 +1,26 @@
-from fastapi import FastAPI
+from typing import List, Union
+from fastapi import FastAPI, Query
+from os import getenv
+from typing_extensions import Annotated
+from pickle import load
 
 from app.model import Code2Vec
 from app.request_body import Code
 
-app = FastAPI()
-model = Code2Vec()
 
-@app.get("/code2vec/")
+app = FastAPI()
+
+with open(getenv("MODELFILE"), "rb") as f:
+    model = load(f)
+
+@app.get("/embedding-multiple/")
+def get_embedding(code_list: Annotated[Union[List[Code], None], Query()] = None):
+    return {c.name : model.encode(code=c.text) for c in code_list}
+
+@app.get("/embedding-single/")
 def get_embedding(code: Code):
     return {"embedding":model.encode(code=code.text)}
+
+@app.get("/targets/")
+def get_targets():
+    return model.targets

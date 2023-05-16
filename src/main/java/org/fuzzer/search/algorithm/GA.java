@@ -4,7 +4,7 @@ import org.fuzzer.grammar.ast.syntax.SyntaxNode;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.search.chromosome.CodeBlock;
 import org.fuzzer.search.clustering.ClusteringEngine;
-import org.fuzzer.search.fitness.FitnessFunction;
+import org.fuzzer.search.fitness.IndividualFitnessFunction;
 import org.fuzzer.search.operators.recombination.RecombinationOperator;
 import org.fuzzer.search.operators.selection.SelectionOperator;
 import org.fuzzer.utils.RandomNumberGenerator;
@@ -26,7 +26,7 @@ public abstract class GA extends Search {
     public GA(SyntaxNode nodeToSample, Long timeBudgetMilis,
                 Context rootContext, Long seed,
                 Long populationSize,
-                FitnessFunction fitnessFunction,
+                IndividualFitnessFunction fitnessFunction,
                 SelectionOperator selectionOperator,
                 RecombinationOperator recombinationOperator,
                 ClusteringEngine<CodeBlock> clusteringEngine) {
