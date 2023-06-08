@@ -1,16 +1,34 @@
 config:
   heuristic:
-    type: moga
-    population-size: 40
-    new-blocks-generated: 20
+    type: proximity-ga
+    population-size: 10
+    new-blocks-generated: 2
     distance-metric: euclidean
+    blocks-per-suite: 20
+    num-iters-per-target: 10
+    suite-mutation-probability: 0.1
     selection:
-      mo-selection: domination-rank
-      so-selection : tournament
-      tournament-size: 4
-      tournament-selection-probability: 0.75
-      truncation-proportion: 0.3
-      maximum-length: 500
+      individual:
+        mo-selection: domination-rank
+        so-selection : tournament
+        tournament-size: 4
+        tournament-selection-probability: 0.99
+        truncation-proportion: 0.3
+        maximum-length: 500
+      suite:
+        so-selection: tournament
+        tournament-size: 4
+        tournament-selection-probability: 0.99
+        truncation-proportion: 0.3
+    remote:
+      embedding-single: http://localhost:9090/embedding-single/
+      embedding-multi: http://localhost:9090/embedding-multiple/
+      targets: http://localhost:9091/centers/kmeans100/
+      num-targets: 100
+      oom:
+        enable: true
+        oom-single: http://localhost:9092/predict-single/
+        oom-multi: http://localhost:9092/predict-multiple/
   grammar:
     simplicity-bias: 0.6
     plus-node-dist:
