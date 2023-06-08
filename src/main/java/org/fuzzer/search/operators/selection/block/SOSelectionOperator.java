@@ -1,4 +1,4 @@
-package org.fuzzer.search.operators.selection;
+package org.fuzzer.search.operators.selection.block;
 
 import org.fuzzer.search.chromosome.CodeBlock;
 import org.fuzzer.utils.Tuple;

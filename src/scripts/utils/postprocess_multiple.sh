@@ -7,6 +7,7 @@
 counter=1
 while [ $counter -le $2 ]
 do
+  echo $(date)
   echo $counter
   bash src/scripts/utils/postprocess.sh $1-$counter stats.csv
   ((counter++))

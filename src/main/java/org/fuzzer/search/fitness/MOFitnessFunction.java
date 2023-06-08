@@ -2,8 +2,6 @@ package org.fuzzer.search.fitness;
 
 import org.fuzzer.search.chromosome.CodeBlock;
 
-import java.util.List;
-
-public interface MOFitnessFunction extends FitnessFunction {
+public interface MOFitnessFunction extends IndividualFitnessFunction {
     public double[] evaluate(CodeBlock block);
 }

@@ -22,6 +22,11 @@ option_list <- list(
         help = "whether to output the compiler model [default= %default]",
         metavar = "logical", dest = "comp"
     ),
+        make_option(c("-l", "--lang-model"),
+        type = "logical", default = TRUE,
+        help = "whether to output the language model [default= %default]",
+        metavar = "logical", dest = "lang"
+    ),
     make_option(c("-a", "--aicc"),
         type = "logical", default = TRUE,
         help = "whether to compute the second-order Akaike Information Criterion [default= %default]",
@@ -39,7 +44,6 @@ dataset <- read.csv(opt$input)
 if (opt$output != "stdout") {
     sink(opt$output)
 }
-
 
 if (opt$file) {
     file_model <- aov(
@@ -59,9 +63,18 @@ if (opt$comp) {
     print(summary(compiler_model))
 }
 
+if (opt$lang) {
+    lang_model <- aov(
+        crash ~ do_while * assignment * try_catch * if_expr * elvis_op,
+        data = dataset
+    )
+
+    print(summary(lang_model))
+}
+
 if (opt$aicc) {
-    model_list <- list(compiler_model, file_model)
-    model_names <- c("compiler_model", "file_model")
+    model_list <- list(compiler_model, file_model, lang_model)
+    model_names <- c("compiler_model", "file_model", "lang_model")
 
     aicc <- aictab(cand.set = model_list, modnames = model_names, sort = TRUE)
     print(aicc)

@@ -12,7 +12,7 @@ import org.fuzzer.grammar.ast.ASTNode;
 import org.fuzzer.grammar.ast.syntax.PlusNode;
 import org.fuzzer.grammar.ast.syntax.SyntaxNode;
 import org.fuzzer.representations.context.Context;
-import org.fuzzer.search.Search;
+import org.fuzzer.search.algorithm.Search;
 import org.fuzzer.utils.FileUtilities;
 import org.fuzzer.utils.RandomNumberGenerator;
 import org.fuzzer.utils.Tuple;

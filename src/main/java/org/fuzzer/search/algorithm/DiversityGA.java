@@ -1,21 +1,17 @@
-package org.fuzzer.search;
+package org.fuzzer.search.algorithm;
 
 import org.fuzzer.dt.FuzzerStatistics;
 import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.ast.syntax.SyntaxNode;
-import org.fuzzer.representations.callables.KCallable;
 import org.fuzzer.search.chromosome.CodeBlock;
-import org.fuzzer.search.chromosome.CodeSnippet;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.search.clustering.*;
 import org.fuzzer.search.fitness.SOFitnessFunction;
-import org.fuzzer.search.operators.recombination.RecombinationOperator;
-import org.fuzzer.search.operators.selection.SelectionOperator;
-import org.fuzzer.utils.RandomNumberGenerator;
+import org.fuzzer.search.operators.recombination.block.RecombinationOperator;
+import org.fuzzer.search.operators.selection.block.SelectionOperator;
 import org.fuzzer.utils.Tuple;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class DiversityGA extends GA {
 
@@ -33,7 +29,7 @@ public class DiversityGA extends GA {
     @Override
     public List<Tuple<CodeFragment, FuzzerStatistics>> search() {
         startGlobalStats();
-        List<CodeBlock> pop = getRandomBlocks(populationSize);
+        List<CodeBlock> pop = getNewBlocks(populationSize);
         List<CodeBlock> parents;
 
         while (!exceededTimeBudget()) {
@@ -56,7 +52,7 @@ public class DiversityGA extends GA {
             }
 
             List<CodeBlock> children = getChildren(parents);
-            List<CodeBlock> newBlocks = getRandomBlocks(populationSize - children.size() - parents.size());
+            List<CodeBlock> newBlocks = getNewBlocks(populationSize - children.size() - parents.size());
 
             updatePopulation(pop, parents, children, newBlocks);
         }

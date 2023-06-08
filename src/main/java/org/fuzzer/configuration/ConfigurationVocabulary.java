@@ -11,7 +11,7 @@ public class ConfigurationVocabulary {
 
     public static final String language = "language-features";
 
-    public static final String population = "population-size";
+    public static final String popSize = "population-size";
 
     public static final String distance = "distance-metric";
 
@@ -23,7 +23,7 @@ public class ConfigurationVocabulary {
 
     public static final String diversityGA = "diversity-ga";
 
-    public static final String moga = "moga";
+    public static final String structureMoga = "structure-moga";
 
     public static final String selection = "selection";
 
@@ -110,4 +110,34 @@ public class ConfigurationVocabulary {
     public static final String uniform = "uniform";
 
     public static final String geometric = "geometric";
+
+    public static final String proximityGA = "proximity-ga";
+
+    public static final String remote = "remote";
+
+    public static final String singleEmbedding = "embedding-single";
+
+    public static final String multiEmbedding = "embedding-multi";
+
+    public static final String targets = "targets";
+
+    public static final String numberOfTargets = "num-targets";
+
+    public static final String numberOfItersPerTarget = "num-iters-per-target";
+
+    public static final String proximityWTS = "proximity-wts";
+
+    public static final String blocksPerSuite = "blocks-per-suite";
+
+    public static final String individual = "individual";
+
+    public static final String suite = "suite";
+
+    public static final String suiteMutationProb = "suite-mutation-probability";
+
+    public static final String proximityMoga = "proximity-moga";
+
+    public static final String singleOOM = "oom-single";
+
+    public static final String multiOOM = "oom-multi";
 }

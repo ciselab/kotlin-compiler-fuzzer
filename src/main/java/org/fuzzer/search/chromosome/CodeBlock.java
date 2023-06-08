@@ -16,6 +16,15 @@ public class CodeBlock {
 
     private final Set<KCallable> callables;
 
+    //func,simple_expr,do_while,assignment,try_catch,if_expr,elvis_op,simple_stmt
+    //3, 6, 7, 8, 9, 10, 11, 12, refer to SampleStructure
+    private static final int[] oomLanguageFeatures =  new int[]{3, 5, 7, 8, 9, 10, 11, 12};
+    public CodeBlock(String text) {
+        this.stats = null;
+        this.callables = null;
+        this.text = new CodeFragment(text);
+    }
+
     public CodeBlock(String name, List<CodeSnippet> snippets, Set<KCallable> dependencies) {
         this.stats = FuzzerStatistics.aggregate(snippets.stream().map(CodeSnippet::stats).toList());
         this.callables = dependencies;
@@ -28,6 +37,18 @@ public class CodeBlock {
         this.stats = stats;
         this.text = text;
         this.callables = callables;
+    }
+
+    public double[] getOomLanguageFeatures() {
+        double[] allVisitations = getStats().getVisitations();
+
+
+        double[] selectedFeatures = new double[oomLanguageFeatures.length];
+        for (int i = 0; i < oomLanguageFeatures.length; i++) {
+            selectedFeatures[i] = allVisitations[oomLanguageFeatures[i]];
+        }
+
+        return selectedFeatures;
     }
 
     public String getName() {

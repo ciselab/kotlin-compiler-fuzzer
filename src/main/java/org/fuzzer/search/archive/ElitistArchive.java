@@ -1,8 +1,6 @@
 package org.fuzzer.search.archive;
 
-import org.fuzzer.grammar.SampleStructure;
 import org.fuzzer.search.chromosome.CodeBlock;
-import org.fuzzer.search.fitness.FitnessFunction;
 import org.fuzzer.search.fitness.MOFitnessFunction;
 
 import java.util.HashSet;

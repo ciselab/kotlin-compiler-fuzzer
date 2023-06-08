@@ -1,45 +1,49 @@
-package org.fuzzer.search.operators.selection;
+package org.fuzzer.search.operators.selection.suite;
 
-import org.fuzzer.search.chromosome.CodeBlock;
+import org.fuzzer.search.chromosome.TestSuite;
 import org.fuzzer.search.fitness.SOFitnessFunction;
+import org.fuzzer.search.fitness.proximity.SOPopulationFitnessFunction;
 import org.fuzzer.utils.RandomNumberGenerator;
 import org.fuzzer.utils.Tuple;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.PriorityQueue;
 
-public class TournamentSelection extends SOSelectionOperator {
+public class SuiteTournamentSelection extends SuiteSOSelectionOperator {
     private final long tournamentSize;
 
     private final double selectionProbability;
 
-    private final Long maximumAllowedLength;
+    private final Long maximumAllowedSuiteLength;
 
     private RandomNumberGenerator rng;
 
-    private SOFitnessFunction fitnessFunction;
+    private SOPopulationFitnessFunction fitnessFunction;
 
-    public TournamentSelection(Long tournamentSize, double selectionProbability, Long maximumAllowedLength,
-                               RandomNumberGenerator rng, SOFitnessFunction fitnessFunction) {
+    public SuiteTournamentSelection(Long tournamentSize, double selectionProbability, Long maximumAllowedSuiteLength,
+                               RandomNumberGenerator rng, SOPopulationFitnessFunction fitnessFunction) {
         this.tournamentSize = tournamentSize;
         this.selectionProbability = selectionProbability;
-        this.maximumAllowedLength = maximumAllowedLength;
+        this.maximumAllowedSuiteLength = maximumAllowedSuiteLength;
         this.rng = rng;
         this.fitnessFunction = fitnessFunction;
     }
 
     @Override
-    SOFitnessFunction getSOFitnessFunction() {
+    SOPopulationFitnessFunction getSOFitnessFunction() {
         return fitnessFunction;
     }
 
     @Override
-    long getMaxAllowedSize() {
-        return maximumAllowedLength;
+    long getMaxAllowedSuiteSize() {
+        return maximumAllowedSuiteLength;
     }
 
     @Override
-    public List<CodeBlock> select(List<CodeBlock> triagedPopulation, long numberOfSelections, PriorityQueue<Tuple<Double, Integer>> populationFitness) {
-        List<CodeBlock> selections = new LinkedList<>();
+    public List<TestSuite> select(List<TestSuite> triagedPopulation, long numberOfSelections, PriorityQueue<Tuple<Double, Integer>> populationFitness) {
+        List<TestSuite> selections = new LinkedList<>();
         List<Tuple<Double, Integer>> populationFitnessList = new LinkedList<>();
 
         while (!populationFitness.isEmpty()) {
@@ -63,7 +67,7 @@ public class TournamentSelection extends SOSelectionOperator {
 
             while (!pq.isEmpty()) {
                 if (pq.size() == 1 || p < rng.fromUniformContinuous(0.0, 1.0)) {
-                    CodeBlock selection = triagedPopulation.get(pq.poll().second());
+                    TestSuite selection = triagedPopulation.get(pq.poll().second());
                     selections.add(selection);
                     break;
                 }
@@ -76,16 +80,11 @@ public class TournamentSelection extends SOSelectionOperator {
         return selections;
     }
 
-    @Override
-    public Long getSizeMaxAllowedSize() {
-        return maximumAllowedLength;
-    }
-
     public void setRng(RandomNumberGenerator rng) {
         this.rng = rng;
     }
 
-    public void setFitnessFunction(SOFitnessFunction fitnessFunction) {
+    public void setFitnessFunction(SOPopulationFitnessFunction fitnessFunction) {
         this.fitnessFunction = fitnessFunction;
     }
 }

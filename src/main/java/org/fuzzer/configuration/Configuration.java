@@ -4,14 +4,19 @@ package org.fuzzer.configuration;
 import org.fuzzer.grammar.SampleStructure;
 import org.fuzzer.grammar.ast.syntax.SyntaxNode;
 import org.fuzzer.representations.context.Context;
-import org.fuzzer.search.DiversityGA;
-import org.fuzzer.search.MOGA;
-import org.fuzzer.search.RandomSearch;
-import org.fuzzer.search.Search;
+import org.fuzzer.search.algorithm.*;
 import org.fuzzer.search.fitness.*;
-import org.fuzzer.search.operators.recombination.RecombinationOperator;
-import org.fuzzer.search.operators.recombination.SimpleRecombinationOperator;
-import org.fuzzer.search.operators.selection.*;
+import org.fuzzer.search.fitness.proximity.CollectiveProximityFitnessFunction;
+import org.fuzzer.search.fitness.proximity.ProximityMOFitnessFunction;
+import org.fuzzer.search.fitness.proximity.SOPopulationFitnessFunction;
+import org.fuzzer.search.fitness.proximity.SingularSOProximityFitnessFunction;
+import org.fuzzer.search.operators.recombination.block.RecombinationOperator;
+import org.fuzzer.search.operators.recombination.block.SimpleRecombinationOperator;
+import org.fuzzer.search.operators.recombination.suite.SuiteRecombinationOperator;
+import org.fuzzer.search.operators.recombination.suite.WTSRecombinationOperator;
+import org.fuzzer.search.operators.selection.block.*;
+import org.fuzzer.search.operators.selection.suite.SuiteSOSelectionOperator;
+import org.fuzzer.search.operators.selection.suite.SuiteTournamentSelection;
 import org.fuzzer.utils.RandomNumberGenerator;
 import org.fuzzer.utils.Tuple;
 import org.yaml.snakeyaml.Yaml;
@@ -20,6 +25,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -68,7 +75,22 @@ public class Configuration {
 
     private final Map<SampleStructure, Double> statementStructureProbability;
 
-    private final Tuple<SOSelectionOperator, SelectionStrategy> selectionData;
+    private final Tuple<SuiteSOSelectionOperator, Tuple<SOSelectionOperator, SelectionStrategy>> selectionData;
+
+    private final String singleEmbeddingUrl;
+
+    private final String multiEmbeddingUrl;
+    private final String targetsUrl;
+
+    private final Long numberOfTargets;
+
+    private final Long numberOfItersPerTarget;
+
+    private final Long blocksPerSuite;
+
+    private final Double suiteMutationProbability;
+
+//    private final String oomPredictionUrl;
 
     public Configuration(String fullyQualifiedFileName) {
         File configFile = new File(fullyQualifiedFileName);
@@ -107,7 +129,10 @@ public class Configuration {
         checkExistence(data, ConfigurationVocabulary.heuristic);
 
         LinkedHashMap<String, Object> heuristicCfg = (LinkedHashMap<String, Object>) data.get(ConfigurationVocabulary.heuristic);
+        LinkedHashMap<String, Object> remoteCfg = (LinkedHashMap<String, Object>) heuristicCfg.get(ConfigurationVocabulary.remote);
+
         String heuristicName = (String) heuristicCfg.getOrDefault(ConfigurationVocabulary.type, "empty");
+
 
         switch (heuristicName) {
             case ConfigurationVocabulary.random -> {
@@ -115,6 +140,13 @@ public class Configuration {
                 populationSize = null;
                 newBlocksGenerated = null;
                 distanceMetric = null;
+                singleEmbeddingUrl = null;
+                multiEmbeddingUrl = null;
+                targetsUrl = null;
+                numberOfTargets = null;
+                numberOfItersPerTarget = null;
+                blocksPerSuite = null;
+                suiteMutationProbability = null;
             }
 
             case ConfigurationVocabulary.diversityGA -> {
@@ -125,18 +157,80 @@ public class Configuration {
                 }
 
                 searchStrategy = SearchStrategy.DIVERSITY_GA;
-                populationSize = ((Integer) heuristicCfg.get(ConfigurationVocabulary.population)).longValue();
+                populationSize = ((Integer) heuristicCfg.get(ConfigurationVocabulary.popSize)).longValue();
                 newBlocksGenerated = ((Integer) heuristicCfg.get(ConfigurationVocabulary.newBlocks)).longValue();
                 distanceMetric = nameToDistanceMetric((String) heuristicCfg.get(ConfigurationVocabulary.distance));
+                singleEmbeddingUrl = null;
+                multiEmbeddingUrl = null;
+                targetsUrl = null;
+                numberOfTargets = null;
+                numberOfItersPerTarget = null;
+                blocksPerSuite = null;
+                suiteMutationProbability = null;
             }
 
-            case ConfigurationVocabulary.moga -> {
+            case ConfigurationVocabulary.structureMoga -> {
                 checkGAConfiguration(heuristicCfg);
 
-                searchStrategy = SearchStrategy.MOGA;
-                populationSize = ((Integer) heuristicCfg.get(ConfigurationVocabulary.population)).longValue();
+                searchStrategy = SearchStrategy.STRUCT_MOGA;
+                populationSize = ((Integer) heuristicCfg.get(ConfigurationVocabulary.popSize)).longValue();
                 newBlocksGenerated = ((Integer) heuristicCfg.get(ConfigurationVocabulary.newBlocks)).longValue();
                 distanceMetric = null;
+                singleEmbeddingUrl = null;
+                multiEmbeddingUrl = null;
+                targetsUrl = null;
+                numberOfTargets = null;
+                numberOfItersPerTarget = null;
+                blocksPerSuite = null;
+                suiteMutationProbability = null;
+            }
+
+            case ConfigurationVocabulary.proximityMoga -> {
+                searchStrategy = SearchStrategy.PROXIMITY_MOGA;
+                populationSize = ((Integer) heuristicCfg.get(ConfigurationVocabulary.popSize)).longValue();
+                newBlocksGenerated = ((Integer) heuristicCfg.get(ConfigurationVocabulary.newBlocks)).longValue();
+                distanceMetric = null;
+                singleEmbeddingUrl = (String) remoteCfg.get(ConfigurationVocabulary.singleEmbedding);
+                multiEmbeddingUrl = (String) remoteCfg.get(ConfigurationVocabulary.multiEmbedding);
+                targetsUrl = (String) remoteCfg.get(ConfigurationVocabulary.targets);
+                numberOfTargets = ((Integer) remoteCfg.get(ConfigurationVocabulary.numberOfTargets)).longValue();
+                numberOfItersPerTarget = null;
+                blocksPerSuite = null;
+                suiteMutationProbability = null;
+            }
+
+            case ConfigurationVocabulary.proximityGA -> {
+                checkGAConfiguration(heuristicCfg);
+
+                searchStrategy = SearchStrategy.PROXIMITY_GA;
+                populationSize = ((Integer) heuristicCfg.get(ConfigurationVocabulary.popSize)).longValue();
+                newBlocksGenerated = ((Integer) heuristicCfg.get(ConfigurationVocabulary.newBlocks)).longValue();
+                singleEmbeddingUrl = (String) remoteCfg.get(ConfigurationVocabulary.singleEmbedding);
+                multiEmbeddingUrl = (String) remoteCfg.get(ConfigurationVocabulary.multiEmbedding);
+                targetsUrl = (String) remoteCfg.get(ConfigurationVocabulary.targets);
+                numberOfTargets = ((Integer) remoteCfg.get(ConfigurationVocabulary.numberOfTargets)).longValue();
+                numberOfItersPerTarget = ((Integer) heuristicCfg.get(ConfigurationVocabulary.numberOfItersPerTarget)).longValue();;
+                // TODO: make this configurable
+                distanceMetric = null;
+                blocksPerSuite = null;
+                suiteMutationProbability = null;
+            }
+
+            case ConfigurationVocabulary.proximityWTS -> {
+                checkGAConfiguration(heuristicCfg);
+
+                searchStrategy = SearchStrategy.PROXIMITY_WTS;
+                populationSize = ((Integer) heuristicCfg.get(ConfigurationVocabulary.popSize)).longValue();
+                newBlocksGenerated = ((Integer) heuristicCfg.get(ConfigurationVocabulary.newBlocks)).longValue();
+                singleEmbeddingUrl = (String) remoteCfg.get(ConfigurationVocabulary.singleEmbedding);
+                multiEmbeddingUrl = (String) remoteCfg.get(ConfigurationVocabulary.multiEmbedding);
+                targetsUrl = (String) remoteCfg.get(ConfigurationVocabulary.targets);
+                numberOfTargets = ((Integer) remoteCfg.get(ConfigurationVocabulary.numberOfTargets)).longValue();
+                blocksPerSuite = ((Integer) heuristicCfg.get(ConfigurationVocabulary.blocksPerSuite)).longValue();
+                numberOfItersPerTarget = null;
+                distanceMetric = null;
+                suiteMutationProbability = (Double) heuristicCfg.get(ConfigurationVocabulary.suiteMutationProb);
+
             }
 
             default -> {
@@ -366,38 +460,62 @@ public class Configuration {
         return statementStructureProbability;
     }
 
-    private Tuple<SOSelectionOperator, SelectionStrategy> getSelectionOperator(LinkedHashMap<String, Object> selectionCfg) {
-        checkExistence(selectionCfg, ConfigurationVocabulary.moSelection);
-        checkExistence(selectionCfg, ConfigurationVocabulary.soSelection);
-        checkExistence(selectionCfg, ConfigurationVocabulary.maxLen);
+    private Tuple<SuiteSOSelectionOperator, Tuple<SOSelectionOperator, SelectionStrategy>> getSelectionOperator(LinkedHashMap<String, Object> selectionCfg) {
 
-        Long maxSize = ((Integer) selectionCfg.get(ConfigurationVocabulary.maxLen)).longValue();
+        checkExistence(selectionCfg, ConfigurationVocabulary.individual);
+        checkExistence(selectionCfg, ConfigurationVocabulary.suite);
 
-        String moSelection = (String) selectionCfg.get(ConfigurationVocabulary.moSelection);
-        String soSelection = (String) selectionCfg.get(ConfigurationVocabulary.soSelection);
+        LinkedHashMap<String, Object> individualSelectionData = (LinkedHashMap<String, Object>) selectionCfg.get(ConfigurationVocabulary.individual);
+        LinkedHashMap<String, Object> suiteSelectionData = (LinkedHashMap<String, Object>) selectionCfg.get(ConfigurationVocabulary.suite);
+
+        checkExistence(individualSelectionData, ConfigurationVocabulary.moSelection);
+        checkExistence(individualSelectionData, ConfigurationVocabulary.soSelection);
+        checkExistence(individualSelectionData, ConfigurationVocabulary.maxLen);
+
+        Long maxSize = ((Integer) individualSelectionData.get(ConfigurationVocabulary.maxLen)).longValue();
+
+        String moSelection = (String) individualSelectionData.get(ConfigurationVocabulary.moSelection);
+        String soSelection = (String) individualSelectionData.get(ConfigurationVocabulary.soSelection);
+        String suiteSoSelection = (String) suiteSelectionData.get(ConfigurationVocabulary.soSelection);
 
         SOSelectionOperator soSelectionOperator;
+        SuiteSOSelectionOperator suiteSOSelectionOperator;
         SelectionStrategy moSelectionIndicator;
 
         switch (soSelection) {
             case ConfigurationVocabulary.tournament -> {
-                checkExistence(selectionCfg, ConfigurationVocabulary.tournamentSize);
-                checkExistence(selectionCfg, ConfigurationVocabulary.tournamentSelectionProb);
+                checkExistence(individualSelectionData, ConfigurationVocabulary.tournamentSize);
+                checkExistence(individualSelectionData, ConfigurationVocabulary.tournamentSelectionProb);
 
-                Long tournamentSize = ((Integer) selectionCfg.get(ConfigurationVocabulary.tournamentSize)).longValue();
-                double tournamentSelectionProb = (Double) selectionCfg.get(ConfigurationVocabulary.tournamentSelectionProb);
+                Long tournamentSize = ((Integer) individualSelectionData.get(ConfigurationVocabulary.tournamentSize)).longValue();
+                double tournamentSelectionProb = (Double) individualSelectionData.get(ConfigurationVocabulary.tournamentSelectionProb);
 
                 soSelectionOperator = new TournamentSelection(tournamentSize, tournamentSelectionProb, maxSize, null, null);
             }
             case ConfigurationVocabulary.truncated -> {
-                checkExistence(selectionCfg, ConfigurationVocabulary.truncationProp);
+                checkExistence(individualSelectionData, ConfigurationVocabulary.truncationProp);
 
-                double truncationProp = (Double) selectionCfg.get(ConfigurationVocabulary.truncationProp);
+                double truncationProp = (Double) individualSelectionData.get(ConfigurationVocabulary.truncationProp);
 
                 soSelectionOperator = new TruncatedSelection(truncationProp, maxSize, null);
             }
             default -> {
                 throw new IllegalStateException("Unknown SO selection operator: " + soSelection);
+            }
+        }
+
+        switch (suiteSoSelection) {
+            case ConfigurationVocabulary.tournament -> {
+                checkExistence(suiteSelectionData, ConfigurationVocabulary.tournamentSize);
+                checkExistence(suiteSelectionData, ConfigurationVocabulary.tournamentSelectionProb);
+
+                Long tournamentSize = ((Integer) suiteSelectionData.get(ConfigurationVocabulary.tournamentSize)).longValue();
+                double tournamentSelectionProb = (Double) suiteSelectionData.get(ConfigurationVocabulary.tournamentSelectionProb);
+
+                suiteSOSelectionOperator = new SuiteTournamentSelection(tournamentSize, tournamentSelectionProb, maxSize, null, null);
+            }
+            default -> {
+                throw new IllegalStateException("Unknown Suite SO selection operator: " + soSelection);
             }
         }
 
@@ -413,7 +531,7 @@ public class Configuration {
             }
         }
 
-        return new Tuple<>(soSelectionOperator, moSelectionIndicator);
+        return new Tuple<>(suiteSOSelectionOperator, new Tuple<>(soSelectionOperator, moSelectionIndicator));
     }
 
     private <T extends Number> Distribution<T> parseDistribution(LinkedHashMap<String, Object> distCfg) {
@@ -491,11 +609,61 @@ public class Configuration {
             case RANDOM -> {
                 return new RandomSearch(nodeToSample, timeBudgetMilis, rootContext, seed);
             }
+            case PROXIMITY_GA -> {
+                RandomNumberGenerator selectionRng = new RandomNumberGenerator(seed);
+
+                SingularSOProximityFitnessFunction f = null;
+                try {
+                    f = new SingularSOProximityFitnessFunction(new URL(singleEmbeddingUrl), new URL(multiEmbeddingUrl),
+                            new URL(targetsUrl), Integer.parseInt(numberOfTargets.toString()));
+                } catch (MalformedURLException e) {
+                    throw new RuntimeException(e);
+                }
+                SOSelectionOperator s = selectionData.second().first();
+
+                if (s instanceof TournamentSelection) {
+                    ((TournamentSelection) s).setFitnessFunction(f);
+                    ((TournamentSelection) s).setRng(selectionRng);
+                } else if (s instanceof TruncatedSelection) {
+                    ((TruncatedSelection) s).setFitnessFunction(f);
+                } else {
+                    throw new IllegalStateException("Cannot support selection operator: " + s);
+                }
+
+                RecombinationOperator r = new SimpleRecombinationOperator();
+
+                return new ProximityGA(nodeToSample, timeBudgetMilis, rootContext, seed,
+                        populationSize, f, s, r, null, numberOfItersPerTarget);
+            }
+            case PROXIMITY_WTS -> {
+                RandomNumberGenerator selectionRng = new RandomNumberGenerator(seed);
+
+                SOPopulationFitnessFunction f = null;
+                try {
+                    f = new CollectiveProximityFitnessFunction(new URL(singleEmbeddingUrl), new URL(multiEmbeddingUrl),
+                            new URL(targetsUrl), Integer.parseInt(numberOfTargets.toString()));
+                } catch (MalformedURLException e) {
+                    throw new RuntimeException(e);
+                }
+                SuiteSOSelectionOperator s = selectionData.first();
+
+                if (s instanceof SuiteTournamentSelection) {
+                    ((SuiteTournamentSelection) s).setFitnessFunction(f);
+                    ((SuiteTournamentSelection) s).setRng(selectionRng);
+                } else {
+                    throw new IllegalStateException("Cannot support selection operator: " + s);
+                }
+
+                SuiteRecombinationOperator r = new WTSRecombinationOperator(new RandomNumberGenerator(seed));
+
+                return new ProximityWholeTestSuite(nodeToSample, timeBudgetMilis, rootContext, seed,
+                        populationSize, s, r, blocksPerSuite, suiteMutationProbability);
+            }
             case DIVERSITY_GA -> {
                 RandomNumberGenerator selectionRng = new RandomNumberGenerator(seed);
 
                 SOFitnessFunction f = new DiversityFitnessFunction(null, distanceMetric);
-                SOSelectionOperator s = selectionData.first();
+                SOSelectionOperator s = selectionData.second().first();
 
                 if (s instanceof TournamentSelection) {
                     ((TournamentSelection) s).setFitnessFunction(f);
@@ -511,13 +679,13 @@ public class Configuration {
                 return new DiversityGA(nodeToSample, timeBudgetMilis, rootContext, seed,
                         populationSize, f, s, r, null);
             }
-            case MOGA -> {
+            case STRUCT_MOGA -> {
                 RandomNumberGenerator selectionRng = new RandomNumberGenerator(seed);
 
                 MOFitnessFunction f = new StructureMOFitness();
                 SOFitnessFunction selectionFitness = null;
 
-                SOSelectionOperator soSelector = selectionData.first();
+                SOSelectionOperator soSelector = selectionData.second().first();
 
                 if (soSelector instanceof TournamentSelection) {
                     ((TournamentSelection) soSelector).setFitnessFunction(selectionFitness);
@@ -539,7 +707,7 @@ public class Configuration {
                 }
 
 
-                switch (selectionData.second()) {
+                switch (selectionData.second().second()) {
                     case DOMINATION_RANK -> {
                         moSelector = new DominationRankSelection(soSelector.getSizeMaxAllowedSize(), f, soSelector, shouldMinimize);
                     }
@@ -556,6 +724,54 @@ public class Configuration {
                 return new MOGA(nodeToSample, timeBudgetMilis, rootContext, seed,
                         populationSize, f, moSelector, r, null, shouldMinimize);
             }
+            case PROXIMITY_MOGA -> {
+                RandomNumberGenerator selectionRng = new RandomNumberGenerator(seed);
+
+                ProximityMOFitnessFunction f = null;
+                try {
+                    f = new ProximityMOFitnessFunction(new URL(singleEmbeddingUrl), new URL(multiEmbeddingUrl),
+                            new URL(targetsUrl), Math.toIntExact(numberOfTargets));
+                } catch (MalformedURLException e) {
+                    throw new RuntimeException(e);
+                }
+                SOFitnessFunction selectionFitness = null;
+                SOSelectionOperator soSelector = selectionData.second().first();
+
+                if (soSelector instanceof TournamentSelection) {
+                    ((TournamentSelection) soSelector).setFitnessFunction(selectionFitness);
+                    ((TournamentSelection) soSelector).setRng(selectionRng);
+                } else if (soSelector instanceof TruncatedSelection) {
+                    ((TruncatedSelection) soSelector).setFitnessFunction(selectionFitness);
+                } else {
+                    throw new IllegalStateException("Cannot support selection operator: " + soSelector);
+                }
+
+                MOSelectionOperator moSelector;
+
+                // TODO: make this configurable
+                boolean[] shouldMinimize = new boolean[Math.toIntExact(numberOfTargets)];
+                for (int i = 1; i < numberOfTargets; i++) {
+                    shouldMinimize[i] = true;
+                }
+
+
+                switch (selectionData.second().second()) {
+                    case DOMINATION_RANK -> {
+                        moSelector = new DominationRankSelection(soSelector.getSizeMaxAllowedSize(), f, soSelector, shouldMinimize);
+                    }
+                    case DOMINATION_COUNT -> {
+                        moSelector = new DominationCountSelection(soSelector.getSizeMaxAllowedSize(), f, soSelector, shouldMinimize);
+                    }
+                    default -> {
+                        throw new IllegalStateException("Cannot support selection strategy: " + selectionData.second());
+                    }
+                }
+
+                RecombinationOperator r = new SimpleRecombinationOperator();
+
+                return new ProximityMOGA(nodeToSample, timeBudgetMilis, rootContext, seed,
+                        populationSize, f, moSelector, r, null, shouldMinimize);
+            }
             default -> {
                 throw new IllegalStateException("Cannot support search strategy: " + searchStrategy);
             }
@@ -563,7 +779,7 @@ public class Configuration {
     }
 
     private void checkGAConfiguration(LinkedHashMap<String, Object> heuristicCfg) {
-        if (!heuristicCfg.containsKey(ConfigurationVocabulary.population)) {
+        if (!heuristicCfg.containsKey(ConfigurationVocabulary.popSize)) {
             throw new IllegalStateException("population-size size must be provided for GAs.");
         }
 

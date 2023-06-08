@@ -1,4 +1,4 @@
-package org.fuzzer.search;
+package org.fuzzer.search.algorithm;
 
 import org.fuzzer.dt.FuzzerStatistics;
 import org.fuzzer.generator.CodeFragment;

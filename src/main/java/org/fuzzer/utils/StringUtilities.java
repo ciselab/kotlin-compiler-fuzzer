@@ -40,4 +40,8 @@ public class StringUtilities {
 
         return typeName;
     }
+
+    public static String escapeQuotes(String in) {
+        return in.replace("\"", "\\\"");
+    }
 }

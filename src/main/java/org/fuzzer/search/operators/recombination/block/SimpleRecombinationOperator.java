@@ -1,4 +1,4 @@
-package org.fuzzer.search.operators.recombination;
+package org.fuzzer.search.operators.recombination.block;
 
 import org.fuzzer.dt.FuzzerStatistics;
 import org.fuzzer.generator.CodeFragment;

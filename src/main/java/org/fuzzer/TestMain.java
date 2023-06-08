@@ -1,7 +1,6 @@
 package org.fuzzer;
 
 import org.antlr.runtime.RecognitionException;
-import org.fuzzer.configuration.Configuration;
 import org.fuzzer.dt.DTRunner;
 
 import java.io.IOException;
@@ -39,5 +38,6 @@ public class TestMain {
 
         // 5 minutes
         runner.run(0L, 120000L);
+
     }
 }

@@ -3,5 +3,8 @@ package org.fuzzer.configuration;
 public enum SearchStrategy {
     RANDOM,
     DIVERSITY_GA,
-    MOGA
+    STRUCT_MOGA,
+    PROXIMITY_GA,
+    PROXIMITY_WTS,
+    PROXIMITY_MOGA,
 }

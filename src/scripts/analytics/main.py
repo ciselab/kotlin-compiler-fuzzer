@@ -8,6 +8,15 @@ from statistical_tests import a12_effectiveness_dfs, a12_efficiency_dfs, auc_tra
 import pandas as pd
 import numpy as np
 
+def analyze_single(directories_alg1, name):
+    df1s = [append_cummulative_bugs(get_data_from_dir(output_dir)) for output_dir in directories_alg1]
+    print(f"{name} generates on average {np.mean([len(d.index) for d in df1s])} files")
+    print(f"{name} files are on average {np.mean([d['chars'].mean() for d in df1s])} chars long")
+
+    mean_diversity_df1s, std_diversity_df1s = diversity_dfs(df1s)
+    print(f"Algorithm 1 mean distance %.2f with stddev %.2f" % (mean_diversity_df1s, std_diversity_df1s))
+    print(f"Algorithm 1 causes on average {np.mean(get_total_bugs(df1s))} crashes")
+
 def analyze_results(directories_alg1, directories_alg2, p_thresh = 0.05):
     """
     Assumes post-processed directories.
@@ -86,13 +95,16 @@ if __name__ == "__main__":
         print("The number of names and dirs provided do not match.")
         sys.exit(1)
 
+    # for c, (d1, n1) in enumerate(zip(dirs, names)):
+    #     for (d2, n2) in zip(dirs[c + 1:], names[c + 1:]):
+    #         print(f'==== Comparing {n1} and {n2} ====')
+    #         print(f'==== In directories {d1} and {d2} ====')
+
+    #         analyze_results(get_dirs(d1), get_dirs(d2))
+
     for c, (d1, n1) in enumerate(zip(dirs, names)):
-        for (d2, n2) in zip(dirs[c + 1:], names[c + 1:]):
-            print(f'==== Comparing {n1} and {n2} ====')
-            print(f'==== In directories {d1} and {d2} ====')
-
-            analyze_results(get_dirs(d1), get_dirs(d2))
-
+        print(f'==== Analyzing {n1} ====')
+        analyze_single(get_dirs(d1), n1)
 
     
     if (args.output):

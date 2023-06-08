@@ -1,9 +1,7 @@
-package org.fuzzer.search.operators.selection;
+package org.fuzzer.search.operators.selection.block;
 
 import org.fuzzer.search.chromosome.CodeBlock;
-import org.fuzzer.utils.Tuple;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 

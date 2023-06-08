@@ -1,4 +1,4 @@
 package org.fuzzer.search.fitness;
 
-public interface FitnessFunction {
+public interface IndividualFitnessFunction extends FitnessFunction {
 }
