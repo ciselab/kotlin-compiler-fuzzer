@@ -162,5 +162,21 @@ public abstract class KCallable implements Cloneable, Serializable {
         return newCallable;
     }
 
+    public boolean isCompatibleWithDependency(KCallable kCallable) {
+        if (!name.equals(kCallable.name)) return false;
+        if (!inputTypes.equals(kCallable.inputTypes)) return false;
+        if (!returnType.equals(kCallable.returnType)) return false;
+
+        if ((owner == null) != (kCallable.owner == null)) {
+            return false;
+        }
+
+        if (owner != null) {
+            return owner.equals(kCallable.owner);
+        }
+
+        return true;
+    }
+
     public abstract boolean requiresOwner();
 }

@@ -52,7 +52,7 @@ public class GrammarTransformer {
                     altNodes.add(transformGrammar(alt.ast));
                 }
 
-                return new AltNode(null, null, altNodes);
+                return new AltNode(null, null, altNodes, null, null);
             }
             default -> throw new IllegalStateException("Unexpected value: " + rule.name);
         }
@@ -81,7 +81,7 @@ public class GrammarTransformer {
                     altNodes.add(transformGrammar(childNode));
                 }
 
-                return new AltNode(null, altNodes);
+                return new AltNode(null, altNodes, null, null);
             }
 
             // ?
@@ -92,7 +92,7 @@ public class GrammarTransformer {
 
                 children.add(transformGrammar(childNode));
 
-                return new OptNode(ast, children);
+                return new OptNode(ast, children, null, null);
             }
 
             // *
@@ -103,7 +103,7 @@ public class GrammarTransformer {
 
                 children.add(transformGrammar(childNode));
 
-                return new StarNode(ast, children);
+                return new StarNode(ast, children, null, null);
             }
 
             case RuleName.BLOCK -> {
@@ -120,11 +120,11 @@ public class GrammarTransformer {
                     children.add(transformGrammar(childNode));
                 }
 
-                return new BlockNode(ast, children);
+                return new BlockNode(ast, children, null, null);
             }
 
             case RuleName.SEMIS, RuleName.SEMI -> {
-                return new TextNode(ast, System.lineSeparator());
+                return new TextNode(ast, System.lineSeparator(), null, null);
             }
 
             // RuleRefAST have to be retrieved from by `getRule()`
@@ -147,16 +147,16 @@ public class GrammarTransformer {
                     declOptions.add(transformGrammar((GrammarAST) declType));
                 }
 
-                return new AltNode(ast, declOptions);
+                return new AltNode(ast, declOptions, null, null);
             }
 
             case RuleName.FUNC_DECL -> {
-                return new FunctionDecl(ast, new ArrayList<>());
+                return new FunctionDecl(ast, new ArrayList<>(), null, null);
             }
 
             // Placeholder
             default -> {
-                return new TextNode(ast, ast.token.toString());
+                return new TextNode(ast, ast.token.toString(), null, null);
             }
         }
     }

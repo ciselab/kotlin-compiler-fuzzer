@@ -10,24 +10,32 @@ public record Point<T>(T data, double [] coordinates) {
         return coordinates.length;
     }
 
-    public double distance(Point other, DistanceMetric distanceMetric) {
+    public double distance(Point<T> other, DistanceMetric distanceMetric) {
+        return Point.distance(this.coordinates(), other.coordinates(), distanceMetric);
+    }
+
+    public static double distance(double[] p1, double[] p2, DistanceMetric distanceMetric) {
         double sum = 0.0;
 
         switch (distanceMetric) {
             case EUCLIDEAN:
-                for (int i = 0; i < coordinates.length; i++) {
-                    double diff = coordinates[i] - other.coordinates[i];
+                for (int i = 0; i < p1.length; i++) {
+                    double diff = p1[i] - p2[i];
                     sum += diff * diff;
                 }
                 return Math.sqrt(sum);
             case MANHATTAN:
-                for (int i = 0; i < coordinates.length; i++) {
-                    sum += Math.abs(coordinates[i] - other.coordinates[i]);
+                for (int i = 0; i < p1.length; i++) {
+                    sum += Math.abs(p1[i] - p2[i]);
                 }
                 return sum;
             default:
                 throw new IllegalArgumentException("Unsupported distance metric: " + distanceMetric);
         }
+    }
+
+    public double getCoordinate(int i) {
+        return coordinates[i];
     }
 
     @Override

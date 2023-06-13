@@ -3,8 +3,9 @@ package org.fuzzer.grammar.ast;
 import org.antlr.v4.tool.ast.GrammarAST;
 import org.fuzzer.configuration.Configuration;
 import org.fuzzer.dt.FuzzerStatistics;
-import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.representations.context.Context;
+import org.fuzzer.search.chromosome.CodeBlock;
+import org.fuzzer.search.chromosome.CodeConstruct;
 import org.fuzzer.utils.RandomNumberGenerator;
 
 import java.util.List;
@@ -24,19 +25,26 @@ public abstract class ASTNode {
 
     public ASTNode(GrammarAST antlrNode,
                    ASTNode parent,
-                   List<ASTNode> children) {
+                   List<ASTNode> children,
+                   FuzzerStatistics stats,
+                   Configuration cfg) {
         this.antlrNode = antlrNode;
         this.parent = parent;
         this.children = children;
-        this.stats = null;
-        this.cfg = null;
+        this.stats = stats;
+        this.cfg = cfg;
+
+        for (ASTNode child : children) {
+            child.recordStatistics(stats);
+            child.useConfiguration(cfg);
+        }
     }
 
-    public ASTNode(GrammarAST antlrNode, List<ASTNode> children) {
-        this(antlrNode, null, children);
+    public ASTNode(GrammarAST antlrNode, List<ASTNode> children, FuzzerStatistics stats, Configuration cfg) {
+        this(antlrNode, null, children, stats, cfg);
     }
 
-    public abstract CodeFragment getSample(RandomNumberGenerator rng, Context ctx, Set<String> generatedCallableDependencies);
+    public abstract CodeConstruct getSample(RandomNumberGenerator rng, Context ctx);
 
     public void recordStatistics(FuzzerStatistics stats) {
         this.stats = stats;
@@ -45,7 +53,7 @@ public abstract class ASTNode {
         }
     }
 
-    public void useConfiguration(Configuration cfg) {
+    protected void useConfiguration(Configuration cfg) {
         this.cfg = cfg;
         for (ASTNode child : children) {
             child.useConfiguration(cfg);

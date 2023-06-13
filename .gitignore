@@ -46,3 +46,6 @@ META-INF/
 detekt/
 context.ser
 **__pycache__**
+**.csv
+**.pdf
+**.antlr**

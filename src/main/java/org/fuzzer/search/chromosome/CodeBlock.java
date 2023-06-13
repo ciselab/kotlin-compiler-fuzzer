@@ -1,82 +1,173 @@
 package org.fuzzer.search.chromosome;
 
 import org.fuzzer.dt.FuzzerStatistics;
-import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.SampleStructure;
 import org.fuzzer.representations.callables.KCallable;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
-public class CodeBlock {
+public class CodeBlock implements CodeConstruct {
     private final FuzzerStatistics stats;
 
-    private final CodeFragment text;
+    private final List<CodeSnippet> snippets;
 
-    private final Set<KCallable> callables;
+    //func,simple_expr,do_while,assignment,try_catch,if_expr,elvis_op,simple_stmt
+    //3, 6, 7, 8, 9, 10, 11, 12, refer to SampleStructure
+    private static final int[] oomLanguageFeatures =  new int[]{3, 5, 7, 8, 9, 10, 11, 12};
 
-    public CodeBlock(String name, List<CodeSnippet> snippets, Set<KCallable> dependencies) {
+    public CodeBlock(List<CodeSnippet> snippets) {
         this.stats = FuzzerStatistics.aggregate(snippets.stream().map(CodeSnippet::stats).toList());
-        this.callables = dependencies;
-        this.text = snippets.stream().map(CodeSnippet::code).reduce(new CodeFragment(),  (x, y) -> { x.extend(y); return x; });
-        text.setName(name);
+        this.snippets = snippets;
         this.stats.stop();
     }
 
-    public CodeBlock(FuzzerStatistics stats, CodeFragment text, Set<KCallable> callables) {
+    public CodeBlock(FuzzerStatistics stats, List<CodeSnippet> snippets) {
         this.stats = stats;
-        this.text = text;
-        this.callables = callables;
+        this.snippets = snippets;
     }
 
-    public String getName() {
-        return text.getName();
+    public List<CodeSnippet> getSnippets() {
+        return snippets;
+    }
+
+    public double[] getOomLanguageFeatures() {
+        double[] allVisitations = stats().getVisitations();
+
+
+        double[] selectedFeatures = new double[oomLanguageFeatures.length];
+        for (int i = 0; i < oomLanguageFeatures.length; i++) {
+            selectedFeatures[i] = allVisitations[oomLanguageFeatures[i]];
+        }
+
+        return selectedFeatures;
     }
 
     public Long size() {
-        return (long) text.getText().length();
+        return snippets.stream().map(CodeSnippet::size).reduce(0L, Long::sum);
     }
 
-    public FuzzerStatistics getStats() {
+    @Override
+    public FuzzerStatistics stats() {
         return stats;
     }
 
-    public CodeFragment getText() {
-        return text;
+    @Override
+    public Set<KCallable> callableDependencies() {
+        Set<KCallable> dependencies = new HashSet<>();
+        for (CodeSnippet snippet : snippets) {
+            dependencies.addAll(snippet.callableDependencies());
+        }
+
+        return dependencies;
     }
 
-    public Set<KCallable> getCallables() {
+    @Override
+    public Set<KCallable> providedCallables() {
+        Set<KCallable> callables = new HashSet<>();
+        for (CodeSnippet snippet : snippets) {
+            callables.addAll(snippet.providedCallables());
+        }
+
         return callables;
+    }
+
+    @Override
+    public String text() {
+        StringBuilder text = new StringBuilder();
+
+        for (CodeSnippet snippet : snippets) {
+            text.append(snippet.code().text());
+            text.append(System.lineSeparator());
+        }
+
+        return text.toString();
     }
 
     public Long getNumberOfSamples(SampleStructure s) {
         return stats.getNumberOfSamples(s);
     }
 
+    private List<String> getCallableNames() {
+        return snippets.stream().map(CodeSnippet::getCallableName).toList();
+    }
+
     public boolean isCompatible(CodeBlock other) {
-        List<String> callableNames = callables.stream().map(KCallable::getName).toList();
+        List<String> theseCallableNames = getCallableNames();
+        List<String> otherCallableNames = other.getCallableNames();
 
         // Code blocks are only compatible if they have no overlapping names
-        // TODO generalize this by having each block retain the snippets that compose it
-        return other.getCallables().stream().noneMatch(kCallable -> callableNames.contains(kCallable.getName()));
+        return otherCallableNames.stream().noneMatch(theseCallableNames::contains);
+    }
+
+    public List<CodeBlock> split() {
+        List<CodeBlock> blocksWithin = new LinkedList<>();
+
+        for (CodeSnippet snippet : snippets) {
+            blocksWithin.add(new CodeBlock(getDependencySnippets(snippet, snippets).stream().toList()));
+        }
+
+        return blocksWithin;
+    }
+
+    private Set<CodeSnippet> getDependencySnippets(CodeSnippet snippet,
+                                                   Collection<CodeSnippet> visibleSnippets) {
+        Set<CodeSnippet> dependencySnippets = new HashSet<>();
+        dependencySnippets.add(snippet);
+
+        return getDependencySnippets(visibleSnippets, dependencySnippets);
+    }
+
+    private boolean dependenciesPresent(CodeSnippet snippet, Collection<CodeSnippet> snippets) {
+        Set<KCallable> providedCallables = snippets
+                .stream()
+                .map(CodeSnippet::providedCallables)
+                .reduce(new HashSet<>(), (a, b) -> {
+                    a.addAll(b);
+                    return a;
+                });
+
+        return providedCallables.containsAll(snippet.callableDependencies());
+    }
+
+    private Set<CodeSnippet> getDependencySnippets(Collection<CodeSnippet> visibleSnippets,
+                                                   Set<CodeSnippet> dependencySet) {
+        boolean selfContained = false;
+        while (!selfContained) {
+            selfContained = true;
+            for (CodeSnippet snippet : visibleSnippets) {
+                if (!dependenciesPresent(snippet, dependencySet)) {
+                    selfContained = false;
+                    dependencySet.addAll(getDirectDependencies(snippet, visibleSnippets));
+                    break;
+                }
+            }
+        }
+
+        return dependencySet;
+    }
+
+    private Set<CodeSnippet> getDirectDependencies(CodeSnippet snippet,
+                                                   Collection<CodeSnippet> visibleSnippets) {
+        return visibleSnippets
+                .stream()
+                .filter(s -> providedCallables().stream().anyMatch(s.callableDependencies()::contains))
+                .collect(Collectors.toSet());
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof CodeBlock codeBlock)) return false;
+        if (!(o instanceof CodeBlock block)) return false;
 
-        if (!Objects.equals(stats, codeBlock.stats)) return false;
-        if (!Objects.equals(text, codeBlock.text)) return false;
-        return Objects.equals(callables, codeBlock.callables);
+        if (!Objects.equals(stats, block.stats)) return false;
+        return Objects.equals(snippets, block.snippets);
     }
 
     @Override
     public int hashCode() {
         int result = stats != null ? stats.hashCode() : 0;
-        result = 31 * result + (text != null ? text.hashCode() : 0);
-        result = 31 * result + (callables != null ? callables.hashCode() : 0);
+        result = 31 * result + (snippets != null ? snippets.hashCode() : 0);
         return result;
     }
 }

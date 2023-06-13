@@ -5,7 +5,7 @@ import org.fuzzer.search.chromosome.CodeBlock;
 
 import java.util.List;
 
-public class DiversityFitnessFunction implements FitnessFunction {
+public class DiversityFitnessFunction implements SOFitnessFunction {
 
     private List<CodeBlock> population;
 

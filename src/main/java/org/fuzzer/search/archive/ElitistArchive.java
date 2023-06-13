@@ -1,7 +1,7 @@
 package org.fuzzer.search.archive;
 
-import org.fuzzer.grammar.SampleStructure;
 import org.fuzzer.search.chromosome.CodeBlock;
+import org.fuzzer.search.fitness.MOFitnessFunction;
 
 import java.util.HashSet;
 import java.util.List;
@@ -11,24 +11,32 @@ public class ElitistArchive {
     private final Set<CodeBlock> archive;
 
     // Pretty terrible way to show that only the LOC should be minimized
-    private final static List<Boolean> minimize = List.of(true, false, false, false, false, false, false, false, false, false, false, false, false);
+    private final boolean[] shouldMinimize;
 
-    public ElitistArchive() {
-        archive = new HashSet<>();
+    private final MOFitnessFunction fitnessFunction;
+
+    public ElitistArchive(MOFitnessFunction fitnessFunction, boolean[] shouldMinimize) {
+        this.archive = new HashSet<>();
+        this.fitnessFunction = fitnessFunction;
+        this.shouldMinimize = shouldMinimize;
     }
 
-    public static int dominates(CodeBlock b1, CodeBlock b2) {
+    public static int dominates(CodeBlock b1, CodeBlock b2,
+                                MOFitnessFunction fitnessFunction, boolean[] shouldMinimize) {
+        return dominates(fitnessFunction.evaluate(b1), fitnessFunction.evaluate(b2), shouldMinimize);
+    }
+
+    public static int dominates(double[] f1, double[] f2, boolean[] shouldMinimize) {
         int b1Superior = 0, b2Superior = 0, bothEqual = 0;
 
-        int featureIndex = 0;
-        for (SampleStructure feature : SampleStructure.values()) {
-            long b1Feature = b1.getNumberOfSamples(feature);
-            long b2Feature = b2.getNumberOfSamples(feature);
+        for (int i = 0; i < f1.length; i++) {
+            double b1Feature = f1[i];
+            double b2Feature = f2[i];
 
-            boolean shouldMinimize = minimize.get(featureIndex);
-            Integer comparisonResult = Long.compare(b1Feature, b2Feature);
+            boolean shouldMinimizeFeature = shouldMinimize[i];
+            Integer comparisonResult = Double.compare(b1Feature, b2Feature);
 
-            if (shouldMinimize) {
+            if (shouldMinimizeFeature) {
                 comparisonResult *= -1;
             }
 
@@ -56,19 +64,19 @@ public class ElitistArchive {
         return 0;
     }
 
-    public boolean add(CodeBlock b) {
+    public boolean add(CodeBlock b, MOFitnessFunction fitnessFunction) {
         Set<CodeBlock> dominated = new HashSet<>();
         boolean isDominated = false;
 
         for (CodeBlock b1 : archive) {
-            int comparisonResult = dominates(b, b1);
+            int comparisonResult = dominates(b, b1, fitnessFunction, shouldMinimize);
 
-            if (comparisonResult > 1) {
+            if (comparisonResult == 1) {
                 dominated.add(b1);
                 continue;
             }
 
-            if (comparisonResult < 1) {
+            if (comparisonResult == -1) {
                 isDominated = true;
                 // TODO uncomment. Only commented as to improve the power of the following check.
 //                break;
@@ -89,5 +97,15 @@ public class ElitistArchive {
         }
 
         return false;
+    }
+
+    public void addAll(List<CodeBlock> population, MOFitnessFunction fitnessFunction) {
+        for (CodeBlock b : population) {
+            add(b, fitnessFunction);
+        }
+    }
+
+    public Set<CodeBlock> getArchive() {
+        return archive;
     }
 }
