@@ -3,8 +3,9 @@ package org.fuzzer.grammar.ast;
 import org.antlr.v4.tool.ast.GrammarAST;
 import org.fuzzer.configuration.Configuration;
 import org.fuzzer.dt.FuzzerStatistics;
-import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.representations.context.Context;
+import org.fuzzer.search.chromosome.CodeBlock;
+import org.fuzzer.search.chromosome.CodeConstruct;
 import org.fuzzer.utils.RandomNumberGenerator;
 
 import java.util.List;
@@ -43,7 +44,7 @@ public abstract class ASTNode {
         this(antlrNode, null, children, stats, cfg);
     }
 
-    public abstract CodeFragment getSample(RandomNumberGenerator rng, Context ctx, Set<String> generatedCallableDependencies);
+    public abstract CodeConstruct getSample(RandomNumberGenerator rng, Context ctx);
 
     public void recordStatistics(FuzzerStatistics stats) {
         this.stats = stats;

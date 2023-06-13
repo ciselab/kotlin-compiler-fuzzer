@@ -1,7 +1,5 @@
 package org.fuzzer.search.algorithm;
 
-import org.fuzzer.dt.FuzzerStatistics;
-import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.ast.syntax.SyntaxNode;
 import org.fuzzer.search.chromosome.CodeBlock;
 import org.fuzzer.representations.context.Context;
@@ -27,7 +25,7 @@ public class DiversityGA extends GA {
     }
 
     @Override
-    public List<Tuple<CodeFragment, FuzzerStatistics>> search() {
+    public List<CodeBlock> search() {
         startGlobalStats();
         List<CodeBlock> pop = getNewBlocks(populationSize);
         List<CodeBlock> parents;
@@ -57,10 +55,10 @@ public class DiversityGA extends GA {
             updatePopulation(pop, parents, children, newBlocks);
         }
 
-        return pop.stream().map(block -> new Tuple<>(block.getText(), block.getStats())).toList();
+        return pop;
     }
 
     private List<Point<CodeBlock>> getPoints(List<CodeBlock> population) {
-        return population.stream().map(block -> new Point<>(block, block.getStats().getVisitations())).toList();
+        return population.stream().map(block -> new Point<>(block, block.stats().getVisitations())).toList();
     }
 }

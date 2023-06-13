@@ -3,7 +3,7 @@ package org.fuzzer.grammar.ast.statements;
 import org.antlr.v4.tool.ast.GrammarAST;
 import org.fuzzer.configuration.Configuration;
 import org.fuzzer.dt.FuzzerStatistics;
-import org.fuzzer.generator.CodeFragment;
+import org.fuzzer.search.chromosome.CodeFragment;
 import org.fuzzer.grammar.ast.ASTNode;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.utils.RandomNumberGenerator;
@@ -27,7 +27,7 @@ public class LoopStatementNode extends ASTNode {
     }
 
     @Override
-    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx, Set<String> generatedCallableDependencies) {
+    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx) {
         return null;
     }
 

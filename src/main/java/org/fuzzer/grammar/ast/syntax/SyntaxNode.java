@@ -4,7 +4,7 @@ import org.antlr.v4.tool.ast.GrammarAST;
 import org.fuzzer.configuration.Configuration;
 import org.fuzzer.dt.FuzzerStatistics;
 import org.fuzzer.grammar.ast.ASTNode;
-import org.fuzzer.search.chromosome.CodeSnippet;
+import org.fuzzer.search.chromosome.CodeBlock;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.utils.RandomNumberGenerator;
 
@@ -20,5 +20,5 @@ public abstract class SyntaxNode extends ASTNode {
         super(antlrNode, children, stats, cfg);
     }
 
-    abstract public List<CodeSnippet> getSnippets(RandomNumberGenerator rng, Context ctx);
+    abstract public List<CodeBlock> getBlocks(RandomNumberGenerator rng, Context ctx);
 }

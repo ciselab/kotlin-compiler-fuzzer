@@ -1,7 +1,5 @@
 package org.fuzzer.search.algorithm;
 
-import org.fuzzer.dt.FuzzerStatistics;
-import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.ast.syntax.SyntaxNode;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.search.chromosome.CodeBlock;
@@ -9,7 +7,6 @@ import org.fuzzer.search.clustering.ClusteringEngine;
 import org.fuzzer.search.fitness.proximity.SingularSOProximityFitnessFunction;
 import org.fuzzer.search.operators.recombination.block.RecombinationOperator;
 import org.fuzzer.search.operators.selection.block.SelectionOperator;
-import org.fuzzer.utils.Tuple;
 
 import java.util.List;
 
@@ -33,7 +30,7 @@ public class ProximityGA extends GA {
         this.numberOfIters = numberOfIterationsPerTarget;
     }
     @Override
-    public List<Tuple<CodeFragment, FuzzerStatistics>> search() {
+    public List<CodeBlock> search() {
         startGlobalStats();
         List<CodeBlock> pop = getNewBlocks(populationSize);
         List<CodeBlock> parents;
@@ -54,8 +51,6 @@ public class ProximityGA extends GA {
             fitnessFunction.switchTargets();
         }
 
-        return fitnessFunction
-                .getArchive().getArchive()
-                .stream().map(block -> new Tuple<>(block.getText(), block.getStats())).toList();
+        return fitnessFunction.getArchive().getArchive().stream().toList();
     }
 }

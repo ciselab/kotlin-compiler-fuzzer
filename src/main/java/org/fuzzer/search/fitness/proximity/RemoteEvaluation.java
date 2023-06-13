@@ -92,7 +92,7 @@ public class RemoteEvaluation {
             // Create an object for this code block
             JSONObject codeObject = new JSONObject();
             codeObject.put("name", Integer.toString(c.hashCode()));
-            codeObject.put("text", c.getText().getText());
+            codeObject.put("text", c.text());
 
             // Add it to the array
             json.put(codeObject);
@@ -102,7 +102,7 @@ public class RemoteEvaluation {
     }
 
     public double[] getEmbedding(CodeBlock codeBlock) {
-        String code = codeBlock.getText().getText();
+        String code = codeBlock.text();
 
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("name", "");

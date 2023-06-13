@@ -1,19 +1,12 @@
 package org.fuzzer.search.algorithm;
 
 import org.fuzzer.dt.FuzzerStatistics;
-import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.ast.ASTNode;
-import org.fuzzer.grammar.ast.syntax.SyntaxNode;
-import org.fuzzer.representations.callables.KCallable;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.search.chromosome.CodeBlock;
-import org.fuzzer.search.chromosome.CodeSnippet;
 import org.fuzzer.search.operators.generator.BlockGenerator;
-import org.fuzzer.utils.RandomNumberGenerator;
-import org.fuzzer.utils.Tuple;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public abstract class Search {
 
@@ -64,7 +57,7 @@ public abstract class Search {
         return blockGenerator.generateBlocks(numberOfBlocks, nodeToSample, globalStats);
     }
 
-    public abstract List<Tuple<CodeFragment, FuzzerStatistics>> search();
+    public abstract List<CodeBlock> search();
 
     protected void startGlobalStats() {
         globalStats.start();

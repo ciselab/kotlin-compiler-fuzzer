@@ -40,7 +40,7 @@ public abstract class GA extends Search {
     }
 
     protected List<CodeBlock> getParents(List<CodeBlock> pop) {
-        Long numberOfSelections = populationSize / 4L;
+        long numberOfSelections = populationSize / 4L;
         List<CodeBlock> parents;
 
         if (clusteringEngine != null) {

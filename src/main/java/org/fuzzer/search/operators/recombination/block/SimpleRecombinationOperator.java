@@ -1,7 +1,7 @@
 package org.fuzzer.search.operators.recombination.block;
 
 import org.fuzzer.dt.FuzzerStatistics;
-import org.fuzzer.generator.CodeFragment;
+import org.fuzzer.search.chromosome.CodeFragment;
 import org.fuzzer.representations.callables.KCallable;
 import org.fuzzer.search.chromosome.CodeBlock;
 
@@ -13,18 +13,20 @@ public class SimpleRecombinationOperator implements RecombinationOperator {
 
     @Override
     public CodeBlock combine(CodeBlock b1, CodeBlock b2) {
-        FuzzerStatistics combiedStatistics = FuzzerStatistics.aggregate(List.of(b1.getStats(), b2.getStats()));
-        combiedStatistics.stop();
+//        FuzzerStatistics combiedStatistics = FuzzerStatistics.aggregate(List.of(b1.stats(), b2.stats()));
+//        combiedStatistics.stop();
+//
+//        CodeFragment combinedText = new CodeFragment(text, fragmentType);
+//
+//        combinedText.append(b1.text());
+//        combinedText.extend(b2.text());
+//
+//        Set<KCallable> combinedDependencies = new HashSet<>();
+//        combinedDependencies.addAll(b1.getCallables());
+//        combinedDependencies.addAll(b2.getCallables());
+//
+//        return new CodeBlock(combiedStatistics, combinedText, combinedDependencies);
 
-        CodeFragment combinedText = new CodeFragment();
-
-        combinedText.appendToText(b1.getText());
-        combinedText.extend(b2.getText());
-
-        Set<KCallable> combinedDependencies = new HashSet<>();
-        combinedDependencies.addAll(b1.getCallables());
-        combinedDependencies.addAll(b2.getCallables());
-
-        return new CodeBlock(combiedStatistics, combinedText, combinedDependencies);
+        return null;
     }
 }

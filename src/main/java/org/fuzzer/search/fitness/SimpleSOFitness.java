@@ -14,7 +14,7 @@ public class SimpleSOFitness implements SOFitnessFunction {
 
     @Override
     public double evaluate(CodeBlock individual) {
-        return individual.getStats().getVisitations()[featureToEvaluate];
+        return individual.stats().getVisitations()[featureToEvaluate];
     }
 
     @Override

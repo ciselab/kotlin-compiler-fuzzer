@@ -34,10 +34,7 @@ public class BlockGenerator {
 
     public List<CodeBlock> generateBlocks(long numberOfBlocks, ASTNode nodeToSample, FuzzerStatistics globalStats) {
         List<CodeBlock> population = new LinkedList<>();
-
-        Map<String, Tuple<CodeSnippet, Set<KCallable>>> snippetTable = new HashMap<>();
-
-        while (snippetTable.size() < numberOfBlocks) {
+        while (population.size() < numberOfBlocks) {
             // Prepare a fresh context with a new seed
             Context ctx = getNewContext();
             SyntaxNode rootNode = (SyntaxNode) nodeToSample;
@@ -47,29 +44,9 @@ public class BlockGenerator {
             stats.resetVisitations();
             rootNode.recordStatistics(stats);
 
-            List<CodeSnippet> snippets = rootNode.getSnippets(ctx.getRNG(), ctx);
+            List<CodeBlock> blocks = rootNode.getBlocks(ctx.getRNG(), ctx);
 
-            List<Tuple<CodeSnippet, Set<KCallable>>> snippetsAndDependencies = ctx.getAllSnippetCombinations(snippets);
-
-            for (Tuple<CodeSnippet, Set<KCallable>> tup : snippetsAndDependencies) {
-                snippetTable.put(tup.first().name(), tup);
-            }
-        }
-
-        for (String snippetName : snippetTable.keySet()) {
-            // Get the list of dependencies for the current snippet
-            Set<String> dependencyNames = snippetTable.get(snippetName)
-                    .second().stream().map(KCallable::getName).collect(Collectors.toSet());
-
-
-            // The snippet itself is also in the dependency set.
-            List<CodeSnippet> dependencySnippets = new ArrayList<>(snippetTable.entrySet()
-                    .stream().filter(entry -> dependencyNames.contains(entry.getKey()))
-                    .map(entry -> entry.getValue().first())
-                    .toList());
-
-            CodeBlock newIndividual = new CodeBlock(snippetName, dependencySnippets, snippetTable.get(snippetName).second());
-            population.add(newIndividual);
+            population.addAll(blocks);
         }
 
         return population;

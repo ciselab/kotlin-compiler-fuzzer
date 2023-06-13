@@ -3,15 +3,13 @@ package org.fuzzer.grammar.ast.statements;
 import org.antlr.v4.tool.ast.GrammarAST;
 import org.fuzzer.configuration.Configuration;
 import org.fuzzer.dt.FuzzerStatistics;
-import org.fuzzer.generator.CodeFragment;
+import org.fuzzer.search.chromosome.CodeFragment;
 import org.fuzzer.grammar.SampleStructure;
 import org.fuzzer.grammar.ast.ASTNode;
-import org.fuzzer.grammar.ast.expressions.*;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.utils.RandomNumberGenerator;
 
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Set;
 
 public class StatementNode extends ASTNode {
@@ -23,8 +21,8 @@ public class StatementNode extends ASTNode {
         this.maxDepth = maxDepth;
     }
     @Override
-    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx, Set<String> generatedCallableDependencies) {
-        return getRandomStatementNode(rng).getSample(rng, ctx, generatedCallableDependencies);
+    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx) {
+        return getRandomStatementNode(rng).getSample(rng, ctx);
     }
 
     public StatementNode getRandomStatementNode(RandomNumberGenerator rng) {

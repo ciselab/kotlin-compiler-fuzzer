@@ -1362,67 +1362,6 @@ public class Context implements Cloneable, Serializable {
         return type instanceof KFuncType;
     }
 
-    public List<Tuple<CodeSnippet, Set<KCallable>>> getAllSnippetCombinations(List<CodeSnippet> snippets) {
-        List<Tuple<CodeSnippet, Set<KCallable>>> res = new LinkedList<>();
-        Map<String, Set<KCallable>> dependencies = new HashMap<>();
-        Map<String, CodeSnippet> snippetTable = new HashMap<>();
-
-        for (CodeSnippet s : snippets) {
-            snippetTable.put(s.name(), s);
-        }
-
-        for (CodeSnippet snippet : snippets) {
-            getDependenciesOfSnippet(snippet, snippetTable, dependencies);
-        }
-
-        return snippets.stream().map(s -> new Tuple<>(s, dependencies.get(s.name()))).toList();
-    }
-
-    private void getDependenciesOfSnippet(CodeSnippet snippet,
-                                          Map<String, CodeSnippet> allSnippets,
-                                          Map<String, Set<KCallable>> dependencies) {
-
-        // The dependencies were found in the past
-        if (dependencies.containsKey(snippet.name())) {
-            return;
-        }
-
-        Set<String> dependencyNames = snippet.callableDependencies();
-
-        // No dependencies, skip recursive step
-        if (dependencyNames.isEmpty()) {
-            dependencies.put(snippet.name(), Collections.singleton(getCallableByName(snippet.name())));
-            return;
-        }
-
-        // Recursively resolve all dependencies
-        for (String dependencyName : dependencyNames) {
-            getDependenciesOfSnippet(allSnippets.get(dependencyName), allSnippets, dependencies);
-        }
-
-        Set<KCallable> dependenciesOfSnippet = new HashSet<>();
-        for (String dependencyName : dependencyNames) {
-            dependenciesOfSnippet.addAll(dependencies.get(dependencyName));
-            dependenciesOfSnippet.add(getCallableByName(snippet.name()));
-        }
-
-        dependencies.put(snippet.name(), dependenciesOfSnippet);
-    }
-
-    private KCallable getCallableByName(String name) {
-        // TODO: handle classes
-        return idStore.getIdentifier(name);
-    }
-
-    private void addDependency(KCallable callable) {
-        if (callable instanceof KFunction) {
-            KVoid voidType = (KVoid) KTypeWrapper.getVoidWrapper().toType();
-            callablesByOwner.get(voidType).add(callable);
-        } else {
-            throw new UnsupportedOperationException("Cannot non-function dependencies.");
-        }
-    }
-
     @Override
     public Context clone() {
         try {

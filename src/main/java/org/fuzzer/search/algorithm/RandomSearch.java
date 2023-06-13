@@ -1,11 +1,12 @@
 package org.fuzzer.search.algorithm;
 
 import org.fuzzer.dt.FuzzerStatistics;
-import org.fuzzer.generator.CodeFragment;
 import org.fuzzer.grammar.ast.ASTNode;
 import org.fuzzer.representations.context.Context;
+import org.fuzzer.search.chromosome.CodeBlock;
+import org.fuzzer.search.chromosome.CodeConstruct;
+import org.fuzzer.search.chromosome.CodeFragment;
 import org.fuzzer.utils.RandomNumberGenerator;
-import org.fuzzer.utils.Tuple;
 
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -20,9 +21,9 @@ public class RandomSearch extends Search {
     }
 
     @Override
-    public List<Tuple<CodeFragment, FuzzerStatistics>> search() {
+    public List<CodeBlock> search() {
         long startTime = System.currentTimeMillis();
-        List<Tuple<CodeFragment, FuzzerStatistics>> snippets = new LinkedList<>();
+        List<CodeBlock> blocks = new LinkedList<>();
         RandomNumberGenerator seedGenerator = new RandomNumberGenerator(getSeed());
         FuzzerStatistics statistics = new FuzzerStatistics();
 
@@ -34,19 +35,22 @@ public class RandomSearch extends Search {
             nextCtx.updateRNG(nextRNG);
 
             // Prepare dependency set and record statistics
-            Set<String> snippetDependencies = new HashSet<>();
 
             getNodeToSample().recordStatistics(statistics);
 
             // Sample the node.
-            CodeFragment code = getNodeToSample().getSample(nextRNG, nextCtx, snippetDependencies);
+            CodeConstruct b = getNodeToSample().getSample(nextRNG, nextCtx);
+
+            if (!(b instanceof CodeBlock block)) {
+                throw new IllegalStateException("Only block sampling is supported at the moment.");
+            }
 
             statistics.stop();
 
-            snippets.add(new Tuple<>(code, statistics.clone()));
+            blocks.add(block);
             statistics.resetVisitations();
         }
 
-        return snippets;
+        return blocks;
     }
 }

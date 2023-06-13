@@ -3,7 +3,9 @@ package org.fuzzer.grammar.ast.syntax;
 import org.antlr.v4.tool.ast.GrammarAST;
 import org.fuzzer.configuration.Configuration;
 import org.fuzzer.dt.FuzzerStatistics;
-import org.fuzzer.generator.CodeFragment;
+import org.fuzzer.search.chromosome.CodeBlock;
+import org.fuzzer.search.chromosome.CodeConstruct;
+import org.fuzzer.search.chromosome.CodeFragment;
 import org.fuzzer.grammar.ast.ASTNode;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.search.chromosome.CodeSnippet;
@@ -25,48 +27,41 @@ public class StarNode extends SyntaxNode {
     }
 
     @Override
-    public List<CodeSnippet> getSnippets(RandomNumberGenerator rng, Context ctx) {
+    public List<CodeBlock> getBlocks(RandomNumberGenerator rng, Context ctx) {
         invariant();
 
         int numberOfSamples = rng.fromDiscreteDistribution(cfg.getStarNodeDist());
 
         ASTNode nodeToSample = children.get(0);
-
-        List<CodeSnippet> snippets = new LinkedList<>();
+        List<CodeConstruct> constructs = new LinkedList<>();
 
         for (int sampleNumber = 0; sampleNumber < numberOfSamples; sampleNumber++) {
-            Set<String> dependencyNames = new HashSet<>();
-
             FuzzerStatistics newStats = stats.clone();
             nodeToSample.recordStatistics(newStats);
 
-            CodeFragment newCode = nodeToSample.getSample(rng, ctx, dependencyNames);
+            constructs.add(nodeToSample.getSample(rng, ctx));
 
             newStats.stop();
-
-            if (newCode.isStructure()) {
-                CodeSnippet snippet = new CodeSnippet(newCode, newCode.getName(), dependencyNames, newStats);
-                snippets.add(snippet);
-            }
         }
 
-        return snippets;
+        CodeBlock block = CodeConstruct.aggregateConstructs(constructs);
+
+        return block.split();
     }
 
     @Override
-    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx, Set<String> generatedCallableDependencies) {
+    public CodeConstruct getSample(RandomNumberGenerator rng, Context ctx) {
         invariant();
 
         int numberOfSamples = rng.fromDiscreteDistribution(cfg.getStarNodeDist());
-
-        CodeFragment code = new CodeFragment();
+        List<CodeConstruct> sampledConstructs = new LinkedList<>();
 
         for (int sampleNumber = 0; sampleNumber < numberOfSamples; sampleNumber++) {
-            CodeFragment newCode = children.get(0).getSample(rng, ctx, generatedCallableDependencies);
-            code.extend(newCode);
+            CodeConstruct newCode = children.get(0).getSample(rng, ctx);
+            sampledConstructs.add(newCode);
         }
 
-        return code;
+        return CodeConstruct.aggregateConstructs(sampledConstructs);
     }
 
     @Override

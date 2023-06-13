@@ -5,7 +5,8 @@ import org.antlr.runtime.RecognitionException;
 import org.antlr.v4.tool.Grammar;
 import org.antlr.v4.tool.LexerGrammar;
 import org.fuzzer.configuration.Configuration;
-import org.fuzzer.generator.CodeFragment;
+import org.fuzzer.search.chromosome.CodeBlock;
+import org.fuzzer.search.chromosome.CodeFragment;
 import org.fuzzer.grammar.GrammarTransformer;
 import org.fuzzer.grammar.RuleHandler;
 import org.fuzzer.grammar.ast.ASTNode;
@@ -140,7 +141,7 @@ public class DTRunner {
         SyntaxNode nodeToSample = new PlusNode(List.of(functionNode), cfg);
 
         Search searchAlgorithm = cfg.getSearchStrategy(nodeToSample, timeLimitMs, rootContext, seed);
-        List<Tuple<CodeFragment, FuzzerStatistics>> output = searchAlgorithm.search();
+        List<CodeBlock> output = searchAlgorithm.search();
 
         // Write the statistics of the run
         BufferedWriter statsWriter = new BufferedWriter(new FileWriter(statsFile.getAbsolutePath(), true));
@@ -151,12 +152,12 @@ public class DTRunner {
         statsWriter.write("file,time,chars,cls,attr,func,method,constr,simple_expr,do_while,assignment,try_catch,if_expr,elvis_op,simple_stmt,k1_exit,k1_time,k1_mem,k1_sz,k2_exit,k2_time,k2_mem,k2_sz,loc,sloc,lloc,cloc,mcc,cog,smells,cmm_ratio,mcckloc,smellskloc");
         statsWriter.flush();
 
-        for (Tuple<CodeFragment, FuzzerStatistics> tup : output) {
+        for (CodeBlock code : output) {
             String randomFileName = UUID.randomUUID().toString();
             String outputFileName = directoryOutput + randomFileName + ".kt";
 
             String text = "fun main(args: Array<String>) {\n";
-            text += tup.first().getText();
+            text += code.text();
             text += "\n}";
 
             BufferedWriter writer = new BufferedWriter(new FileWriter(outputFileName));
@@ -164,7 +165,7 @@ public class DTRunner {
             writer.close();
 
             statsWriter.newLine();
-            statsWriter.write(randomFileName + "," + tup.second().csv());
+            statsWriter.write(randomFileName + "," + code.stats().csv());
         }
 
         statsWriter.newLine();

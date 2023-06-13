@@ -3,13 +3,14 @@ package org.fuzzer.grammar.ast.expressions;
 import org.antlr.v4.tool.ast.GrammarAST;
 import org.fuzzer.configuration.Configuration;
 import org.fuzzer.dt.FuzzerStatistics;
-import org.fuzzer.generator.CodeFragment;
+import org.fuzzer.search.chromosome.CodeFragment;
 import org.fuzzer.grammar.SampleStructure;
 import org.fuzzer.grammar.ast.ASTNode;
 import org.fuzzer.representations.callables.*;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.representations.types.KFuncType;
 import org.fuzzer.representations.types.KType;
+import org.fuzzer.search.chromosome.FragmentType;
 import org.fuzzer.utils.RandomNumberGenerator;
 import org.fuzzer.utils.Tree;
 import org.fuzzer.utils.Tuple;
@@ -28,8 +29,8 @@ public class ExpressionNode extends ASTNode {
     }
 
     @Override
-    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx, Set<String> generatedCallableDependencies) {
-        return getRandomExpressionNode(rng).getSample(rng, ctx, generatedCallableDependencies);
+    public CodeFragment getSample(RandomNumberGenerator rng, Context ctx) {
+        return getRandomExpressionNode(rng).getSample(rng, ctx);
     }
 
     public ExpressionNode getRandomExpressionNode(RandomNumberGenerator rng) {
@@ -60,11 +61,17 @@ public class ExpressionNode extends ASTNode {
     }
 
     public Tuple<CodeFragment, Tuple<KType, List<KType>>> getSampleOfType(RandomNumberGenerator rng, Context ctx, KType type,
-                                                                          boolean allowSubtypes, Set<String> generatedCallableDependencies) {
+                                                                          boolean allowSubtypes) {
         try {
             int depth = 0;
 
-            KCallable baseCallable = getCallableOfType(type, depth++, ctx, rng);
+            Set<KCallable> callableDependencies = new HashSet<>();
+
+            KCallable baseCallable = getCallableOfType(type, depth++, ctx, rng, callableDependencies);
+            if (baseCallable.isGenerated()) {
+                callableDependencies.add(baseCallable);
+            }
+
             Tree<KCallable> rootNode = new Tree<>(baseCallable);
 
             KType returnType = baseCallable.getReturnType();
@@ -75,17 +82,15 @@ public class ExpressionNode extends ASTNode {
                 throw new IllegalStateException("Sampling subtypes failed");
             }
 
-            rootNode = sampleTypedCallables(rootNode, depth, ctx, rng);
-            verifyCallableCompatibility(rootNode, ctx, allowSubtypes);
+            rootNode = sampleTypedCallables(rootNode, depth, ctx, rng, callableDependencies);
+            verifyCallableCompatibility(rootNode, ctx, allowSubtypes, callableDependencies);
             String expression = rootNode.getValue().call(ctx);
 
-            CodeFragment code = new CodeFragment(expression);
+            CodeFragment code = new CodeFragment(expression, callableDependencies, FragmentType.EXPR);
 
             if (stats != null) {
                 stats.increment(SampleStructure.SIMPLE_EXPR);
             }
-
-            generatedCallableDependencies.addAll(getGeneratedCallableNames(rootNode));
 
             return new Tuple<>(code,
                     new Tuple<>(returnType, typeParameterInstances.stream()
@@ -97,7 +102,7 @@ public class ExpressionNode extends ASTNode {
     }
 
     private Tree<KCallable> sampleTypedCallables(Tree<KCallable> currentNode, int depth,
-                                                 Context ctx, RandomNumberGenerator rng) throws CloneNotSupportedException {
+                                                 Context ctx, RandomNumberGenerator rng, Set<KCallable> callableDependencies) throws CloneNotSupportedException {
         KCallable currentCallable = currentNode.getValue();
         if (currentCallable.isTerminal()) {
             return currentNode;
@@ -109,7 +114,12 @@ public class ExpressionNode extends ASTNode {
 
         // First, sample callables for this level
         for (KType inputType : currentNode.getValue().getInputTypes()) {
-            KCallable child = getCallableOfType(inputType, depth, ctx, rng);
+            KCallable child = getCallableOfType(inputType, depth, ctx, rng, callableDependencies);
+
+            if (child.isGenerated()) {
+                callableDependencies.add(child);
+            }
+
             currentNode.addChild(child);
         }
 
@@ -117,13 +127,13 @@ public class ExpressionNode extends ASTNode {
 
         // Recursively sample callables as inputs for all children
         for (Tree<KCallable> childNode : currentNode.getChildren()) {
-            sampleTypedCallables(childNode, depth + 1, ctx, rng);
+            sampleTypedCallables(childNode, depth + 1, ctx, rng, callableDependencies);
         }
 
         return currentNode;
     }
 
-    private KCallable getCallableOfType(KType type, int depth, Context ctx, RandomNumberGenerator rng) throws CloneNotSupportedException {
+    private KCallable getCallableOfType(KType type, int depth, Context ctx, RandomNumberGenerator rng, Set<KCallable> callableDependencies) throws CloneNotSupportedException {
         boolean sampleConsumerCallable = (depth < maxDepth - 1) && rng.randomBoolean(0.25);
         KCallable callable = null;
         boolean allowSubtypes = true;
@@ -157,12 +167,16 @@ public class ExpressionNode extends ASTNode {
             throw new IllegalStateException("No callable found for type: " + type);
         }
 
+        if (callable.isGenerated()) {
+            callableDependencies.add(callable);
+        }
+
         return callable;
     }
 
-    private void verifyCallableCompatibility(Tree<KCallable> callableTree, Context ctx, boolean allowSubtypes) throws CloneNotSupportedException {
+    private void verifyCallableCompatibility(Tree<KCallable> callableTree, Context ctx, boolean allowSubtypes, Set<KCallable> callableDependencies) throws CloneNotSupportedException {
         for (Tree<KCallable> child : callableTree.getChildren()) {
-            verifyCallableCompatibility(child, ctx, allowSubtypes);
+            verifyCallableCompatibility(child, ctx, allowSubtypes, callableDependencies);
         }
         List<KCallable> childrenCallables = List.copyOf(callableTree.getChildrenValues());
         KCallable callable = callableTree.getValue();
@@ -175,7 +189,8 @@ public class ExpressionNode extends ASTNode {
             } else {
                 KMethod methodCallable = (KMethod) callable;
                 KType ownerType = ctx.getTypeByName(methodCallable.getOwnerType().name());
-                KCallable owner = sampleOwnerCallableOfType(ownerType, ctx, allowSubtypes);
+                KCallable owner = sampleOwnerCallableOfType(ownerType, ctx, allowSubtypes, callableDependencies);
+
                 callable.call(ctx, owner, childrenCallables);
             }
 
@@ -190,7 +205,7 @@ public class ExpressionNode extends ASTNode {
         return callableTree.toList().stream().filter(KCallable::isGenerated).map(KCallable::getName).collect(Collectors.toSet());
     }
 
-    private KCallable sampleOwnerCallableOfType(KType type, Context ctx, boolean allowSubtypes) throws CloneNotSupportedException {
+    private KCallable sampleOwnerCallableOfType(KType type, Context ctx, boolean allowSubtypes, Set<KCallable> callableDependencies) throws CloneNotSupportedException {
         // Sample callables that are either identifiers or constructors
         Predicate<KCallable> constructorOrIdOrAnon = kCallable -> kCallable instanceof KConstructor ||
                 kCallable instanceof KIdentifierCallable ||
@@ -215,10 +230,21 @@ public class ExpressionNode extends ASTNode {
         List<KCallable> sampledOwnerInput = new ArrayList<>();
 
         for (KType inputType : sampledOwner.getInputTypes()) {
-            sampledOwnerInput.add(sampleOwnerCallableOfType(inputType, ctx, allowSubtypes));
+            sampledOwnerInput.add(sampleOwnerCallableOfType(inputType, ctx, allowSubtypes, callableDependencies));
         }
 
         sampledOwner.call(ctx, null, sampledOwnerInput);
+
+        if (sampledOwner.isGenerated()) {
+            callableDependencies.add(sampledOwner);
+        }
+
+        for (KCallable child : sampledOwnerInput) {
+            if (child.isGenerated()) {
+                callableDependencies.add(child);
+            }
+        }
+
         return sampledOwner;
     }
 
