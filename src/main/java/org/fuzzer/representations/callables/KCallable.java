@@ -137,11 +137,12 @@ public abstract class KCallable implements Cloneable, Serializable {
 
     @Override
     public int hashCode() {
-        int result = name.hashCode();
-        result = 31 * result + inputTypes.hashCode();
-        result = 31 * result + returnType.hashCode();
-        result = 31 * result + (owner == null ? 0 : owner.hashCode());
-        result = 31 * result + lastInput.hashCode();
+        int result = name != null ? name.hashCode() : 0;
+        result = 31 * result + (inputTypes != null ? inputTypes.hashCode() : 0);
+        result = 31 * result + (returnType != null ? returnType.hashCode() : 0);
+        result = 31 * result + (owner != null ? owner.hashCode() : 0);
+        result = 31 * result + (lastInput != null ? lastInput.hashCode() : 0);
+        result = 31 * result + (isGenerated ? 1 : 0);
         return result;
     }
 
