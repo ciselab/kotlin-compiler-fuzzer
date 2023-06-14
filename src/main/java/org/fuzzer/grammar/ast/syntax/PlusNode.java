@@ -36,7 +36,7 @@ public class PlusNode extends SyntaxNode {
 
         CodeBlock block = CodeConstruct.aggregateConstructs(constructs);
 
-        return block.split();
+        return null;
     }
 
     public PlusNode(List<ASTNode> children, Configuration cfg) {

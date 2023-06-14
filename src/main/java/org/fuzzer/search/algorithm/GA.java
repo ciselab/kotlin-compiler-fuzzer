@@ -66,8 +66,8 @@ public abstract class GA extends Search {
 
             CodeBlock parent2 = compatibleParents.get(choiceGenerator.fromUniformDiscrete(0, compatibleParents.size() - 1));
 
-            CodeBlock child = recombinationOperator.combine(parent1, parent2);
-            children.add(child);
+//            CodeBlock child = recombinationOperator.combine(parent1, parent2);
+//            children.add(child);
         }
 
         return children;
