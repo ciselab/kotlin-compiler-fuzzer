@@ -2,6 +2,7 @@ package org.fuzzer.search.chromosome;
 
 import org.fuzzer.dt.FuzzerStatistics;
 import org.fuzzer.representations.callables.KCallable;
+import org.fuzzer.representations.context.Context;
 
 import java.util.Set;
 
@@ -28,6 +29,10 @@ public record CodeSnippet(CodeFragment code,
 
     public long size() {
         return code.size();
+    }
+
+    public void buildContext(Context context) {
+        context.addIdentifier(name, providedCallable);
     }
 
     public String getCallableName() {

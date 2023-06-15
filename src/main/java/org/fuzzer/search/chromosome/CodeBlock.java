@@ -3,6 +3,7 @@ package org.fuzzer.search.chromosome;
 import org.fuzzer.dt.FuzzerStatistics;
 import org.fuzzer.grammar.SampleStructure;
 import org.fuzzer.representations.callables.KCallable;
+import org.fuzzer.representations.context.Context;
 
 import java.util.*;
 
@@ -81,6 +82,12 @@ public class CodeBlock implements CodeConstruct {
         }
 
         return text.toString();
+    }
+
+    public void buildContext(Context context) {
+        for (CodeSnippet snippet : snippets) {
+            snippet.buildContext(context);
+        }
     }
 
     public Long getNumberOfSamples(SampleStructure s) {

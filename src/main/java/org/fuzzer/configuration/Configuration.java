@@ -630,7 +630,7 @@ public class Configuration {
                     throw new IllegalStateException("Cannot support selection operator: " + s);
                 }
 
-                RecombinationOperator r = new SimpleRecombinationOperator();
+                RecombinationOperator r = new SimpleRecombinationOperator(rng);
 
                 return new ProximityGA(nodeToSample, timeBudgetMilis, rootContext, seed,
                         populationSize, f, s, r, null, numberOfItersPerTarget);
@@ -674,7 +674,7 @@ public class Configuration {
                     throw new IllegalStateException("Cannot support selection operator: " + s);
                 }
 
-                RecombinationOperator r = new SimpleRecombinationOperator();
+                RecombinationOperator r = new SimpleRecombinationOperator(rng);
 
                 return new DiversityGA(nodeToSample, timeBudgetMilis, rootContext, seed,
                         populationSize, f, s, r, null);
@@ -719,7 +719,7 @@ public class Configuration {
                     }
                 }
 
-                RecombinationOperator r = new SimpleRecombinationOperator();
+                RecombinationOperator r = new SimpleRecombinationOperator(rng);
 
                 return new MOGA(nodeToSample, timeBudgetMilis, rootContext, seed,
                         populationSize, f, moSelector, r, null, shouldMinimize);
@@ -767,7 +767,7 @@ public class Configuration {
                     }
                 }
 
-                RecombinationOperator r = new SimpleRecombinationOperator();
+                RecombinationOperator r = new SimpleRecombinationOperator(rng);
 
                 return new ProximityMOGA(nodeToSample, timeBudgetMilis, rootContext, seed,
                         populationSize, f, moSelector, r, null, shouldMinimize);

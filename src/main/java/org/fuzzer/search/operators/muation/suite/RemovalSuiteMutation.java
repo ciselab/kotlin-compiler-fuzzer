@@ -1,9 +1,8 @@
-package org.fuzzer.search.operators.muation;
+package org.fuzzer.search.operators.muation.suite;
 
 import org.fuzzer.search.chromosome.TestSuite;
 import org.fuzzer.utils.RandomNumberGenerator;
 
-import java.util.Collection;
 import java.util.List;
 
 public class RemovalSuiteMutation implements SuiteMutationOperator {

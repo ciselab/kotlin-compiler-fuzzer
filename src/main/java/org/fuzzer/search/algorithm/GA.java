@@ -5,6 +5,7 @@ import org.fuzzer.representations.context.Context;
 import org.fuzzer.search.chromosome.CodeBlock;
 import org.fuzzer.search.clustering.ClusteringEngine;
 import org.fuzzer.search.fitness.IndividualFitnessFunction;
+import org.fuzzer.search.operators.muation.block.MutationOperator;
 import org.fuzzer.search.operators.recombination.block.RecombinationOperator;
 import org.fuzzer.search.operators.selection.block.SelectionOperator;
 import org.fuzzer.utils.RandomNumberGenerator;

@@ -1,4 +1,4 @@
-package org.fuzzer.search.operators.muation;
+package org.fuzzer.search.operators.muation.suite;
 
 import org.fuzzer.dt.FuzzerStatistics;
 import org.fuzzer.grammar.ast.ASTNode;
@@ -10,7 +10,7 @@ import org.fuzzer.utils.RandomNumberGenerator;
 import java.util.LinkedList;
 import java.util.List;
 
-public class InsertionSuiteMutation implements SuiteMutationOperator {
+public class ChangeSuiteMutation implements SuiteMutationOperator {
     private final double mutationProbability;
 
     private final LinkedList<CodeBlock> codeBlockCache;
@@ -21,8 +21,8 @@ public class InsertionSuiteMutation implements SuiteMutationOperator {
 
     private final FuzzerStatistics globalStats;
 
-    public InsertionSuiteMutation(BlockGenerator blockGenerator, double mutationProbability,
-                                  ASTNode nodeToSample, FuzzerStatistics globalStats) {
+    public ChangeSuiteMutation(BlockGenerator blockGenerator, double mutationProbability,
+                               ASTNode nodeToSample, FuzzerStatistics globalStats) {
         this.mutationProbability = mutationProbability;
         this.codeBlockCache = new LinkedList<>();
         this.blockGenerator= blockGenerator;
@@ -36,9 +36,12 @@ public class InsertionSuiteMutation implements SuiteMutationOperator {
             return suite;
         }
 
+        suite.remove(rng);
+
         if (!codeBlockCache.isEmpty()) {
             CodeBlock blockToAdd = codeBlockCache.pop();
             suite.add(blockToAdd);
+
             return suite;
         }
 
@@ -72,6 +75,7 @@ public class InsertionSuiteMutation implements SuiteMutationOperator {
         }
 
         for (TestSuite s : suitesToMutate) {
+            s.remove(rng);
             CodeBlock blockToAdd = codeBlockCache.pop();
             s.add(blockToAdd);
         }
