@@ -40,7 +40,8 @@ public class DoWhileNode extends StatementNode {
             code = code.extend(stmtNode.getSample(rng, innerContext));
         }
 
-        code.extend("} while(")
+        code = code
+                .extend("} while(")
                 .extend(conditionCode)
                 .extend(")");
 

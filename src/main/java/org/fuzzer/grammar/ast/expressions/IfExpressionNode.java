@@ -70,7 +70,7 @@ public class IfExpressionNode extends ExpressionNode {
 
         CodeFragment code = CodeFragment.emptyFragmentOfType(FragmentType.EXPR);
 
-        code.append("if (")
+        code = code.append("if (")
                 .append(conditionCode)
                 .append(") { ")
                 .extend(trueBranchCode)

@@ -33,7 +33,7 @@ public class DiversityGA extends GA {
 
         while (!exceededTimeBudget()) {
 
-            Long numberOfSelections = populationSize / 4L;
+            long numberOfSelections = populationSize / 3L;
             //TODO: test clustering
             parents = selectionOperator.select(pop, numberOfSelections);
 
