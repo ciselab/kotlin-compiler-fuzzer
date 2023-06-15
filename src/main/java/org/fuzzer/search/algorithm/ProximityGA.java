@@ -5,6 +5,7 @@ import org.fuzzer.representations.context.Context;
 import org.fuzzer.search.chromosome.CodeBlock;
 import org.fuzzer.search.clustering.ClusteringEngine;
 import org.fuzzer.search.fitness.proximity.SingularSOProximityFitnessFunction;
+import org.fuzzer.search.operators.muation.block.MutationOperator;
 import org.fuzzer.search.operators.recombination.block.RecombinationOperator;
 import org.fuzzer.search.operators.selection.block.SelectionOperator;
 
@@ -20,11 +21,12 @@ public class ProximityGA extends GA {
                        Long populationSize,
                        SingularSOProximityFitnessFunction fitnessFunction,
                        SelectionOperator selectionOperator,
+                       MutationOperator mutationOperator,
                        RecombinationOperator recombinationOperator,
                        ClusteringEngine<CodeBlock> clusteringEngine,
                        Long numberOfIterationsPerTarget) {
         super(nodeToSample, timeBudgetMilis, rootContext, seed, populationSize, fitnessFunction,
-                selectionOperator, recombinationOperator, clusteringEngine);
+                selectionOperator, mutationOperator, recombinationOperator, clusteringEngine);
 
         this.fitnessFunction = fitnessFunction;
         this.numberOfIters = numberOfIterationsPerTarget;
@@ -42,7 +44,7 @@ public class ProximityGA extends GA {
 
                 parents = selectionOperator.select(pop, numberOfSelections);
 
-                List<CodeBlock> children = getChildren(parents);
+                List<CodeBlock> children = getOffspring(parents);
                 List<CodeBlock> newBlocks = getNewBlocks(populationSize - children.size() - parents.size());
 
                 updatePopulation(pop, parents, children, newBlocks);

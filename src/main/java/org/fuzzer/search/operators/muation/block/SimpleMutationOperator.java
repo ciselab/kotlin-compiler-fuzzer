@@ -13,7 +13,7 @@ public class SimpleMutationOperator extends ContextSensitiveMutationOperator {
 
     private final ContextualInsertionOperator contextualInsertionOperator;
 
-    protected SimpleMutationOperator(SyntaxNode nodeToSample, Context context, RandomNumberGenerator rng) {
+    public SimpleMutationOperator(SyntaxNode nodeToSample, Context context, RandomNumberGenerator rng) {
         super(nodeToSample, context, rng);
 
         this.independentInsertionOperator = new IndependentInsertionOperator(nodeToSample, context, rng);

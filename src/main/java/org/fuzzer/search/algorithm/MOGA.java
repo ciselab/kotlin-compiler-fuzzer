@@ -6,6 +6,7 @@ import org.fuzzer.search.archive.ElitistArchive;
 import org.fuzzer.search.chromosome.CodeBlock;
 import org.fuzzer.search.clustering.ClusteringEngine;
 import org.fuzzer.search.fitness.MOFitnessFunction;
+import org.fuzzer.search.operators.muation.block.MutationOperator;
 import org.fuzzer.search.operators.recombination.block.RecombinationOperator;
 import org.fuzzer.search.operators.selection.block.SelectionOperator;
 
@@ -22,11 +23,12 @@ public class MOGA extends GA {
                 Long populationSize,
                 MOFitnessFunction fitnessFunction,
                 SelectionOperator selectionOperator,
+                MutationOperator mutationOperator,
                 RecombinationOperator recombinationOperator,
                 ClusteringEngine<CodeBlock> clusteringEngine,
                 boolean[] shouldMinimize) {
         super(nodeToSample, timeBudgetMilis, rootContext, seed, populationSize, fitnessFunction,
-                selectionOperator, recombinationOperator, clusteringEngine);
+                selectionOperator, mutationOperator, recombinationOperator, clusteringEngine);
 
         this.f = fitnessFunction;
         this.elitistArchive = new ElitistArchive(fitnessFunction, shouldMinimize);
@@ -39,8 +41,8 @@ public class MOGA extends GA {
         elitistArchive.addAll(pop, f);
 
         while (!exceededTimeBudget()) {
-            List<CodeBlock> parents = getParents(pop);
-            List<CodeBlock> children = getChildren(parents);
+            List<CodeBlock> parents = selectParents(pop);
+            List<CodeBlock> children = getOffspring(parents);
             List<CodeBlock> newBlocks = getNewBlocks(populationSize - children.size() - parents.size());
 
             elitistArchive.addAll(children, f);

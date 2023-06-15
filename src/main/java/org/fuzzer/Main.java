@@ -16,7 +16,11 @@ public class Main {
         String compilerPath = System.getProperty("kotlinc"); // "src/main/resources/kotlinc/bin/kotlinc"
         String classPath = System.getProperty("classPath"); // "src/test/resources/kotlin/"
         String compilerScriptPath = System.getProperty("compilerScriptPath"); //"src/scripts/compile_file.sh"
-        Long seed = Long.parseLong(System.getProperty("seed"));
+        int ctxSeed = Integer.parseInt(System.getProperty("ctxSeed"));
+        int searchSeed = Integer.parseInt(System.getProperty("searchSeed"));
+        int selectionSeed = Integer.parseInt(System.getProperty("selectionSeed"));
+        int mutationSeed = Integer.parseInt(System.getProperty("mutationSeed"));
+        int recombinationSeed = Integer.parseInt(System.getProperty("recombinationSeed"));
         Long time = Long.parseLong(System.getProperty("time"));
         String output = System.getProperty("output");
         String configPath = System.getProperty("configFile"); // "./config.yaml"
@@ -36,9 +40,11 @@ public class Main {
                 fileNames, output,
                 compilerPath, compilerArgs,
                 compilerScriptPath, configPath,
-                0, 3, ctxFileName,
+                ctxSeed, searchSeed,
+                selectionSeed, mutationSeed,
+                recombinationSeed, 3, ctxFileName,
                 lexerGrammarFile, grammarFile,
                 false);
-        runner.run(seed, time);
+        runner.run(time);
     }
 }

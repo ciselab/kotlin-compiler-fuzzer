@@ -49,13 +49,23 @@ public class DTRunner {
 
     private final List<String> args;
 
+    private final int searchSeed;
+
+    private final int selectionSeed;
+
+    private final int mutationSeed;
+
+    private final int recombinationSeed;
+
     private final File statsFile;
 
     public DTRunner(int numberOfFiles, int numberOfStatements,
                     List<String> inputFileNames, String directoryOutput,
                     String kotlinCompilerPath, List<String> commandLineArgs,
                     String compilerScriptPath, String configFilePath,
-                    int seed, int maxDepth, String contextFileName,
+                    int ctxSeed, int searchSeed, int selectionSeed,
+                    int mutationSeed, int recombinationSeed,
+                    int maxDepth, String contextFileName,
                     String lexerFileName, String grammarFileName,
                     boolean serializeContext) throws IOException, RecognitionException, ClassNotFoundException {
         this.numberOfFiles = numberOfFiles;
@@ -65,6 +75,10 @@ public class DTRunner {
         this.compilerScriptPath = compilerScriptPath;
         this.args = commandLineArgs;
         this.maxDepth = maxDepth;
+        this.searchSeed = searchSeed;
+        this.selectionSeed = selectionSeed;
+        this.mutationSeed = mutationSeed;
+        this.recombinationSeed = recombinationSeed;
 
         File lexerFile = new File(lexerFileName);
         File parserFile = new File(grammarFileName);
@@ -73,7 +87,7 @@ public class DTRunner {
         parserGrammar = new Grammar(FileUtilities.fileContentToString(parserFile));
 
         ruleHandler = new RuleHandler(lexerGrammar, parserGrammar);
-        rng = new RandomNumberGenerator(seed);
+        rng = new RandomNumberGenerator(ctxSeed);
 
         File ctxFile = new File(contextFileName);
 
@@ -132,7 +146,7 @@ public class DTRunner {
         return ctxs;
     }
 
-    public void run(Long seed, Long timeLimitMs) throws IOException {
+    public void run(Long timeLimitMs) throws IOException {
         ASTNode grammarRoot = new GrammarTransformer(lexerGrammar, parserGrammar).transformGrammar();
         // Function declarations node
         ASTNode functionNode = grammarRoot.getChildren().get(0).getChildren().get(5).getChildren().get(0).getChildren().get(0).getChildren().get(2);
@@ -140,7 +154,8 @@ public class DTRunner {
         // One or more functions
         SyntaxNode nodeToSample = new PlusNode(List.of(functionNode), cfg);
 
-        Search searchAlgorithm = cfg.getSearchStrategy(nodeToSample, timeLimitMs, rootContext, seed);
+        Search searchAlgorithm = cfg.getSearchStrategy(nodeToSample, timeLimitMs, rootContext,
+                searchSeed, selectionSeed, mutationSeed, recombinationSeed);
         List<CodeBlock> output = searchAlgorithm.search();
 
         // Write the statistics of the run

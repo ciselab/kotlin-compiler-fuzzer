@@ -32,12 +32,13 @@ public class TestMain {
                 fileNames, outputDir,
                 compilerPath, compilerArgs,
                 compilerScriptPath, configPath,
-                0, 3, ctxFileName,
+                0, 0, 0, 0, 0,
+                3, ctxFileName,
                 lexerGrammarFile, grammarFile,
                 true);
 
         // 5 minutes
-        runner.run(0L, 120000L);
+        runner.run(120000L);
 
     }
 }

@@ -46,9 +46,6 @@ public class BlockGenerator {
 
             CodeBlock block = (CodeBlock) rootNode.getSample(ctx.getRNG(), ctx);
             population.add(block);
-
-//            List<CodeBlock> blocks = rootNode.getBlocks(ctx.getRNG(), ctx);
-//            population.addAll(blocks);
         }
 
         return population;

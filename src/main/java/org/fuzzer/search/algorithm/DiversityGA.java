@@ -5,9 +5,9 @@ import org.fuzzer.search.chromosome.CodeBlock;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.search.clustering.*;
 import org.fuzzer.search.fitness.SOFitnessFunction;
+import org.fuzzer.search.operators.muation.block.MutationOperator;
 import org.fuzzer.search.operators.recombination.block.RecombinationOperator;
 import org.fuzzer.search.operators.selection.block.SelectionOperator;
-import org.fuzzer.utils.Tuple;
 
 import java.util.*;
 
@@ -18,10 +18,11 @@ public class DiversityGA extends GA {
                        Long populationSize,
                        SOFitnessFunction fitnessFunction,
                        SelectionOperator selectionOperator,
+                       MutationOperator mutationOperator,
                        RecombinationOperator recombinationOperator,
                        ClusteringEngine<CodeBlock> clusteringEngine) {
         super(nodeToSample, timeBudgetMilis, rootContext, seed, populationSize, fitnessFunction,
-                selectionOperator, recombinationOperator, clusteringEngine);
+                selectionOperator, mutationOperator, recombinationOperator, clusteringEngine);
     }
 
     @Override
@@ -33,23 +34,10 @@ public class DiversityGA extends GA {
         while (!exceededTimeBudget()) {
 
             Long numberOfSelections = populationSize / 4L;
+            //TODO: test clustering
+            parents = selectionOperator.select(pop, numberOfSelections);
 
-            if (clusteringEngine != null) {
-                throw new IllegalArgumentException("Clustering is not supported yet.");
-//                clusteringEngine.updatePoints(getPoints(pop));
-//                List<Cluster<CodeBlock>> clusters = clusteringEngine.cluster();
-//
-//                for (Cluster<CodeBlock> cluster : clusters) {
-//                    List<CodeBlock> pointsOfCluster = cluster.points().stream().map(Point::data).toList();
-//                    Long numberOfClusterSelections = (((double) pointsOfCluster.size()) / )
-//
-//                    List<CodeBlock> selectedPoints = selectionOperator.select(pointsOfCluster, )
-//                }
-            } else {
-                parents = selectionOperator.select(pop, numberOfSelections);
-            }
-
-            List<CodeBlock> children = getChildren(parents);
+            List<CodeBlock> children = getOffspring(parents);
             List<CodeBlock> newBlocks = getNewBlocks(populationSize - children.size() - parents.size());
 
             updatePopulation(pop, parents, children, newBlocks);
