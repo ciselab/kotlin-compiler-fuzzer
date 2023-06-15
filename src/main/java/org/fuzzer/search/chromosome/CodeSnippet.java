@@ -48,4 +48,8 @@ public record CodeSnippet(CodeFragment code,
     public String text() {
         return code().text();
     }
+
+    public CodeSnippet getCopy() {
+        return new CodeSnippet(code, name, callableDependencies, providedCallable, stats, snippetType);
+    }
 }

@@ -18,8 +18,10 @@ public class ProximityMOGA extends MOGA {
                        MutationOperator mutationOperator,
                        RecombinationOperator recombinationOperator,
                        ClusteringEngine<CodeBlock> clusteringEngine,
-                       boolean[] shouldMinimize) {
+                       boolean[] shouldMinimize,
+                       Long snapshotInterval) {
         super(nodeToSample, timeBudgetMilis, rootContext, seed, populationSize, fitnessFunction,
-                selectionOperator, mutationOperator, recombinationOperator, clusteringEngine, shouldMinimize);
+                selectionOperator, mutationOperator, recombinationOperator, clusteringEngine,
+                shouldMinimize, snapshotInterval);
     }
 }

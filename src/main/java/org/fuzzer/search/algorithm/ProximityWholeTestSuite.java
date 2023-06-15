@@ -29,9 +29,10 @@ public class ProximityWholeTestSuite extends SuiteGA {
                                    SuiteSOSelectionOperator selectionOperator,
                                    SuiteRecombinationOperator recombinationOperator,
                                    Long blocksPerSuite,
-                                   double mutationProbability) {
+                                   double mutationProbability,
+                                   Long snapshotInterval) {
         super(nodeToSample, timeBudgetMilis, rootContext, seed, populationSize,
-                selectionOperator, recombinationOperator);
+                selectionOperator, recombinationOperator, snapshotInterval);
         this.populationSize = populationSize;
         this.blocksPerSuite = blocksPerSuite;
         this.mutationOperator = new WTSMutationOperator(

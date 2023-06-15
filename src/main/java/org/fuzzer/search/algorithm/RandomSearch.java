@@ -15,15 +15,18 @@ import java.util.Set;
 
 public class RandomSearch extends Search {
 
+    private List<CodeBlock> blocks;
+
     public RandomSearch(ASTNode nodeToSample, Long timeBudgetMilis,
-                        Context rootContext, Long seed) {
-        super(nodeToSample, timeBudgetMilis, rootContext, seed);
+                        Context rootContext, Long seed, Long snapshotInterval) {
+        super(nodeToSample, timeBudgetMilis, rootContext, seed, snapshotInterval);
+
+        blocks = new LinkedList<>();
     }
 
     @Override
     public List<CodeBlock> search() {
         long startTime = System.currentTimeMillis();
-        List<CodeBlock> blocks = new LinkedList<>();
         RandomNumberGenerator seedGenerator = new RandomNumberGenerator(getSeed());
         FuzzerStatistics statistics = new FuzzerStatistics();
 
@@ -52,5 +55,10 @@ public class RandomSearch extends Search {
         }
 
         return blocks;
+    }
+
+    @Override
+    List<CodeBlock> takeSnapshot() {
+        return blocks.stream().map(CodeBlock::getCopy).toList();
     }
 }

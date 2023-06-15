@@ -9,6 +9,7 @@ import org.fuzzer.search.operators.muation.block.MutationOperator;
 import org.fuzzer.search.operators.recombination.block.RecombinationOperator;
 import org.fuzzer.search.operators.selection.block.SelectionOperator;
 
+import java.util.LinkedList;
 import java.util.List;
 
 public class ProximityGA extends GA {
@@ -24,9 +25,11 @@ public class ProximityGA extends GA {
                        MutationOperator mutationOperator,
                        RecombinationOperator recombinationOperator,
                        ClusteringEngine<CodeBlock> clusteringEngine,
-                       Long numberOfIterationsPerTarget) {
+                       Long numberOfIterationsPerTarget,
+                       Long snapshotInterval) {
         super(nodeToSample, timeBudgetMilis, rootContext, seed, populationSize, fitnessFunction,
-                selectionOperator, mutationOperator, recombinationOperator, clusteringEngine);
+                selectionOperator, mutationOperator, recombinationOperator,
+                clusteringEngine, snapshotInterval);
 
         this.fitnessFunction = fitnessFunction;
         this.numberOfIters = numberOfIterationsPerTarget;
@@ -36,7 +39,6 @@ public class ProximityGA extends GA {
         startGlobalStats();
         List<CodeBlock> pop = getNewBlocks(populationSize);
         List<CodeBlock> parents;
-
         while (!exceededTimeBudget()) {
 
             for (int i = 0; i < numberOfIters; i++) {
@@ -54,5 +56,11 @@ public class ProximityGA extends GA {
         }
 
         return fitnessFunction.getArchive().getArchive().stream().toList();
+    }
+
+    @Override
+    List<CodeBlock> takeSnapshot() {
+        return fitnessFunction.getArchive().getArchive()
+                .stream().map(CodeBlock::getCopy).toList();
     }
 }

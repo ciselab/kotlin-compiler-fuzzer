@@ -607,7 +607,7 @@ public class Configuration {
     public Search getSearchStrategy(SyntaxNode nodeToSample, Long timeBudgetMillis,
                                     Context rootContext, long searchSeed,
                                     long selectionSeed, long mutationSeed,
-                                    long recombinationSeed) {
+                                    long recombinationSeed, long snapshotInterval) {
 
         RandomNumberGenerator selectionRng = new RandomNumberGenerator(selectionSeed);
         RandomNumberGenerator mutationRng = new RandomNumberGenerator(mutationSeed);
@@ -615,7 +615,7 @@ public class Configuration {
 
         switch (searchStrategy) {
             case RANDOM -> {
-                return new RandomSearch(nodeToSample, timeBudgetMillis, rootContext, searchSeed);
+                return new RandomSearch(nodeToSample, timeBudgetMillis, rootContext, searchSeed, snapshotInterval);
             }
             case PROXIMITY_GA -> {
                 SingularSOProximityFitnessFunction f = null;
@@ -640,7 +640,7 @@ public class Configuration {
                 RecombinationOperator r = new SimpleRecombinationOperator(recombinationRng);
 
                 return new ProximityGA(nodeToSample, timeBudgetMillis, rootContext, searchSeed,
-                        populationSize, f, s, m, r, null, numberOfItersPerTarget);
+                        populationSize, f, s, m, r, null, numberOfItersPerTarget, snapshotInterval);
             }
             case PROXIMITY_WTS -> {
                 SOPopulationFitnessFunction f = null;
@@ -662,7 +662,7 @@ public class Configuration {
                 SuiteRecombinationOperator r = new WTSRecombinationOperator(new RandomNumberGenerator(recombinationSeed));
 
                 return new ProximityWholeTestSuite(nodeToSample, timeBudgetMillis, rootContext, searchSeed,
-                        populationSize, s, r, blocksPerSuite, suiteMutationProbability);
+                        populationSize, s, r, blocksPerSuite, suiteMutationProbability, snapshotInterval);
             }
             case DIVERSITY_GA -> {
                 SOFitnessFunction f = new DiversityFitnessFunction(null, distanceMetric);
@@ -681,7 +681,7 @@ public class Configuration {
                 RecombinationOperator r = new SimpleRecombinationOperator(recombinationRng);
 
                 return new DiversityGA(nodeToSample, timeBudgetMillis, rootContext, searchSeed,
-                        populationSize, f, s, m, r, null);
+                        populationSize, f, s, m, r, null, snapshotInterval);
             }
             case STRUCT_MOGA -> {
                 MOFitnessFunction f = new StructureMOFitness();
@@ -724,7 +724,7 @@ public class Configuration {
                 RecombinationOperator r = new SimpleRecombinationOperator(recombinationRng);
 
                 return new MOGA(nodeToSample, timeBudgetMillis, rootContext, searchSeed,
-                        populationSize, f, moSelector, m, r, null, shouldMinimize);
+                        populationSize, f, moSelector, m, r, null, shouldMinimize, snapshotInterval);
             }
             case PROXIMITY_MOGA -> {
                 ProximityMOFitnessFunction f = null;
@@ -770,7 +770,7 @@ public class Configuration {
                 RecombinationOperator r = new SimpleRecombinationOperator(recombinationRng);
 
                 return new ProximityMOGA(nodeToSample, timeBudgetMillis, rootContext, searchSeed,
-                        populationSize, f, moSelector, m, r, null, shouldMinimize);
+                        populationSize, f, moSelector, m, r, null, shouldMinimize, snapshotInterval);
             }
             default -> {
                 throw new IllegalStateException("Cannot support search strategy: " + searchStrategy);

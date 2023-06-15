@@ -28,17 +28,21 @@ public abstract class GA extends Search {
 
     protected final ClusteringEngine<CodeBlock> clusteringEngine;
 
-    public GA(SyntaxNode nodeToSample, Long timeBudgetMilis,
+    protected final IndividualFitnessFunction fitnessFunction;
+
+    public GA(SyntaxNode nodeToSample, Long timeBudgetMillis,
                 Context rootContext, Long seed,
                 Long populationSize,
                 IndividualFitnessFunction fitnessFunction,
                 SelectionOperator selectionOperator,
                 MutationOperator mutationOperator,
                 RecombinationOperator recombinationOperator,
-                ClusteringEngine<CodeBlock> clusteringEngine) {
-        super(nodeToSample, timeBudgetMilis, rootContext, seed);
+                ClusteringEngine<CodeBlock> clusteringEngine,
+                Long snapshotInterval) {
+        super(nodeToSample, timeBudgetMillis, rootContext, seed, snapshotInterval);
 
         this.populationSize = populationSize;
+        this.fitnessFunction = fitnessFunction;
         this.selectionOperator = selectionOperator;
         this.mutationOperator = mutationOperator;
         this.recombinationOperator = recombinationOperator;

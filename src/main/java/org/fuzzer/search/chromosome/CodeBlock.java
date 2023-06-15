@@ -228,4 +228,8 @@ public class CodeBlock implements CodeConstruct {
         result = 31 * result + (snippets != null ? snippets.hashCode() : 0);
         return result;
     }
+
+    public CodeBlock getCopy() {
+        return new CodeBlock(snippets.stream().map(CodeSnippet::getCopy).toList());
+    }
 }

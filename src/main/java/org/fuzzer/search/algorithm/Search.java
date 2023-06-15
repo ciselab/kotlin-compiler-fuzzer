@@ -22,15 +22,24 @@ public abstract class Search {
 
     protected final BlockGenerator blockGenerator;
 
+    protected final Long snapshotInterval;
+
+    protected Long lastSnapShotTime;
+
+    private final List<List<CodeBlock>> snapshots;
+
     public Search(ASTNode nodeToSample, Long timeBudgetMilis,
-                  Context rootContext, Long seed) {
+                  Context rootContext, Long seed, Long snapshotInterval) {
         this.nodeToSample = nodeToSample;
         this.timeBudgetMilis = timeBudgetMilis;
         this.rootContext = rootContext;
         this.seed = seed;
+        this.snapshotInterval = snapshotInterval;
 
         this.globalStats = new FuzzerStatistics();
         this.blockGenerator = new BlockGenerator(rootContext, seed);
+        this.lastSnapShotTime = 0L;
+        this.snapshots = new LinkedList<>();
     }
 
     public ASTNode getNodeToSample() {
@@ -60,6 +69,7 @@ public abstract class Search {
     public abstract List<CodeBlock> search();
 
     protected void startGlobalStats() {
+        lastSnapShotTime = System.currentTimeMillis();
         globalStats.start();
     }
 
@@ -69,5 +79,28 @@ public abstract class Search {
 
     protected boolean exceededTimeBudget() {
         return System.currentTimeMillis() - getStartTime() >= getTimeBudgetMilis();
+    }
+
+    protected boolean shouldTakeSnapshot() {
+        return System.currentTimeMillis() - lastSnapShotTime >= snapshotInterval;
+    }
+
+    protected void updateSnapshotTime() {
+        lastSnapShotTime = System.currentTimeMillis();
+    }
+
+    void processSnapshot() {
+        if (!shouldTakeSnapshot()) {
+            return;
+        }
+
+        snapshots.add(takeSnapshot());
+        updateSnapshotTime();
+    }
+
+    abstract List<CodeBlock> takeSnapshot();
+
+    public List<List<CodeBlock>> getSnapshots() {
+        return snapshots;
     }
 }

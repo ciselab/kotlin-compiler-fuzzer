@@ -33,8 +33,9 @@ public abstract class SuiteGA extends Search {
               Context rootContext, Long seed,
               Long populationSize,
               SuiteSOSelectionOperator selectionOperator,
-              SuiteRecombinationOperator recombinationOperator) {
-        super(nodeToSample, timeBudgetMilis, rootContext, seed);
+              SuiteRecombinationOperator recombinationOperator,
+              Long snapshotInterval) {
+        super(nodeToSample, timeBudgetMilis, rootContext, seed, snapshotInterval);
 
         this.populationSize = populationSize;
         this.selectionOperator = selectionOperator;

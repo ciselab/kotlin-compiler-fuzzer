@@ -146,7 +146,7 @@ public class DTRunner {
         return ctxs;
     }
 
-    public void run(Long timeLimitMs) throws IOException {
+    public void run(Long timeLimitMs, Long snapshotInterval) throws IOException {
         ASTNode grammarRoot = new GrammarTransformer(lexerGrammar, parserGrammar).transformGrammar();
         // Function declarations node
         ASTNode functionNode = grammarRoot.getChildren().get(0).getChildren().get(5).getChildren().get(0).getChildren().get(0).getChildren().get(2);
@@ -155,7 +155,7 @@ public class DTRunner {
         SyntaxNode nodeToSample = new PlusNode(List.of(functionNode), cfg);
 
         Search searchAlgorithm = cfg.getSearchStrategy(nodeToSample, timeLimitMs, rootContext,
-                searchSeed, selectionSeed, mutationSeed, recombinationSeed);
+                searchSeed, selectionSeed, mutationSeed, recombinationSeed, snapshotInterval);
         List<CodeBlock> output = searchAlgorithm.search();
 
         // Write the statistics of the run

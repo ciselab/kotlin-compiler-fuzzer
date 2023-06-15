@@ -10,6 +10,7 @@ import org.fuzzer.search.operators.muation.block.MutationOperator;
 import org.fuzzer.search.operators.recombination.block.RecombinationOperator;
 import org.fuzzer.search.operators.selection.block.SelectionOperator;
 
+import java.util.LinkedList;
 import java.util.List;
 
 public class MOGA extends GA {
@@ -17,6 +18,8 @@ public class MOGA extends GA {
     private final ElitistArchive elitistArchive;
 
     private final MOFitnessFunction f;
+
+    private final List<List<CodeBlock>> snapshots;
 
     public MOGA(SyntaxNode nodeToSample, Long timeBudgetMilis,
                 Context rootContext, Long seed,
@@ -26,12 +29,15 @@ public class MOGA extends GA {
                 MutationOperator mutationOperator,
                 RecombinationOperator recombinationOperator,
                 ClusteringEngine<CodeBlock> clusteringEngine,
-                boolean[] shouldMinimize) {
+                boolean[] shouldMinimize,
+                Long snapshotInterval) {
         super(nodeToSample, timeBudgetMilis, rootContext, seed, populationSize, fitnessFunction,
-                selectionOperator, mutationOperator, recombinationOperator, clusteringEngine);
+                selectionOperator, mutationOperator, recombinationOperator,
+                clusteringEngine, snapshotInterval);
 
         this.f = fitnessFunction;
         this.elitistArchive = new ElitistArchive(fitnessFunction, shouldMinimize);
+        this.snapshots = new LinkedList<>();
     }
 
     @Override
@@ -51,6 +57,24 @@ public class MOGA extends GA {
             updatePopulation(pop, parents, children, newBlocks);
         }
 
+        return getArchivedBlocks();
+    }
+
+    @Override
+    void processSnapshot() {
+        if (!shouldTakeSnapshot()) {
+            return;
+        }
+
+        snapshots.add(takeSnapshot());
+    }
+
+    @Override
+    List<CodeBlock> takeSnapshot() {
+        return elitistArchive.getArchive().stream().map(CodeBlock::getCopy).toList();
+    }
+
+    private List<CodeBlock> getArchivedBlocks() {
         return elitistArchive.getArchive().stream().toList();
     }
 }
