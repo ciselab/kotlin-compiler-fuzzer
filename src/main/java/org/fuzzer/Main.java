@@ -22,6 +22,7 @@ public class Main {
         int mutationSeed = Integer.parseInt(System.getProperty("mutationSeed"));
         int recombinationSeed = Integer.parseInt(System.getProperty("recombinationSeed"));
         Long time = Long.parseLong(System.getProperty("time"));
+        boolean takeSnapshots = Boolean.parseBoolean(System.getProperty("takeSnapshots"));
         Long snapshotInterval = Long.parseLong(System.getProperty("snapshotInterval"));
         String output = System.getProperty("output");
         String configPath = System.getProperty("configFile"); // "./config.yaml"
@@ -46,6 +47,6 @@ public class Main {
                 recombinationSeed, 3, ctxFileName,
                 lexerGrammarFile, grammarFile,
                 false);
-        runner.run(time, snapshotInterval);
+        runner.run(time, snapshotInterval, takeSnapshots);
     }
 }

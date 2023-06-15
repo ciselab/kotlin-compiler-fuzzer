@@ -15,7 +15,7 @@ import java.util.Set;
 
 public class RandomSearch extends Search {
 
-    private List<CodeBlock> blocks;
+    private final List<CodeBlock> blocks;
 
     public RandomSearch(ASTNode nodeToSample, Long timeBudgetMilis,
                         Context rootContext, Long seed, Long snapshotInterval) {
@@ -25,13 +25,15 @@ public class RandomSearch extends Search {
     }
 
     @Override
-    public List<CodeBlock> search() {
-        long startTime = System.currentTimeMillis();
+    public List<CodeBlock> search(boolean takeSnapshots) {
         RandomNumberGenerator seedGenerator = new RandomNumberGenerator(getSeed());
         FuzzerStatistics statistics = new FuzzerStatistics();
 
-        while (System.currentTimeMillis() - startTime < getTimeBudgetMilis()) {
-//            System.out.println("Time elapsed: " + (System.currentTimeMillis() - startTime) + " ms");
+        while (!exceededTimeBudget()) {
+            if (takeSnapshots) {
+                processSnapshot();
+            }
+
             // Prepare a fresh context with a new seed
             Context nextCtx = getRootContext().clone();
             RandomNumberGenerator nextRNG = new RandomNumberGenerator(seedGenerator.getNewSeed());

@@ -30,7 +30,7 @@ public class DiversityGA extends GA {
     }
 
     @Override
-    public List<CodeBlock> search() {
+    public List<CodeBlock> search(boolean takeSnapshots) {
         startGlobalStats();
         pop = getNewBlocks(populationSize);
 
@@ -39,14 +39,16 @@ public class DiversityGA extends GA {
 
         while (!exceededTimeBudget()) {
 
-            processSnapshot();
-
-            if (cumulativeFitness(pop) < cumulativeFitness(bestPop)) {
-                bestPop.clear();
-                for (CodeBlock block : pop) {
-                    bestPop.add(block.getCopy());
-                }
+            if (takeSnapshots) {
+                processSnapshot();
             }
+
+//            if (cumulativeFitness(pop) < cumulativeFitness(bestPop)) {
+//                bestPop.clear();
+//                for (CodeBlock block : pop) {
+//                    bestPop.add(block.getCopy());
+//                }
+//            }
 
             long numberOfSelections = populationSize / 3L;
             //TODO: test clustering

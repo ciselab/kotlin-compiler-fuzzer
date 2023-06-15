@@ -66,7 +66,7 @@ public abstract class Search {
         return blockGenerator.generateBlocks(numberOfBlocks, nodeToSample, globalStats);
     }
 
-    public abstract List<CodeBlock> search();
+    public abstract List<CodeBlock> search(boolean takeSnapshots);
 
     protected void startGlobalStats() {
         lastSnapShotTime = System.currentTimeMillis();

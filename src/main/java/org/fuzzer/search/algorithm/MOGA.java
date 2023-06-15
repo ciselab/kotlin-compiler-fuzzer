@@ -41,12 +41,16 @@ public class MOGA extends GA {
     }
 
     @Override
-    public List<CodeBlock> search() {
+    public List<CodeBlock> search(boolean takeSnapshots) {
         startGlobalStats();
         List<CodeBlock> pop = getNewBlocks(populationSize);
         elitistArchive.addAll(pop, f);
 
         while (!exceededTimeBudget()) {
+            if (takeSnapshots) {
+                processSnapshot();
+            }
+
             List<CodeBlock> parents = selectParents(pop);
             List<CodeBlock> children = getOffspring(parents);
             List<CodeBlock> newBlocks = getNewBlocks(populationSize - children.size() - parents.size());

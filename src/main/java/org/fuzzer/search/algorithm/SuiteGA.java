@@ -49,7 +49,7 @@ public abstract class SuiteGA extends Search {
     }
 
     protected List<TestSuite> getParents(List<TestSuite> pop) {
-        long numberOfSelections = populationSize / 4L;
+        long numberOfSelections = populationSize / 3L;
         List<TestSuite> parents;
 
         parents = selectionOperator.select(pop, numberOfSelections);

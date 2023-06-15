@@ -11,6 +11,7 @@ import org.fuzzer.search.operators.recombination.suite.SuiteRecombinationOperato
 import org.fuzzer.search.operators.selection.suite.SuiteSOSelectionOperator;
 import org.fuzzer.utils.RandomNumberGenerator;
 
+import java.util.LinkedList;
 import java.util.List;
 
 public class ProximityWholeTestSuite extends SuiteGA {
@@ -21,7 +22,9 @@ public class ProximityWholeTestSuite extends SuiteGA {
 
     private final SuiteMutationOperator mutationOperator;
 
-    private final RandomNumberGenerator mutationRng ;
+    private final RandomNumberGenerator mutationRng;
+
+    private List<TestSuite> pop;
 
     public ProximityWholeTestSuite(SyntaxNode nodeToSample, Long timeBudgetMilis,
                                    Context rootContext, Long seed,
@@ -39,15 +42,20 @@ public class ProximityWholeTestSuite extends SuiteGA {
                 new BlockGenerator(getRootContext(), getSeed()),
                 mutationProbability, nodeToSample, getGlobalStats());
         this.mutationRng = new RandomNumberGenerator(getSeed());
+        this.pop = new LinkedList<>();
     }
 
     @Override
-    public List<CodeBlock> search() {
+    public List<CodeBlock> search(boolean takeSnapshots) {
         startGlobalStats();
 
-        List<TestSuite> pop = getNewSuites(populationSize, blocksPerSuite);
+        pop = getNewSuites(populationSize, blocksPerSuite);
 
         while (!exceededTimeBudget()) {
+            if (takeSnapshots) {
+                processSnapshot();
+            }
+
             List<TestSuite> parents = getParents(pop);
             List<TestSuite> children = getChildren(parents);
             List<TestSuite> newBlocks = getNewSuites(populationSize - children.size() - parents.size(), blocksPerSuite);
@@ -57,5 +65,13 @@ public class ProximityWholeTestSuite extends SuiteGA {
         }
 
         return selectionOperator.getBestSuite().getBlocks();
+    }
+
+    @Override
+    List<CodeBlock> takeSnapshot() {
+        return selectionOperator
+                .getBestSuite().getBlocks()
+                .stream().map(CodeBlock::getCopy)
+                .toList();
     }
 }

@@ -19,6 +19,8 @@ import org.fuzzer.utils.RandomNumberGenerator;
 import org.fuzzer.utils.Tuple;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 
 public class DTRunner {
@@ -146,7 +148,7 @@ public class DTRunner {
         return ctxs;
     }
 
-    public void run(Long timeLimitMs, Long snapshotInterval) throws IOException {
+    public void run(Long timeLimitMs, Long snapshotInterval, boolean takeSnapshots) throws IOException {
         ASTNode grammarRoot = new GrammarTransformer(lexerGrammar, parserGrammar).transformGrammar();
         // Function declarations node
         ASTNode functionNode = grammarRoot.getChildren().get(0).getChildren().get(5).getChildren().get(0).getChildren().get(0).getChildren().get(2);
@@ -156,7 +158,7 @@ public class DTRunner {
 
         Search searchAlgorithm = cfg.getSearchStrategy(nodeToSample, timeLimitMs, rootContext,
                 searchSeed, selectionSeed, mutationSeed, recombinationSeed, snapshotInterval);
-        List<CodeBlock> output = searchAlgorithm.search();
+        List<CodeBlock> output = searchAlgorithm.search(takeSnapshots);
 
         // Write the statistics of the run
         BufferedWriter statsWriter = new BufferedWriter(new FileWriter(statsFile.getAbsolutePath(), true));
@@ -186,5 +188,35 @@ public class DTRunner {
         statsWriter.newLine();
         statsWriter.flush();
         statsWriter.close();
+
+        if (takeSnapshots) {
+            processSnapshots(searchAlgorithm, snapshotInterval);
+        }
+    }
+
+    private void processSnapshots(Search searchAlgorithm, Long snapshotInterval) throws IOException {
+        List<List<CodeBlock>> snapshots = searchAlgorithm.getSnapshots();
+        int iter = 1;
+
+        for (List<CodeBlock> snapshot : snapshots) {
+            String snapshotDir = directoryOutput +
+                    "snapshots-" + iter++ * snapshotInterval / 1000;
+            Files.createDirectory(Paths.get(snapshotDir));
+            Files.createDirectory(Paths.get(snapshotDir + "/v1"));
+            Files.createDirectory(Paths.get(snapshotDir + "/v2"));
+
+            for (CodeBlock code : snapshot) {
+                String randomFileName = UUID.randomUUID().toString();
+                String outputFileName = snapshotDir + "/" + randomFileName + ".kt";
+
+                String text = "fun main(args: Array<String>) {\n";
+                text += code.text();
+                text += "\n}";
+
+                BufferedWriter writer = new BufferedWriter(new FileWriter(outputFileName));
+                writer.write(text);
+                writer.close();
+            }
+        }
     }
 }

@@ -35,11 +35,14 @@ public class ProximityGA extends GA {
         this.numberOfIters = numberOfIterationsPerTarget;
     }
     @Override
-    public List<CodeBlock> search() {
+    public List<CodeBlock> search(boolean takeSnapshots) {
         startGlobalStats();
         List<CodeBlock> pop = getNewBlocks(populationSize);
         List<CodeBlock> parents;
         while (!exceededTimeBudget()) {
+            if (takeSnapshots) {
+                processSnapshot();
+            }
 
             for (int i = 0; i < numberOfIters; i++) {
                 long numberOfSelections = populationSize / 4L;
