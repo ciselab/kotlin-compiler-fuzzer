@@ -21,8 +21,8 @@ class GrammarTransformerTest {
 
     @BeforeEach
     void setUp() throws RecognitionException, IOException {
-        String lexerText = FileUtilities.fileContentToString(new File("src/main/resources/KotlinLexer.g4"));
-        String parserText = FileUtilities.fileContentToString(new File("src/main/resources/KotlinParser.g4"));
+        String lexerText = FileUtilities.fileContentToString(new File("resources/antlr/KotlinLexer.g4"));
+        String parserText = FileUtilities.fileContentToString(new File("resources/antlr/KotlinParser.g4"));
 
         lexerGrammar = new LexerGrammar(lexerText);
         parserGrammar = new Grammar(parserText);

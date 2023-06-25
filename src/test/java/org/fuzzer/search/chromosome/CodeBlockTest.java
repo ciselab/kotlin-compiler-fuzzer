@@ -129,8 +129,9 @@ class CodeBlockTest {
     void getDependencyTopology1() {
         List<CodeSnippet> topology = bigBlock.getDependencyTopology(aSnippet);
         assertTrue(topology.containsAll(List.of(aSnippet, bSnippet, xSnippet, ySnippet)));
-        assertEquals(4, topology.size());
+        assertEquals(5, topology.size());
         assertTrue(topology.indexOf(xSnippet) < topology.indexOf(ySnippet));
+        assertTrue(topology.indexOf(ySnippet) < topology.indexOf(zSnippet));
         assertTrue(topology.indexOf(aSnippet) < topology.indexOf(bSnippet));
     }
 
@@ -158,8 +159,9 @@ class CodeBlockTest {
     void getDependencyTopology4() {
         List<CodeSnippet> topology = bigBlock.getDependencyTopology(zSnippet);
         assertTrue(topology.containsAll(List.of(xSnippet, ySnippet, zSnippet)));
-        assertEquals(3, topology.size());
+        assertEquals(5, topology.size());
         assertTrue(topology.indexOf(xSnippet) < topology.indexOf(ySnippet));
         assertTrue(topology.indexOf(ySnippet) < topology.indexOf(zSnippet));
+        assertTrue(topology.indexOf(aSnippet) < topology.indexOf(bSnippet));
     }
 }
