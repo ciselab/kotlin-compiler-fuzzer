@@ -118,7 +118,7 @@ public class CodeBlock implements CodeConstruct {
                 if (!dependentsPresent(s, dependentSnippets)) {
                     selfContained = false;
                     List<CodeSnippet> newDependencies = getDirectDependents(s);
-                    dependentSnippets.addAll(newDependencies);
+                    dependentSnippets.addAll(newDependencies.stream().filter(sn -> !dependentSnippets.contains(sn)).toList());
                     break;
                 }
             }
@@ -143,7 +143,7 @@ public class CodeBlock implements CodeConstruct {
                             .stream()
                             .filter(sn -> !finalDependencySnippets.contains(sn))
                             .toList());
-                    newDependencies.addAll(dependencySnippets);
+                    newDependencies.addAll(dependencySnippets.stream().filter(sn -> !newDependencies.contains(sn)).toList());
                     dependencySnippets = newDependencies;
                     break;
                 }
@@ -175,7 +175,15 @@ public class CodeBlock implements CodeConstruct {
      * @return the topologically sorted list of snippets that forms from the two traversals.
      */
     public List<CodeSnippet> getDependencyTopology(CodeSnippet snippet) {
-        return getDownStreamDependencies(getUpStreamDependents(snippet));
+        List<CodeSnippet> snippets =  getDownStreamDependencies(getUpStreamDependents(snippet));
+        List<CodeSnippet> addedSnippets = getDownStreamDependencies(getUpStreamDependents(snippets));
+
+        while (!snippets.equals(addedSnippets)) {
+            snippets = addedSnippets;
+            addedSnippets = getDownStreamDependencies(getUpStreamDependents(snippets));
+        }
+
+        return snippets;
     }
 
     private boolean dependsOn(CodeSnippet snippet, CodeSnippet other) {

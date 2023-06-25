@@ -39,16 +39,8 @@ public class DTRunner {
 
     private final Context rootContext;
 
-    private final RandomNumberGenerator rng;
-
     private final int maxDepth;
-
-    private String compilerScriptPath;
-
     private final Configuration cfg;
-
-    private final String kotlinCompilerPath;
-
     private final List<String> args;
 
     private final int searchSeed;
@@ -63,8 +55,7 @@ public class DTRunner {
 
     public DTRunner(int numberOfFiles, int numberOfStatements,
                     List<String> inputFileNames, String directoryOutput,
-                    String kotlinCompilerPath, List<String> commandLineArgs,
-                    String compilerScriptPath, String configFilePath,
+                    List<String> commandLineArgs,String configFilePath,
                     int ctxSeed, int searchSeed, int selectionSeed,
                     int mutationSeed, int recombinationSeed,
                     int maxDepth, String contextFileName,
@@ -73,8 +64,6 @@ public class DTRunner {
         this.numberOfFiles = numberOfFiles;
         this.numberOfStatements = numberOfStatements;
         this.directoryOutput = directoryOutput;
-        this.kotlinCompilerPath = kotlinCompilerPath;
-        this.compilerScriptPath = compilerScriptPath;
         this.args = commandLineArgs;
         this.maxDepth = maxDepth;
         this.searchSeed = searchSeed;
@@ -89,7 +78,7 @@ public class DTRunner {
         parserGrammar = new Grammar(FileUtilities.fileContentToString(parserFile));
 
         ruleHandler = new RuleHandler(lexerGrammar, parserGrammar);
-        rng = new RandomNumberGenerator(ctxSeed);
+        RandomNumberGenerator rng = new RandomNumberGenerator(ctxSeed);
 
         File ctxFile = new File(contextFileName);
 
@@ -171,7 +160,11 @@ public class DTRunner {
 
         for (CodeBlock code : output) {
             String randomFileName = UUID.randomUUID().toString();
-            String outputFileName = directoryOutput + randomFileName + ".kt";
+            String outputFileName = directoryOutput + "/" + randomFileName + ".kt";
+
+//            System.out.println("Writing to " + outputFileName);
+//            System.out.println(new File(outputFileName).isFile());
+//            System.out.println(new File(directoryOutput).isDirectory());
 
             String text = "fun main(args: Array<String>) {\n";
             text += code.text();

@@ -12,12 +12,12 @@ public class TestMain {
         String ctxFileName = "context.ser";
         String compilerScriptPath = "src/scripts/compile_file.sh";
 
-        String lexerGrammarFile = "./src/main/resources/KotlinLexer.g4";
-        String grammarFile = "./src/main/resources/KotlinParser.g4";
-        String compilerPath = "src/main/resources/kotlinc/bin/kotlinc";
-        String classPath = "src/test/resources/kotlin/";
+        String lexerGrammarFile = "resources/antlr/KotlinLexer.g4";
+        String grammarFile = "resources/antlr/KotlinParser.g4";
+        String compilerPath = "resources/kotlinc/bin/kotlinc";
+        String classPath = "resources/kotlin/";
         String outputDir = "output/";
-        String configPath = "./config.yaml";
+        String configPath = "config.yaml";
 
         List<String> classes = new ArrayList<>(List.of("Any.kt", "Comparable.kt", "Throwable.kt",
                 "Array.kt", "Enum.kt", "Iterator.kt", "Library.kt", "Collections.kt", "Unit.kt", "ExceptionsH.kt",
@@ -30,8 +30,7 @@ public class TestMain {
 
         DTRunner runner = new DTRunner(10000, 5,
                 fileNames, outputDir,
-                compilerPath, compilerArgs,
-                compilerScriptPath, configPath,
+                compilerArgs, configPath,
                 0, 0, 0, 0, 0,
                 3, ctxFileName,
                 lexerGrammarFile, grammarFile,
