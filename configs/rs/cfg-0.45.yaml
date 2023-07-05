@@ -1,0 +1,101 @@
+config:
+  heuristic:
+    type: random
+    population-size: 20
+    new-blocks-generated: 2
+    distance-metric: euclidean
+    blocks-per-suite: 20
+    num-iters-per-target: 10
+    suite-mutation-probability: 0.1
+    selection:
+      individual:
+        mo-selection: domination-rank
+        so-selection : tournament
+        tournament-size: 4
+        tournament-selection-probability: 0.99
+        truncation-proportion: 0.3
+        maximum-length: 500
+      suite:
+        so-selection: tournament
+        tournament-size: 4
+        tournament-selection-probability: 0.99
+        truncation-proportion: 0.3
+    remote:
+      embedding-single: http://localhost:9090/embedding-single/
+      embedding-multi: http://localhost:9090/embedding-multiple/
+      targets: http://localhost:9091/centers/kmeans100/
+      num-targets: 100
+      oom:
+        enable: true
+        oom-single: http://localhost:9092/predict-single/
+        oom-multi: http://localhost:9092/predict-multiple/
+  grammar:
+    simplicity-bias: 0.45
+    plus-node-dist:
+      type: geometric
+      lower-bound: 1
+    star-node-dist:
+      type: geometric
+      lower-bound: 0
+    func-stmts-dist:
+      type: geometric
+      lower-bound: 0
+    func-params-dist:
+      type: geometric
+      lower-bound: 0
+    do-while-stmts-dist:
+      type: geometric
+      lower-bound: 0
+    loop-stmts-dist:
+      type: geometric
+      lower-bound: 0
+    try-block-dist:
+      type: geometric
+      lower-bound: 0
+    catch-block-dist:
+      type: geometric
+      lower-bound: 0
+    catch-block-stmt-dist:
+      type: geometric
+      lower-bound: 0
+    finally-block-dist:
+      probability: 0.5
+      type: geometric
+      lower-bound: 0
+    if-block-dist:
+      type: geometric
+      lower-bound: 0
+    else-block-dist:
+      # The else block probability is discarded at the moment.
+      probability: 1.0
+      type: geometric
+      lower-bound: 0
+  language-features:
+    functions:
+      enable: true
+    expressions:
+      simple-expr:
+        enable: true
+        weight: 1.0
+      if-expr:
+        enable: true
+        weight: 1.0
+      elvis-expr:
+        enable: true
+        weight: 1.0
+      try-catch-expr:
+        enable: true
+        weight: 1.0
+    statements:
+      simple-stmt:
+        enable: true
+        weight: 1.0
+      do-while-stmt:
+        enable: true
+        weight: 1.0
+      assignment-stmt:
+        enable: true
+        weight: 1.0
+      loop-stmt:
+        enable: false
+        weight: 1.0
