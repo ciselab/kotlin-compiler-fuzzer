@@ -21,6 +21,7 @@ import java.util.List;
 public abstract class SuiteGA extends Search {
     protected final long populationSize;
 
+    protected final long newSuitesGenerated;
     protected final SuiteSOSelectionOperator selectionOperator;
 
     protected final SuiteRecombinationOperator recombinationOperator;
@@ -31,13 +32,14 @@ public abstract class SuiteGA extends Search {
 
     public SuiteGA(SyntaxNode nodeToSample, Long timeBudgetMilis,
               Context rootContext, Long seed,
-              Long populationSize,
+              Long populationSize, Long newBlocksGenerated,
               SuiteSOSelectionOperator selectionOperator,
               SuiteRecombinationOperator recombinationOperator,
-              Long snapshotInterval) {
-        super(nodeToSample, timeBudgetMilis, rootContext, seed, snapshotInterval);
+              Long snapshotInterval, String outputDir) {
+        super(nodeToSample, timeBudgetMilis, rootContext, seed, snapshotInterval, outputDir);
 
         this.populationSize = populationSize;
+        this.newSuitesGenerated = newBlocksGenerated;
         this.selectionOperator = selectionOperator;
         this.recombinationOperator = recombinationOperator;
         this.choiceGenerator = new RandomNumberGenerator(getSeed());

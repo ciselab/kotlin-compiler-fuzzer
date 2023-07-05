@@ -5,7 +5,11 @@ import org.fuzzer.grammar.ast.ASTNode;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.search.chromosome.CodeBlock;
 import org.fuzzer.search.operators.generator.BlockGenerator;
+import org.fuzzer.utils.AsyncSnapshotWriter;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 
 public abstract class Search {
@@ -26,10 +30,13 @@ public abstract class Search {
 
     protected Long lastSnapShotTime;
 
-    private final List<List<CodeBlock>> snapshots;
+    protected Long snapshotNumber;
+
+    protected String outputDirectory;
 
     public Search(ASTNode nodeToSample, Long timeBudgetMilis,
-                  Context rootContext, Long seed, Long snapshotInterval) {
+                  Context rootContext, Long seed, Long snapshotInterval,
+                  String outputDirectory) {
         this.nodeToSample = nodeToSample;
         this.timeBudgetMilis = timeBudgetMilis;
         this.rootContext = rootContext;
@@ -39,7 +46,12 @@ public abstract class Search {
         this.globalStats = new FuzzerStatistics();
         this.blockGenerator = new BlockGenerator(rootContext, seed);
         this.lastSnapShotTime = 0L;
-        this.snapshots = new LinkedList<>();
+        this.snapshotNumber = 0L;
+        this.outputDirectory = outputDirectory;
+    }
+
+    public void setOutputDirectory(String outputDirectory) {
+        this.outputDirectory = outputDirectory;
     }
 
     public ASTNode getNodeToSample() {
@@ -94,13 +106,22 @@ public abstract class Search {
             return;
         }
 
-        snapshots.add(takeSnapshot());
+        List<CodeBlock> snapshot = takeSnapshot();
+        String snapshotDir = this.outputDirectory + "snapshot-" + snapshotNumber++;
+        try {
+            Files.createDirectory(Paths.get(snapshotDir));
+            Files.createDirectory(Paths.get(snapshotDir + "/v1"));
+            Files.createDirectory(Paths.get(snapshotDir + "/v2"));
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        AsyncSnapshotWriter snapshotWriter = new AsyncSnapshotWriter(snapshotDir, snapshot);
+        snapshotWriter.start();
+
         updateSnapshotTime();
     }
 
     abstract List<CodeBlock> takeSnapshot();
-
-    public List<List<CodeBlock>> getSnapshots() {
-        return snapshots;
-    }
 }

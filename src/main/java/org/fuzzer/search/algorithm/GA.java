@@ -5,7 +5,7 @@ import org.fuzzer.representations.context.Context;
 import org.fuzzer.search.chromosome.CodeBlock;
 import org.fuzzer.search.clustering.ClusteringEngine;
 import org.fuzzer.search.fitness.IndividualFitnessFunction;
-import org.fuzzer.search.operators.muation.block.MutationOperator;
+import org.fuzzer.search.operators.mutation.block.MutationOperator;
 import org.fuzzer.search.operators.recombination.block.RecombinationOperator;
 import org.fuzzer.search.operators.selection.block.SelectionOperator;
 import org.fuzzer.utils.RandomNumberGenerator;
@@ -24,6 +24,8 @@ public abstract class GA extends Search {
 
     protected final RandomNumberGenerator choiceGenerator;
 
+    protected final Long newBlocksGenerated;
+
     protected final MutationOperator mutationOperator;
 
     protected final ClusteringEngine<CodeBlock> clusteringEngine;
@@ -32,16 +34,17 @@ public abstract class GA extends Search {
 
     public GA(SyntaxNode nodeToSample, Long timeBudgetMillis,
                 Context rootContext, Long seed,
-                Long populationSize,
+                Long populationSize, Long newBlocksGenerated,
                 IndividualFitnessFunction fitnessFunction,
                 SelectionOperator selectionOperator,
                 MutationOperator mutationOperator,
                 RecombinationOperator recombinationOperator,
                 ClusteringEngine<CodeBlock> clusteringEngine,
-                Long snapshotInterval) {
-        super(nodeToSample, timeBudgetMillis, rootContext, seed, snapshotInterval);
+                Long snapshotInterval, String outputDir) {
+        super(nodeToSample, timeBudgetMillis, rootContext, seed, snapshotInterval, outputDir);
 
         this.populationSize = populationSize;
+        this.newBlocksGenerated = newBlocksGenerated;
         this.fitnessFunction = fitnessFunction;
         this.selectionOperator = selectionOperator;
         this.mutationOperator = mutationOperator;
@@ -51,7 +54,7 @@ public abstract class GA extends Search {
     }
 
     protected List<CodeBlock> selectParents(List<CodeBlock> pop) {
-        long numberOfSelections = populationSize / 4L;
+        long numberOfSelections = (populationSize - newBlocksGenerated) / 2L;
         List<CodeBlock> parents;
 
         if (clusteringEngine != null) {

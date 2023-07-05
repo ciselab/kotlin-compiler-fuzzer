@@ -5,7 +5,7 @@ import org.fuzzer.search.chromosome.CodeBlock;
 import org.fuzzer.representations.context.Context;
 import org.fuzzer.search.clustering.*;
 import org.fuzzer.search.fitness.SOFitnessFunction;
-import org.fuzzer.search.operators.muation.block.MutationOperator;
+import org.fuzzer.search.operators.mutation.block.MutationOperator;
 import org.fuzzer.search.operators.recombination.block.RecombinationOperator;
 import org.fuzzer.search.operators.selection.block.SelectionOperator;
 
@@ -16,16 +16,16 @@ public class DiversityGA extends GA {
 
     public DiversityGA(SyntaxNode nodeToSample, Long timeBudgetMilis,
                        Context rootContext, Long seed,
-                       Long populationSize,
+                       Long populationSize, Long newBlocksGenerated,
                        SOFitnessFunction fitnessFunction,
                        SelectionOperator selectionOperator,
                        MutationOperator mutationOperator,
                        RecombinationOperator recombinationOperator,
                        ClusteringEngine<CodeBlock> clusteringEngine,
-                       Long snapshotInterval) {
-        super(nodeToSample, timeBudgetMilis, rootContext, seed, populationSize, fitnessFunction,
+                       Long snapshotInterval, String outputDir) {
+        super(nodeToSample, timeBudgetMilis, rootContext, seed, populationSize, newBlocksGenerated, fitnessFunction,
                 selectionOperator, mutationOperator, recombinationOperator,
-                clusteringEngine, snapshotInterval);
+                clusteringEngine, snapshotInterval, outputDir);
         this.pop = new LinkedList<>();
     }
 
@@ -38,29 +38,28 @@ public class DiversityGA extends GA {
         List<CodeBlock> bestPop = new LinkedList<>();
 
         while (!exceededTimeBudget()) {
+            ((SOFitnessFunction) fitnessFunction).updatePopulation(pop);
 
             if (takeSnapshots) {
                 processSnapshot();
             }
 
-//            if (cumulativeFitness(pop) < cumulativeFitness(bestPop)) {
-//                bestPop.clear();
-//                for (CodeBlock block : pop) {
-//                    bestPop.add(block.getCopy());
-//                }
-//            }
+            if (cumulativeFitness(pop) > cumulativeFitness(bestPop)) {
+                bestPop.clear();
+                for (CodeBlock block : pop) {
+                    bestPop.add(block.getCopy());
+                }
+            }
 
-            long numberOfSelections = populationSize / 3L;
-            //TODO: test clustering
-            parents = selectionOperator.select(pop, numberOfSelections);
+            parents = selectParents(pop);
 
             List<CodeBlock> children = getOffspring(parents);
-            List<CodeBlock> newBlocks = getNewBlocks(populationSize - children.size() - parents.size());
+            List<CodeBlock> newBlocks = getNewBlocks(populationSize - children.size());
 
-            updatePopulation(pop, parents, children, newBlocks);
+            updatePopulation(pop, new LinkedList<>(), children, newBlocks);
         }
 
-        return pop;
+        return bestPop;
     }
 
     @Override

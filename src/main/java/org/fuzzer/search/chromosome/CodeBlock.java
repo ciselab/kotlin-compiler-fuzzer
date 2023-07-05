@@ -232,10 +232,15 @@ public class CodeBlock implements CodeConstruct {
 
     @Override
     public int hashCode() {
-        int result = stats != null ? stats.hashCode() : 0;
-        result = 31 * result + (snippets != null ? snippets.hashCode() : 0);
-        return result;
+        return snippets != null ? snippets.hashCode() : 0;
     }
+
+    //    @Override
+//    public int hashCode() {
+//        int result = stats != null ? stats.hashCode() : 0;
+//        result = 31 * result + (snippets != null ? snippets.hashCode() : 0);
+//        return result;
+//    }
 
     public CodeBlock getCopy() {
         return new CodeBlock(snippets.stream().map(CodeSnippet::getCopy).toList());

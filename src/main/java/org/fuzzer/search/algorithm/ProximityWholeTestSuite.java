@@ -5,8 +5,8 @@ import org.fuzzer.representations.context.Context;
 import org.fuzzer.search.chromosome.CodeBlock;
 import org.fuzzer.search.chromosome.TestSuite;
 import org.fuzzer.search.operators.generator.BlockGenerator;
-import org.fuzzer.search.operators.muation.suite.SuiteMutationOperator;
-import org.fuzzer.search.operators.muation.suite.WTSMutationOperator;
+import org.fuzzer.search.operators.mutation.suite.SuiteMutationOperator;
+import org.fuzzer.search.operators.mutation.suite.WTSMutationOperator;
 import org.fuzzer.search.operators.recombination.suite.SuiteRecombinationOperator;
 import org.fuzzer.search.operators.selection.suite.SuiteSOSelectionOperator;
 import org.fuzzer.utils.RandomNumberGenerator;
@@ -28,14 +28,14 @@ public class ProximityWholeTestSuite extends SuiteGA {
 
     public ProximityWholeTestSuite(SyntaxNode nodeToSample, Long timeBudgetMilis,
                                    Context rootContext, Long seed,
-                                   Long populationSize,
+                                   Long populationSize, Long newBlocksGenerated,
                                    SuiteSOSelectionOperator selectionOperator,
                                    SuiteRecombinationOperator recombinationOperator,
                                    Long blocksPerSuite,
                                    double mutationProbability,
-                                   Long snapshotInterval) {
-        super(nodeToSample, timeBudgetMilis, rootContext, seed, populationSize,
-                selectionOperator, recombinationOperator, snapshotInterval);
+                                   Long snapshotInterval, String outputDir) {
+        super(nodeToSample, timeBudgetMilis, rootContext, seed, populationSize, newBlocksGenerated,
+                selectionOperator, recombinationOperator, snapshotInterval, outputDir);
         this.populationSize = populationSize;
         this.blocksPerSuite = blocksPerSuite;
         this.mutationOperator = new WTSMutationOperator(

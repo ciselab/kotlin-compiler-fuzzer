@@ -1,4 +1,4 @@
-package org.fuzzer.search.operators.muation.block;
+package org.fuzzer.search.operators.mutation.block;
 
 import org.fuzzer.grammar.ast.syntax.SyntaxNode;
 import org.fuzzer.representations.context.Context;
@@ -23,14 +23,12 @@ public class SimpleMutationOperator extends ContextSensitiveMutationOperator {
 
     @Override
     public CodeBlock mutate(CodeBlock block) {
-        if (rng.fromUniformContinuous(0.0, 1.0) < 0.33) {
+        if (rng.fromUniformContinuous(0.0, 1.0) < 0.5) {
             return independentInsertionOperator.mutate(block);
         }
 
-        if (rng.fromUniformContinuous(0.0, 1.0) < 0.33) {
-            return removalOperator.mutate(block);
-        }
+        return removalOperator.mutate(block);
 
-        return contextualInsertionOperator.mutate(block);
+//        return contextualInsertionOperator.mutate(block);
     }
 }

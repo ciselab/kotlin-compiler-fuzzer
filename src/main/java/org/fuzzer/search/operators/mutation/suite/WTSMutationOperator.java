@@ -1,4 +1,4 @@
-package org.fuzzer.search.operators.muation.suite;
+package org.fuzzer.search.operators.mutation.suite;
 
 import org.fuzzer.dt.FuzzerStatistics;
 import org.fuzzer.grammar.ast.ASTNode;

@@ -18,8 +18,9 @@ public class RandomSearch extends Search {
     private final List<CodeBlock> blocks;
 
     public RandomSearch(ASTNode nodeToSample, Long timeBudgetMilis,
-                        Context rootContext, Long seed, Long snapshotInterval) {
-        super(nodeToSample, timeBudgetMilis, rootContext, seed, snapshotInterval);
+                        Context rootContext, Long seed,
+                        Long snapshotInterval, String outputDir) {
+        super(nodeToSample, timeBudgetMilis, rootContext, seed, snapshotInterval, outputDir);
 
         blocks = new LinkedList<>();
     }

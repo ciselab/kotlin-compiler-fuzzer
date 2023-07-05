@@ -38,6 +38,11 @@ public class DiversityFitnessFunction implements SOFitnessFunction {
                     sum += Math.abs(b1.getNumberOfSamples(feature) - b2.getNumberOfSamples(feature));
                 }
             }
+            case LINFINITY -> {
+                for (SampleStructure feature : features) {
+                    sum = Math.max(sum, Math.abs(b1.getNumberOfSamples(feature) - b2.getNumberOfSamples(feature)));
+                }
+            }
         }
 
         return sum;

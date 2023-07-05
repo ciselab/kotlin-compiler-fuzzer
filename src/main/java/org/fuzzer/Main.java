@@ -35,12 +35,10 @@ public class Main {
         compilerArgs.add("");
         compilerArgs.add("-Xuse-k2");
 
-        DTRunner runner = new DTRunner(10000, 5,
-                fileNames, output,
-                compilerArgs, configPath,
-                ctxSeed, searchSeed,
+        DTRunner runner = new DTRunner(fileNames, output,
+                configPath, ctxSeed, searchSeed,
                 selectionSeed, mutationSeed,
-                recombinationSeed, 3, ctxFileName,
+                recombinationSeed, ctxFileName,
                 lexerGrammarFile, grammarFile,
                 false);
         runner.run(time, snapshotInterval, takeSnapshots);

@@ -6,11 +6,10 @@ import org.fuzzer.search.archive.ElitistArchive;
 import org.fuzzer.search.chromosome.CodeBlock;
 import org.fuzzer.search.clustering.ClusteringEngine;
 import org.fuzzer.search.fitness.MOFitnessFunction;
-import org.fuzzer.search.operators.muation.block.MutationOperator;
+import org.fuzzer.search.operators.mutation.block.MutationOperator;
 import org.fuzzer.search.operators.recombination.block.RecombinationOperator;
 import org.fuzzer.search.operators.selection.block.SelectionOperator;
 
-import java.util.LinkedList;
 import java.util.List;
 
 public class MOGA extends GA {
@@ -19,25 +18,22 @@ public class MOGA extends GA {
 
     private final MOFitnessFunction f;
 
-    private final List<List<CodeBlock>> snapshots;
-
     public MOGA(SyntaxNode nodeToSample, Long timeBudgetMilis,
                 Context rootContext, Long seed,
-                Long populationSize,
+                Long populationSize, Long newBlocksGenerated,
                 MOFitnessFunction fitnessFunction,
                 SelectionOperator selectionOperator,
                 MutationOperator mutationOperator,
                 RecombinationOperator recombinationOperator,
                 ClusteringEngine<CodeBlock> clusteringEngine,
                 boolean[] shouldMinimize,
-                Long snapshotInterval) {
-        super(nodeToSample, timeBudgetMilis, rootContext, seed, populationSize, fitnessFunction,
+                Long snapshotInterval, String outputDir) {
+        super(nodeToSample, timeBudgetMilis, rootContext, seed, populationSize, newBlocksGenerated, fitnessFunction,
                 selectionOperator, mutationOperator, recombinationOperator,
-                clusteringEngine, snapshotInterval);
+                clusteringEngine, snapshotInterval, outputDir);
 
         this.f = fitnessFunction;
         this.elitistArchive = new ElitistArchive(fitnessFunction, shouldMinimize);
-        this.snapshots = new LinkedList<>();
     }
 
     @Override
@@ -62,15 +58,6 @@ public class MOGA extends GA {
         }
 
         return getArchivedBlocks();
-    }
-
-    @Override
-    void processSnapshot() {
-        if (!shouldTakeSnapshot()) {
-            return;
-        }
-
-        snapshots.add(takeSnapshot());
     }
 
     @Override

@@ -1,4 +1,4 @@
-package org.fuzzer.search.operators.muation.block;
+package org.fuzzer.search.operators.mutation.block;
 
 import org.fuzzer.grammar.ast.syntax.SyntaxNode;
 import org.fuzzer.representations.context.Context;

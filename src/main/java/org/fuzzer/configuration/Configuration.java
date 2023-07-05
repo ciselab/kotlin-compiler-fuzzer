@@ -10,8 +10,8 @@ import org.fuzzer.search.fitness.proximity.CollectiveProximityFitnessFunction;
 import org.fuzzer.search.fitness.proximity.ProximityMOFitnessFunction;
 import org.fuzzer.search.fitness.proximity.SOPopulationFitnessFunction;
 import org.fuzzer.search.fitness.proximity.SingularSOProximityFitnessFunction;
-import org.fuzzer.search.operators.muation.block.MutationOperator;
-import org.fuzzer.search.operators.muation.block.SimpleMutationOperator;
+import org.fuzzer.search.operators.mutation.block.MutationOperator;
+import org.fuzzer.search.operators.mutation.block.SimpleMutationOperator;
 import org.fuzzer.search.operators.recombination.block.RecombinationOperator;
 import org.fuzzer.search.operators.recombination.block.SimpleRecombinationOperator;
 import org.fuzzer.search.operators.recombination.suite.SuiteRecombinationOperator;
@@ -211,7 +211,7 @@ public class Configuration {
                 multiEmbeddingUrl = (String) remoteCfg.get(ConfigurationVocabulary.multiEmbedding);
                 targetsUrl = (String) remoteCfg.get(ConfigurationVocabulary.targets);
                 numberOfTargets = ((Integer) remoteCfg.get(ConfigurationVocabulary.numberOfTargets)).longValue();
-                numberOfItersPerTarget = ((Integer) heuristicCfg.get(ConfigurationVocabulary.numberOfItersPerTarget)).longValue();;
+                numberOfItersPerTarget = ((Integer) heuristicCfg.get(ConfigurationVocabulary.numberOfItersPerTarget)).longValue();
                 // TODO: make this configurable
                 distanceMetric = null;
                 blocksPerSuite = null;
@@ -598,6 +598,9 @@ public class Configuration {
             case ConfigurationVocabulary.manhattan -> {
                 return DistanceMetric.MANHATTAN;
             }
+            case ConfigurationVocabulary.linfinity -> {
+                return DistanceMetric.LINFINITY;
+            }
             default -> {
                 throw new IllegalArgumentException("Distance metric " + distanceMetricName + " not supported.");
             }
@@ -607,7 +610,8 @@ public class Configuration {
     public Search getSearchStrategy(SyntaxNode nodeToSample, Long timeBudgetMillis,
                                     Context rootContext, long searchSeed,
                                     long selectionSeed, long mutationSeed,
-                                    long recombinationSeed, long snapshotInterval) {
+                                    long recombinationSeed, long snapshotInterval,
+                                    String outputDir) {
 
         RandomNumberGenerator selectionRng = new RandomNumberGenerator(selectionSeed);
         RandomNumberGenerator mutationRng = new RandomNumberGenerator(mutationSeed);
@@ -615,7 +619,7 @@ public class Configuration {
 
         switch (searchStrategy) {
             case RANDOM -> {
-                return new RandomSearch(nodeToSample, timeBudgetMillis, rootContext, searchSeed, snapshotInterval);
+                return new RandomSearch(nodeToSample, timeBudgetMillis, rootContext, searchSeed, snapshotInterval, outputDir);
             }
             case PROXIMITY_GA -> {
                 SingularSOProximityFitnessFunction f = null;
@@ -640,7 +644,7 @@ public class Configuration {
                 RecombinationOperator r = new SimpleRecombinationOperator(recombinationRng);
 
                 return new ProximityGA(nodeToSample, timeBudgetMillis, rootContext, searchSeed,
-                        populationSize, f, s, m, r, null, numberOfItersPerTarget, snapshotInterval);
+                        populationSize, newBlocksGenerated, f, s, m, r, null, numberOfItersPerTarget, snapshotInterval, outputDir);
             }
             case PROXIMITY_WTS -> {
                 SOPopulationFitnessFunction f = null;
@@ -662,7 +666,7 @@ public class Configuration {
                 SuiteRecombinationOperator r = new WTSRecombinationOperator(new RandomNumberGenerator(recombinationSeed));
 
                 return new ProximityWholeTestSuite(nodeToSample, timeBudgetMillis, rootContext, searchSeed,
-                        populationSize, s, r, blocksPerSuite, suiteMutationProbability, snapshotInterval);
+                        populationSize, newBlocksGenerated, s, r, blocksPerSuite, suiteMutationProbability, snapshotInterval, outputDir);
             }
             case DIVERSITY_GA -> {
                 SOFitnessFunction f = new DiversityFitnessFunction(null, distanceMetric);
@@ -681,7 +685,7 @@ public class Configuration {
                 RecombinationOperator r = new SimpleRecombinationOperator(recombinationRng);
 
                 return new DiversityGA(nodeToSample, timeBudgetMillis, rootContext, searchSeed,
-                        populationSize, f, s, m, r, null, snapshotInterval);
+                        populationSize, newBlocksGenerated, f, s, m, r, null, snapshotInterval, outputDir);
             }
             case STRUCT_MOGA -> {
                 MOFitnessFunction f = new StructureMOFitness();
@@ -724,10 +728,10 @@ public class Configuration {
                 RecombinationOperator r = new SimpleRecombinationOperator(recombinationRng);
 
                 return new MOGA(nodeToSample, timeBudgetMillis, rootContext, searchSeed,
-                        populationSize, f, moSelector, m, r, null, shouldMinimize, snapshotInterval);
+                        populationSize, newBlocksGenerated, f, moSelector, m, r, null, shouldMinimize, snapshotInterval, outputDir);
             }
             case PROXIMITY_MOGA -> {
-                ProximityMOFitnessFunction f = null;
+                ProximityMOFitnessFunction f;
                 try {
                     f = new ProximityMOFitnessFunction(new URL(singleEmbeddingUrl), new URL(multiEmbeddingUrl),
                             new URL(targetsUrl), Math.toIntExact(numberOfTargets));
@@ -770,7 +774,7 @@ public class Configuration {
                 RecombinationOperator r = new SimpleRecombinationOperator(recombinationRng);
 
                 return new ProximityMOGA(nodeToSample, timeBudgetMillis, rootContext, searchSeed,
-                        populationSize, f, moSelector, m, r, null, shouldMinimize, snapshotInterval);
+                        populationSize, newBlocksGenerated, f, moSelector, m, r, null, shouldMinimize, snapshotInterval, outputDir);
             }
             default -> {
                 throw new IllegalStateException("Cannot support search strategy: " + searchStrategy);
