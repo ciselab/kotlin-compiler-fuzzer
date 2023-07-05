@@ -1,16 +1,18 @@
 FROM gradle:8.0.0-jdk17-jammy AS build
 WORKDIR /home/gradle/fuzzer
-COPY . .
+
+COPY src ./src
+COPY settings.gradle ./settings.gradle
+COPY build.gradle ./build.gradle
+COPY local_dependencies ./local_dependencies
+
 RUN gradle uberJar --no-daemon
 
 FROM openjdk:17-slim-buster
+#FROM ubuntu:latest
 
-WORKDIR /home/fuzzer
+WORKDIR /fuzzer
 
-COPY --from=build /home/gradle/fuzzer/build/libs/kotlin-compiler-fuzzer-0.1.0-uber.jar /home/fuzzer/fuzzer.jar
-COPY --from=build /home/gradle/fuzzer/src/main/resources /home/fuzzer/resources
-COPY --from=build /home/gradle/fuzzer/src/test/resources/ /home/fuzzer/resources
+COPY --from=build /home/gradle/fuzzer/build/libs/kotlin-compiler-fuzzer-0.1.0-uber.jar ./fuzzer.jar
 
-RUN mkdir "output"
-
-ENTRYPOINT ["java", "-DlexerFile=./resources/KotlinLexer.g4", "-DgrammarFile=./resources/KotlinParser.g4", "-Dkotlinc=./resources/kotlinc/bin/kotlinc", "-DclassPath=./resources/kotlin/", "-jar", "fuzzer.jar"]
+ENTRYPOINT ["java"]

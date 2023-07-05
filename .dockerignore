@@ -43,7 +43,7 @@ README.md
 .github/
 output/*
 context.ser
-Dockerfile
+Docker/fuzzer/Dockerfile
 .dockerignore
 output*
 *.ipynb
