@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Example: bash src/scripts/utils/compile_dir_simple.sh output /src/main/resources/kotlinc/bin/kotlinc
+# Example: bash src/scripts/utils/compile_dir_simple.sh output src/main/resources/kotlinc/bin/kotlinc
 files=$(ls "$1"/*.kt*)
 
 for file in $files;
