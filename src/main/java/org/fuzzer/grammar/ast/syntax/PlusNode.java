@@ -50,9 +50,15 @@ public class PlusNode extends SyntaxNode {
         int numberOfSamples = rng.fromDiscreteDistribution(cfg.getPlusNodeDist());
         List<CodeConstruct> sampledConstructs = new LinkedList<>();
 
+        // TODO: fix bug that allows context to sample callables requiring unsambplable types
         for (int sampleNumber = 0; sampleNumber < numberOfSamples; sampleNumber++) {
-            CodeConstruct newCode = children.get(0).getSample(rng, ctx);
-            sampledConstructs.add(newCode);
+            try {
+                CodeConstruct newCode = children.get(0).getSample(rng, ctx);
+                sampledConstructs.add(newCode);
+            } catch (IllegalStateException e) {
+                System.out.println("Error sampling child of PlusNode: " + e.getMessage());
+                System.out.println("Proceeding to next iteration with empty sample...");
+            }
         }
 
         return CodeConstruct.aggregateConstructs(sampledConstructs);
