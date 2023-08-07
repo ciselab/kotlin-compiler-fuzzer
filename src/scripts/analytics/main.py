@@ -91,7 +91,7 @@ if __name__ == "__main__":
     dirs = args.dirs
     names = args.names
 
-    if (len(dirs) != len(dirs)):
+    if (len(dirs) != len(names)):
         print("The number of names and dirs provided do not match.")
         sys.exit(1)
 

@@ -5,9 +5,15 @@ import org.fuzzer.representations.context.Context;
 import org.fuzzer.search.chromosome.CodeBlock;
 import org.fuzzer.search.clustering.ClusteringEngine;
 import org.fuzzer.search.fitness.proximity.SingularSOProximityFitnessFunction;
+import org.fuzzer.search.operators.mutation.block.MutationOperator;
 import org.fuzzer.search.operators.recombination.block.RecombinationOperator;
 import org.fuzzer.search.operators.selection.block.SelectionOperator;
+import org.fuzzer.utils.AsyncSnapshotWriter;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.LinkedList;
 import java.util.List;
 
 public class ProximityGA extends GA {
@@ -17,40 +23,76 @@ public class ProximityGA extends GA {
     private final Long numberOfIters;
     public ProximityGA(SyntaxNode nodeToSample, Long timeBudgetMilis,
                        Context rootContext, Long seed,
-                       Long populationSize,
+                       Long populationSize, Long newBlocksGenerated,
                        SingularSOProximityFitnessFunction fitnessFunction,
                        SelectionOperator selectionOperator,
+                       MutationOperator mutationOperator,
                        RecombinationOperator recombinationOperator,
                        ClusteringEngine<CodeBlock> clusteringEngine,
-                       Long numberOfIterationsPerTarget) {
-        super(nodeToSample, timeBudgetMilis, rootContext, seed, populationSize, fitnessFunction,
-                selectionOperator, recombinationOperator, clusteringEngine);
+                       Long numberOfIterationsPerTarget,
+                       Long snapshotInterval, String outputDir) {
+        super(nodeToSample, timeBudgetMilis, rootContext, seed, populationSize, newBlocksGenerated, fitnessFunction,
+                selectionOperator, mutationOperator, recombinationOperator,
+                clusteringEngine, snapshotInterval, outputDir);
 
         this.fitnessFunction = fitnessFunction;
         this.numberOfIters = numberOfIterationsPerTarget;
     }
     @Override
-    public List<CodeBlock> search() {
+    public List<CodeBlock> search(boolean takeSnapshots) {
         startGlobalStats();
-        List<CodeBlock> pop = getNewBlocks(populationSize);
         List<CodeBlock> parents;
-
         while (!exceededTimeBudget()) {
 
-            for (int i = 0; i < numberOfIters; i++) {
-                long numberOfSelections = populationSize / 4L;
+            List<CodeBlock> pop = getNewBlocks(populationSize);
 
-                parents = selectionOperator.select(pop, numberOfSelections);
+            for (int i = 0; i < numberOfIters && !exceededTimeBudget(); i++) {
 
-                List<CodeBlock> children = getChildren(parents);
+                parents = selectParents(pop);
+
+                List<CodeBlock> children = getOffspring(parents);
                 List<CodeBlock> newBlocks = getNewBlocks(populationSize - children.size() - parents.size());
 
-                updatePopulation(pop, parents, children, newBlocks);
+                updatePopulation(pop, new LinkedList<>(), children, newBlocks);
+
+                if (takeSnapshots) {
+                    processSnapshot(i == numberOfIters);
+                }
             }
 
             fitnessFunction.switchTargets();
         }
 
         return fitnessFunction.getArchive().getArchive().stream().toList();
+    }
+
+    void processSnapshot(boolean finishedIteration) {
+        if (!shouldTakeSnapshot()) {
+            if (!finishedIteration) {
+                return;
+            }
+        }
+
+        List<CodeBlock> snapshot = takeSnapshot();
+        String snapshotDir = this.outputDirectory + "snapshot-" + snapshotNumber++;
+        try {
+            Files.createDirectory(Paths.get(snapshotDir));
+            Files.createDirectory(Paths.get(snapshotDir + "/v1"));
+            Files.createDirectory(Paths.get(snapshotDir + "/v2"));
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        AsyncSnapshotWriter snapshotWriter = new AsyncSnapshotWriter(snapshotDir, snapshot);
+        snapshotWriter.start();
+
+        updateSnapshotTime();
+    }
+
+    @Override
+    List<CodeBlock> takeSnapshot() {
+        return fitnessFunction.getArchive().getArchive()
+                .stream().map(CodeBlock::getCopy).toList();
     }
 }

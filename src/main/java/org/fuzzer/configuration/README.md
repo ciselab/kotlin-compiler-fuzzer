@@ -3,17 +3,22 @@
 One can configure the fuzzer using a `yaml` file. A sample configuration is provided in the root of the repository, under `config.yaml`. A configuration is composed of the following fields:
 
 - `heuristic`: Contains information about the search heuristic that the fuzzer uses. Contains the following subfields:
-  - `type`: One of `random`, `diversity-ga`, or `moga`. The `random` option will use random search. The `diversity-ga` will optimize for file diversity using a genetic algorithm (GA). `moga` uses a many-objective GA that attempts to minimize the file size while simultaneously maximizing the number of each available language structure. The remainder of the fields in this list govern the two GAs:
+  - `type`: One of `random`, `diversity-ga`, `proximity-ga`, `structure-moga`, `proximity-moga`, or `proximity-wts`. The `random` option will use random search. The `diversity-ga` will optimize for file diversity using a genetic algorithm (GA). `moga` uses a many-objective GA that attempts to minimize the file size while simultaneously maximizing the number of each available language structure. The two following options are analogous for the proximity heuristic, while the last implements the Whole-Suite approach by Arcuri and Fraser. The remainder of the fields in this list govern the two GAs:
   - `population`: The integer population size.
   - `distance-metric`: Either `euclidean` or `manhattan`, which signals the distance metric to use for diversity heuristic (when relevant).
   - `new-blocks-genreated`: The integer number of new blocks to generate during each iteration of the GA.
-  - `selection`: A subfield that governs the selection method for GAs. It contains the following subfields:
-    - `maximum-length`: The integer maximum length that files must not exceed to be selected (across all selection methods).
-    - `mo-selection`: One of `domination-count` or `domination-rank`, to be used in many-objective GAs.
-    - `so-selection`: One of `tournament` or `truncated`, to be used in single-objective GAs and as part of the `domination-count` method.
-    - `tournament-size`: The integer size of tournaments to use in selection (if enabled).
-    - `tournament-selection-probability`: The double probability used to select the best candidate in a tournament (if enabled).
-    - `truncation-proportion`: The double proportion of solutions to retain in the truncation selection method (if enabled).
+  - `selection`: A subfield that governs the selection method for GAs. Selection can be performed on the `individual` or `suite` level, to set apart the WS approach. Both `individual` and `suite` are subfields of `selection`, and they themselves contain the following subfields:
+    - `maximum-length` (`individual`): The integer maximum length that files must not exceed to be selected (across all selection methods).
+    - `mo-selection` (`individual`): One of `domination-count` or `domination-rank`, to be used in many-objective GAs.
+    - `so-selection` (`individual` and `suite`): One of `tournament` or `truncated`, to be used in single-objective GAs and as part of the `domination-count` method.
+    - `tournament-size` (`individual` and `suite`): The integer size of tournaments to use in selection (if enabled).
+    - `tournament-selection-probability`(`individual` and `suite`): The double-valued probability used to select the best candidate in a tournament (if enabled).
+    - `truncation-proportion` (`individual` and `suite`): The double-valued proportion of solutions to retain in the truncation selection method (if enabled).
+  - `remote`: a subfield that stores information regarding the addresses of other services, generally ran in containers on the local network. Contains the following subfields:
+    - `embedding-single` and `embedding-multi`, the addresses of the embedding service API. This service transofrms code into a vectorized numerical representation that the proximity heuristics require.
+    - `targets`, the location of the targets (or clustering) service API. This component gives the locations of the targets for the proximity heuristics.
+    - `num-targets`: the integer-valued number of targets to expect (as to avoid misconfiguration).
+    - `oom`, a field that contains information regarding the out-of-memory classifier API. `oom` contains three subfields: `enable` (`true` or `false`), and `oom-single` and `oom-multi`, the provide analogous functionality to their `embedding` counterparts.
 - `grammar`: Contains information about the syntactic sampling strategies. Contains the following fields:
   - `simplicity-bias`: The probability with which to sample simple statements and expressions.
   - `plus-node-dist` and `star-node-dist` govern the `+` and `*` regular-expression sampling distributions. Each distribution must contain the following fields:
@@ -37,19 +42,37 @@ Below is an example of a configuration file that contains examples of most feasi
 ```yaml
 config:
   heuristic:
-    type: moga
-    population-size: 40
-    new-blocks-generated: 20
+    type: proximity-moga
+    population-size: 50
+    new-blocks-generated: 10
     distance-metric: euclidean
+    blocks-per-suite: 20
+    num-iters-per-target: 10
+    suite-mutation-probability: 0.1
     selection:
-      mo-selection: domination-count
-      so-selection : tournament
-      tournament-size: 4
-      tournament-selection-probability: 0.75
-      truncation-proportion: 0.3
-      maximum-length: 500
+      individual:
+        mo-selection: domination-rank
+        so-selection : tournament
+        tournament-size: 4
+        tournament-selection-probability: 0.99
+        truncation-proportion: 0.3
+        maximum-length: 500
+      suite:
+        so-selection: tournament
+        tournament-size: 10
+        tournament-selection-probability: 0.99
+        truncation-proportion: 0.3
+    remote:
+      embedding-single: http://localhost:9090/embedding-single/
+      embedding-multi: http://localhost:9090/embedding-multiple/
+      targets: http://localhost:9091/centers/kmeans_100/
+      num-targets: 100
+      oom:
+        enable: false
+        oom-single: http://localhost:9092/predict-single/
+        oom-multi: http://localhost:9092/predict-multiple/
   grammar:
-    simplicity-bias: 0.6
+    simplicity-bias: 0.5
     plus-node-dist:
       type: geometric
       lower-bound: 1
@@ -113,9 +136,9 @@ config:
         enable: true
         weight: 1.0
       assignment-stmt:
-        enable: false
-        weight: 3.0
-      loop-stmt:
         enable: true
-        weight: 5.5
+        weight: 1.0
+      loop-stmt:
+        enable: false
+        weight: 1.0
 ```

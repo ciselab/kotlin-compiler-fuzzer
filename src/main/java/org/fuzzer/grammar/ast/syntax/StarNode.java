@@ -46,7 +46,7 @@ public class StarNode extends SyntaxNode {
 
         CodeBlock block = CodeConstruct.aggregateConstructs(constructs);
 
-        return block.split();
+        return null;
     }
 
     @Override

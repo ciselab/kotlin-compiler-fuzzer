@@ -7,22 +7,25 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Main {
-    public static void main(String[] args) throws IOException, RecognitionException, InterruptedException, ClassNotFoundException {
+    public static void main(String[] args) throws IOException, RecognitionException, ClassNotFoundException {
         String ctxFileName = "context.ser";
 
 
-        String lexerGrammarFile = System.getProperty("lexerFile"); // "./src/main/resources/KotlinLexer.g4"
-        String grammarFile = System.getProperty("grammarFile"); // "./src/main/resources/KotlinParser.g4"
-        String compilerPath = System.getProperty("kotlinc"); // "src/main/resources/kotlinc/bin/kotlinc"
-        String classPath = System.getProperty("classPath"); // "src/test/resources/kotlin/"
-        String compilerScriptPath = System.getProperty("compilerScriptPath"); //"src/scripts/compile_file.sh"
-        Long seed = Long.parseLong(System.getProperty("seed"));
+        String lexerGrammarFile = System.getProperty("lexerFile"); // "resources/KotlinLexer.g4"
+        String grammarFile = System.getProperty("grammarFile"); // "resources/KotlinParser.g4"
+        String classPath = System.getProperty("classPath"); // "resources/kotlin/"
+        int ctxSeed = Integer.parseInt(System.getProperty("ctxSeed"));
+        int searchSeed = Integer.parseInt(System.getProperty("searchSeed"));
+        int selectionSeed = Integer.parseInt(System.getProperty("selectionSeed"));
+        int mutationSeed = Integer.parseInt(System.getProperty("mutationSeed"));
+        int recombinationSeed = Integer.parseInt(System.getProperty("recombinationSeed"));
         Long time = Long.parseLong(System.getProperty("time"));
+        boolean takeSnapshots = Boolean.parseBoolean(System.getProperty("takeSnapshots"));
+        Long snapshotInterval = Long.parseLong(System.getProperty("snapshotInterval"));
         String output = System.getProperty("output");
-        String configPath = System.getProperty("configFile"); // "./config.yaml"
+        String configPath = System.getProperty("configFile"); // "config.yaml"
 
-        System.out.println(output);
-
+//        java -DlexerFile="/resources/antlr/KotlinLexer.g4" -DgrammarFile="/resources/antlr/KotlinParser.g4" -DcompilerPath="/resources/kotlinc" -DclassPath="/resources/kotlin/" -DctxSeed=0 -DsearchSeed=0 -DselectionSeed=0 -DmutationSeed=0 -DrecombinationSeed=0 -Dtime=120000 -DtakeSnapshots="false" -DsnapshotInterval=20000 -Doutput="/output" -DconfigFile="configs/rs/cfg-0.2.yaml" -jar fuzzer.jar
         List<String> classes = new ArrayList<>(List.of("Any.kt", "Comparable.kt", "Throwable.kt",
                 "Array.kt", "Enum.kt", "Iterator.kt", "Library.kt", "Collections.kt", "Unit.kt", "ExceptionsH.kt",
                 "Char.kt", "CharSequence.kt", "Number.kt", "Primitives.kt", "Boolean.kt", "String.kt"));
@@ -32,13 +35,12 @@ public class Main {
         compilerArgs.add("");
         compilerArgs.add("-Xuse-k2");
 
-        DTRunner runner = new DTRunner(10000, 5,
-                fileNames, output,
-                compilerPath, compilerArgs,
-                compilerScriptPath, configPath,
-                0, 3, ctxFileName,
+        DTRunner runner = new DTRunner(fileNames, output,
+                configPath, ctxSeed, searchSeed,
+                selectionSeed, mutationSeed,
+                recombinationSeed, ctxFileName,
                 lexerGrammarFile, grammarFile,
                 false);
-        runner.run(seed, time);
+        runner.run(time, snapshotInterval, takeSnapshots);
     }
 }

@@ -58,6 +58,10 @@ public class SuiteTournamentSelection extends SuiteSOSelectionOperator {
                 }
             });
 
+            if (populationFitnessList.size() == 0) {
+                System.out.println("Population fitness is empty.");
+            }
+
             for (int j = 0; j < tournamentSize; j++) {
                 Tuple<Double, Integer> randomTuple = rng.selectFromList(populationFitnessList);
                 pq.add(randomTuple);

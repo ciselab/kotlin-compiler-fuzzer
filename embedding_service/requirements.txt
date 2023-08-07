@@ -1,7 +1,0 @@
-torch>=1.12
-typing==3.7.4.3
-fastapi==0.78.0
-pydantic==1.9.1
-uvicorn==0.17.6
-transformers==4.22.2
-tqdm==4.64.1

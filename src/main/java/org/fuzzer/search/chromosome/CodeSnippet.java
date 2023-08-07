@@ -2,6 +2,7 @@ package org.fuzzer.search.chromosome;
 
 import org.fuzzer.dt.FuzzerStatistics;
 import org.fuzzer.representations.callables.KCallable;
+import org.fuzzer.representations.context.Context;
 
 import java.util.Set;
 
@@ -30,6 +31,10 @@ public record CodeSnippet(CodeFragment code,
         return code.size();
     }
 
+    public void buildContext(Context context) {
+        context.addIdentifier(name, providedCallable);
+    }
+
     public String getCallableName() {
         return providedCallable.getName();
     }
@@ -42,5 +47,9 @@ public record CodeSnippet(CodeFragment code,
     @Override
     public String text() {
         return code().text();
+    }
+
+    public CodeSnippet getCopy() {
+        return new CodeSnippet(code, name, callableDependencies, providedCallable, stats, snippetType);
     }
 }

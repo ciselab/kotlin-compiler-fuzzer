@@ -3,9 +3,9 @@ package org.fuzzer.search.chromosome;
 import org.fuzzer.dt.FuzzerStatistics;
 import org.fuzzer.grammar.SampleStructure;
 import org.fuzzer.representations.callables.KCallable;
+import org.fuzzer.representations.context.Context;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class CodeBlock implements CodeConstruct {
     private final FuzzerStatistics stats;
@@ -84,6 +84,12 @@ public class CodeBlock implements CodeConstruct {
         return text.toString();
     }
 
+    public void buildContext(Context context) {
+        for (CodeSnippet snippet : snippets) {
+            snippet.buildContext(context);
+        }
+    }
+
     public Long getNumberOfSamples(SampleStructure s) {
         return stats.getNumberOfSamples(s);
     }
@@ -100,22 +106,89 @@ public class CodeBlock implements CodeConstruct {
         return otherCallableNames.stream().noneMatch(theseCallableNames::contains);
     }
 
-    public List<CodeBlock> split() {
-        List<CodeBlock> blocksWithin = new LinkedList<>();
-
-        for (CodeSnippet snippet : snippets) {
-            blocksWithin.add(new CodeBlock(getDependencySnippets(snippet, snippets).stream().toList()));
-        }
-
-        return blocksWithin;
+    public List<CodeSnippet> getUpStreamDependents(CodeSnippet snippet) {
+        return getUpStreamDependents(new LinkedList<>(List.of(snippet)));
     }
 
-    private Set<CodeSnippet> getDependencySnippets(CodeSnippet snippet,
-                                                   Collection<CodeSnippet> visibleSnippets) {
-        Set<CodeSnippet> dependencySnippets = new HashSet<>();
-        dependencySnippets.add(snippet);
+    private List<CodeSnippet> getUpStreamDependents(List<CodeSnippet> dependentSnippets) {
+        boolean selfContained = false;
+        while (!selfContained) {
+            selfContained = true;
+            for (CodeSnippet s : dependentSnippets) {
+                if (!dependentsPresent(s, dependentSnippets)) {
+                    selfContained = false;
+                    List<CodeSnippet> newDependencies = getDirectDependents(s);
+                    dependentSnippets.addAll(newDependencies.stream().filter(sn -> !dependentSnippets.contains(sn)).toList());
+                    break;
+                }
+            }
+        }
 
-        return getDependencySnippets(visibleSnippets, dependencySnippets);
+        return dependentSnippets;
+    }
+
+    public List<CodeSnippet> getDownStreamDependencies(CodeSnippet snippet) {
+        return getDownStreamDependencies(List.of(snippet));
+    }
+
+    private List<CodeSnippet> getDownStreamDependencies(List<CodeSnippet> dependencySnippets) {
+        boolean selfContained = false;
+        while (!selfContained) {
+            selfContained = true;
+            for (CodeSnippet s : dependencySnippets) {
+                if (!dependenciesPresent(s, dependencySnippets)) {
+                    selfContained = false;
+                    List<CodeSnippet> finalDependencySnippets = dependencySnippets;
+                    List<CodeSnippet> newDependencies = new LinkedList<>(getDirectDependencies(s)
+                            .stream()
+                            .filter(sn -> !finalDependencySnippets.contains(sn))
+                            .toList());
+                    newDependencies.addAll(dependencySnippets.stream().filter(sn -> !newDependencies.contains(sn)).toList());
+                    dependencySnippets = newDependencies;
+                    break;
+                }
+            }
+        }
+
+        return dependencySnippets;
+    }
+
+    /**
+     * Returns a collection of (1) all snippets that
+     * recursively dependent on a given `snippet` (including itself),
+     * and (2) all snippets that any snippet in (1) depends on, also recursively.
+     *
+     * This is equivalent to an upstream traversal, followed by a downstream traversal
+     * on each of the results of the upstream traversal.
+     *
+     * Example:
+     * fun x() {}
+     * fun y() { x() }
+     * fun z() { y() }
+     * fun a() {}
+     * fun b() { y(); a() }
+     *
+     * getDependencyTopology(y) = {y, z, b, x, a}
+     * getDependencyTopology(b) = {b, y, x}
+     * getDependencyTopology(a) = { a, b, y, x }
+     * @param snippet the snippet to start the upstream traversal from.
+     * @return the topologically sorted list of snippets that forms from the two traversals.
+     */
+    public List<CodeSnippet> getDependencyTopology(CodeSnippet snippet) {
+        List<CodeSnippet> snippets =  getDownStreamDependencies(getUpStreamDependents(snippet));
+        List<CodeSnippet> addedSnippets = getDownStreamDependencies(getUpStreamDependents(snippets));
+
+        while (!snippets.equals(addedSnippets)) {
+            snippets = addedSnippets;
+            addedSnippets = getDownStreamDependencies(getUpStreamDependents(snippets));
+        }
+
+        return snippets;
+    }
+
+    private boolean dependsOn(CodeSnippet snippet, CodeSnippet other) {
+        // Whether `snippet` depends on `other`
+        return other.providedCallables().stream().anyMatch(snippet.callableDependencies()::contains);
     }
 
     private boolean dependenciesPresent(CodeSnippet snippet, Collection<CodeSnippet> snippets) {
@@ -130,29 +203,22 @@ public class CodeBlock implements CodeConstruct {
         return providedCallables.containsAll(snippet.callableDependencies());
     }
 
-    private Set<CodeSnippet> getDependencySnippets(Collection<CodeSnippet> visibleSnippets,
-                                                   Set<CodeSnippet> dependencySet) {
-        boolean selfContained = false;
-        while (!selfContained) {
-            selfContained = true;
-            for (CodeSnippet snippet : visibleSnippets) {
-                if (!dependenciesPresent(snippet, dependencySet)) {
-                    selfContained = false;
-                    dependencySet.addAll(getDirectDependencies(snippet, visibleSnippets));
-                    break;
-                }
-            }
-        }
-
-        return dependencySet;
+    private boolean dependentsPresent(CodeSnippet snippet, Collection<CodeSnippet> snippets) {
+        return snippets.containsAll(getDirectDependents(snippet));
     }
 
-    private Set<CodeSnippet> getDirectDependencies(CodeSnippet snippet,
-                                                   Collection<CodeSnippet> visibleSnippets) {
-        return visibleSnippets
+    private List<CodeSnippet> getDirectDependencies(CodeSnippet snippet) {
+        return snippets
                 .stream()
-                .filter(s -> providedCallables().stream().anyMatch(s.callableDependencies()::contains))
-                .collect(Collectors.toSet());
+                .filter(s -> dependsOn(snippet, s))
+                .toList();
+    }
+
+    private List<CodeSnippet> getDirectDependents(CodeSnippet snippet) {
+        return snippets
+                .stream()
+                .filter(s -> dependsOn(s, snippet))
+                .toList();
     }
 
     @Override
@@ -166,8 +232,17 @@ public class CodeBlock implements CodeConstruct {
 
     @Override
     public int hashCode() {
-        int result = stats != null ? stats.hashCode() : 0;
-        result = 31 * result + (snippets != null ? snippets.hashCode() : 0);
-        return result;
+        return snippets != null ? snippets.hashCode() : 0;
+    }
+
+    //    @Override
+//    public int hashCode() {
+//        int result = stats != null ? stats.hashCode() : 0;
+//        result = 31 * result + (snippets != null ? snippets.hashCode() : 0);
+//        return result;
+//    }
+
+    public CodeBlock getCopy() {
+        return new CodeBlock(snippets.stream().map(CodeSnippet::getCopy).toList());
     }
 }

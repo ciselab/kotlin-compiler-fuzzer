@@ -15,6 +15,9 @@ docker build -t kotfuzz-oom-classifier-service services/oom_classifier_service/ 
 # Build the compiler service 
 docker build -t kotfuzz-compiler-service services/compiler_service/ -f Docker/compiler/Dockerfile
 
+# Build the fuzzer service
+docker build -t kotfuzz-fuzzer . -f Docker/fuzzer/Dockerfile
+
 # Run the dpvc
 # docker run -d -v /data/targets -v /data/targets-raw -v /data/targets-embedding-flat --name kotfuzz-dpvc kotfuzz-dpvc
 

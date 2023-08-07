@@ -19,6 +19,8 @@ public class ConfigurationVocabulary {
 
     public static final String manhattan = "manhattan";
 
+    public static final String linfinity = "l-infinity";
+
     public static final String random = "random";
 
     public static final String diversityGA = "diversity-ga";

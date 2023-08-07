@@ -15,20 +15,26 @@ import java.util.Set;
 
 public class RandomSearch extends Search {
 
+    private final List<CodeBlock> blocks;
+
     public RandomSearch(ASTNode nodeToSample, Long timeBudgetMilis,
-                        Context rootContext, Long seed) {
-        super(nodeToSample, timeBudgetMilis, rootContext, seed);
+                        Context rootContext, Long seed,
+                        Long snapshotInterval, String outputDir) {
+        super(nodeToSample, timeBudgetMilis, rootContext, seed, snapshotInterval, outputDir);
+
+        blocks = new LinkedList<>();
     }
 
     @Override
-    public List<CodeBlock> search() {
-        long startTime = System.currentTimeMillis();
-        List<CodeBlock> blocks = new LinkedList<>();
+    public List<CodeBlock> search(boolean takeSnapshots) {
         RandomNumberGenerator seedGenerator = new RandomNumberGenerator(getSeed());
         FuzzerStatistics statistics = new FuzzerStatistics();
 
-        while (System.currentTimeMillis() - startTime < getTimeBudgetMilis()) {
-//            System.out.println("Time elapsed: " + (System.currentTimeMillis() - startTime) + " ms");
+        while (!exceededTimeBudget()) {
+            if (takeSnapshots) {
+                processSnapshot();
+            }
+
             // Prepare a fresh context with a new seed
             Context nextCtx = getRootContext().clone();
             RandomNumberGenerator nextRNG = new RandomNumberGenerator(seedGenerator.getNewSeed());
@@ -52,5 +58,10 @@ public class RandomSearch extends Search {
         }
 
         return blocks;
+    }
+
+    @Override
+    List<CodeBlock> takeSnapshot() {
+        return blocks.stream().map(CodeBlock::getCopy).toList();
     }
 }

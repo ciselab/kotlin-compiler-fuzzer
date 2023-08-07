@@ -44,9 +44,8 @@ public class BlockGenerator {
             stats.resetVisitations();
             rootNode.recordStatistics(stats);
 
-            List<CodeBlock> blocks = rootNode.getBlocks(ctx.getRNG(), ctx);
-
-            population.addAll(blocks);
+            CodeBlock block = (CodeBlock) rootNode.getSample(ctx.getRNG(), ctx);
+            population.add(block);
         }
 
         return population;

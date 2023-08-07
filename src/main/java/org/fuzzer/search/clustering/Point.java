@@ -18,19 +18,26 @@ public record Point<T>(T data, double [] coordinates) {
         double sum = 0.0;
 
         switch (distanceMetric) {
-            case EUCLIDEAN:
+            case EUCLIDEAN -> {
                 for (int i = 0; i < p1.length; i++) {
                     double diff = p1[i] - p2[i];
                     sum += diff * diff;
                 }
                 return Math.sqrt(sum);
-            case MANHATTAN:
+            }
+            case MANHATTAN -> {
                 for (int i = 0; i < p1.length; i++) {
                     sum += Math.abs(p1[i] - p2[i]);
                 }
                 return sum;
-            default:
-                throw new IllegalArgumentException("Unsupported distance metric: " + distanceMetric);
+            }
+            case LINFINITY -> {
+                for (int i = 0; i < p1.length; i++) {
+                    sum = Math.max(sum, Math.abs(p1[i] - p2[i]));
+                }
+                return sum;
+            }
+            default -> throw new IllegalArgumentException("Unsupported distance metric: " + distanceMetric);
         }
     }
 

@@ -10,6 +10,8 @@ import org.fuzzer.search.fitness.proximity.CollectiveProximityFitnessFunction;
 import org.fuzzer.search.fitness.proximity.ProximityMOFitnessFunction;
 import org.fuzzer.search.fitness.proximity.SOPopulationFitnessFunction;
 import org.fuzzer.search.fitness.proximity.SingularSOProximityFitnessFunction;
+import org.fuzzer.search.operators.mutation.block.MutationOperator;
+import org.fuzzer.search.operators.mutation.block.SimpleMutationOperator;
 import org.fuzzer.search.operators.recombination.block.RecombinationOperator;
 import org.fuzzer.search.operators.recombination.block.SimpleRecombinationOperator;
 import org.fuzzer.search.operators.recombination.suite.SuiteRecombinationOperator;
@@ -93,9 +95,10 @@ public class Configuration {
 //    private final String oomPredictionUrl;
 
     public Configuration(String fullyQualifiedFileName) {
+
         File configFile = new File(fullyQualifiedFileName);
 
-        if (!configFile.exists() || !configFile.exists()) {
+        if (!configFile.exists()) {
             throw new IllegalArgumentException("Cannot read config file: " + fullyQualifiedFileName + ".");
         }
 
@@ -132,7 +135,6 @@ public class Configuration {
         LinkedHashMap<String, Object> remoteCfg = (LinkedHashMap<String, Object>) heuristicCfg.get(ConfigurationVocabulary.remote);
 
         String heuristicName = (String) heuristicCfg.getOrDefault(ConfigurationVocabulary.type, "empty");
-
 
         switch (heuristicName) {
             case ConfigurationVocabulary.random -> {
@@ -209,7 +211,7 @@ public class Configuration {
                 multiEmbeddingUrl = (String) remoteCfg.get(ConfigurationVocabulary.multiEmbedding);
                 targetsUrl = (String) remoteCfg.get(ConfigurationVocabulary.targets);
                 numberOfTargets = ((Integer) remoteCfg.get(ConfigurationVocabulary.numberOfTargets)).longValue();
-                numberOfItersPerTarget = ((Integer) heuristicCfg.get(ConfigurationVocabulary.numberOfItersPerTarget)).longValue();;
+                numberOfItersPerTarget = ((Integer) heuristicCfg.get(ConfigurationVocabulary.numberOfItersPerTarget)).longValue();
                 // TODO: make this configurable
                 distanceMetric = null;
                 blocksPerSuite = null;
@@ -596,22 +598,30 @@ public class Configuration {
             case ConfigurationVocabulary.manhattan -> {
                 return DistanceMetric.MANHATTAN;
             }
+            case ConfigurationVocabulary.linfinity -> {
+                return DistanceMetric.LINFINITY;
+            }
             default -> {
                 throw new IllegalArgumentException("Distance metric " + distanceMetricName + " not supported.");
             }
         }
     }
 
-    public Search getSearchStrategy(SyntaxNode nodeToSample, Long timeBudgetMilis,
-                                    Context rootContext, Long seed) {
+    public Search getSearchStrategy(SyntaxNode nodeToSample, Long timeBudgetMillis,
+                                    Context rootContext, long searchSeed,
+                                    long selectionSeed, long mutationSeed,
+                                    long recombinationSeed, long snapshotInterval,
+                                    String outputDir) {
+
+        RandomNumberGenerator selectionRng = new RandomNumberGenerator(selectionSeed);
+        RandomNumberGenerator mutationRng = new RandomNumberGenerator(mutationSeed);
+        RandomNumberGenerator recombinationRng = new RandomNumberGenerator(recombinationSeed);
 
         switch (searchStrategy) {
             case RANDOM -> {
-                return new RandomSearch(nodeToSample, timeBudgetMilis, rootContext, seed);
+                return new RandomSearch(nodeToSample, timeBudgetMillis, rootContext, searchSeed, snapshotInterval, outputDir);
             }
             case PROXIMITY_GA -> {
-                RandomNumberGenerator selectionRng = new RandomNumberGenerator(seed);
-
                 SingularSOProximityFitnessFunction f = null;
                 try {
                     f = new SingularSOProximityFitnessFunction(new URL(singleEmbeddingUrl), new URL(multiEmbeddingUrl),
@@ -630,14 +640,13 @@ public class Configuration {
                     throw new IllegalStateException("Cannot support selection operator: " + s);
                 }
 
-                RecombinationOperator r = new SimpleRecombinationOperator();
+                MutationOperator m = new SimpleMutationOperator(nodeToSample, rootContext, mutationRng);
+                RecombinationOperator r = new SimpleRecombinationOperator(recombinationRng);
 
-                return new ProximityGA(nodeToSample, timeBudgetMilis, rootContext, seed,
-                        populationSize, f, s, r, null, numberOfItersPerTarget);
+                return new ProximityGA(nodeToSample, timeBudgetMillis, rootContext, searchSeed,
+                        populationSize, newBlocksGenerated, f, s, m, r, null, numberOfItersPerTarget, snapshotInterval, outputDir);
             }
             case PROXIMITY_WTS -> {
-                RandomNumberGenerator selectionRng = new RandomNumberGenerator(seed);
-
                 SOPopulationFitnessFunction f = null;
                 try {
                     f = new CollectiveProximityFitnessFunction(new URL(singleEmbeddingUrl), new URL(multiEmbeddingUrl),
@@ -654,14 +663,12 @@ public class Configuration {
                     throw new IllegalStateException("Cannot support selection operator: " + s);
                 }
 
-                SuiteRecombinationOperator r = new WTSRecombinationOperator(new RandomNumberGenerator(seed));
+                SuiteRecombinationOperator r = new WTSRecombinationOperator(new RandomNumberGenerator(recombinationSeed));
 
-                return new ProximityWholeTestSuite(nodeToSample, timeBudgetMilis, rootContext, seed,
-                        populationSize, s, r, blocksPerSuite, suiteMutationProbability);
+                return new ProximityWholeTestSuite(nodeToSample, timeBudgetMillis, rootContext, searchSeed,
+                        populationSize, newBlocksGenerated, s, r, blocksPerSuite, suiteMutationProbability, snapshotInterval, outputDir);
             }
             case DIVERSITY_GA -> {
-                RandomNumberGenerator selectionRng = new RandomNumberGenerator(seed);
-
                 SOFitnessFunction f = new DiversityFitnessFunction(null, distanceMetric);
                 SOSelectionOperator s = selectionData.second().first();
 
@@ -674,14 +681,13 @@ public class Configuration {
                     throw new IllegalStateException("Cannot support selection operator: " + s);
                 }
 
-                RecombinationOperator r = new SimpleRecombinationOperator();
+                MutationOperator m = new SimpleMutationOperator(nodeToSample, rootContext, mutationRng);
+                RecombinationOperator r = new SimpleRecombinationOperator(recombinationRng);
 
-                return new DiversityGA(nodeToSample, timeBudgetMilis, rootContext, seed,
-                        populationSize, f, s, r, null);
+                return new DiversityGA(nodeToSample, timeBudgetMillis, rootContext, searchSeed,
+                        populationSize, newBlocksGenerated, f, s, m, r, null, snapshotInterval, outputDir);
             }
             case STRUCT_MOGA -> {
-                RandomNumberGenerator selectionRng = new RandomNumberGenerator(seed);
-
                 MOFitnessFunction f = new StructureMOFitness();
                 SOFitnessFunction selectionFitness = null;
 
@@ -706,7 +712,6 @@ public class Configuration {
                     shouldMinimize[i] = false;
                 }
 
-
                 switch (selectionData.second().second()) {
                     case DOMINATION_RANK -> {
                         moSelector = new DominationRankSelection(soSelector.getSizeMaxAllowedSize(), f, soSelector, shouldMinimize);
@@ -719,15 +724,14 @@ public class Configuration {
                     }
                 }
 
-                RecombinationOperator r = new SimpleRecombinationOperator();
+                MutationOperator m = new SimpleMutationOperator(nodeToSample, rootContext, mutationRng);
+                RecombinationOperator r = new SimpleRecombinationOperator(recombinationRng);
 
-                return new MOGA(nodeToSample, timeBudgetMilis, rootContext, seed,
-                        populationSize, f, moSelector, r, null, shouldMinimize);
+                return new MOGA(nodeToSample, timeBudgetMillis, rootContext, searchSeed,
+                        populationSize, newBlocksGenerated, f, moSelector, m, r, null, shouldMinimize, snapshotInterval, outputDir);
             }
             case PROXIMITY_MOGA -> {
-                RandomNumberGenerator selectionRng = new RandomNumberGenerator(seed);
-
-                ProximityMOFitnessFunction f = null;
+                ProximityMOFitnessFunction f;
                 try {
                     f = new ProximityMOFitnessFunction(new URL(singleEmbeddingUrl), new URL(multiEmbeddingUrl),
                             new URL(targetsUrl), Math.toIntExact(numberOfTargets));
@@ -754,7 +758,6 @@ public class Configuration {
                     shouldMinimize[i] = true;
                 }
 
-
                 switch (selectionData.second().second()) {
                     case DOMINATION_RANK -> {
                         moSelector = new DominationRankSelection(soSelector.getSizeMaxAllowedSize(), f, soSelector, shouldMinimize);
@@ -767,10 +770,11 @@ public class Configuration {
                     }
                 }
 
-                RecombinationOperator r = new SimpleRecombinationOperator();
+                MutationOperator m = new SimpleMutationOperator(nodeToSample, rootContext, mutationRng);
+                RecombinationOperator r = new SimpleRecombinationOperator(recombinationRng);
 
-                return new ProximityMOGA(nodeToSample, timeBudgetMilis, rootContext, seed,
-                        populationSize, f, moSelector, r, null, shouldMinimize);
+                return new ProximityMOGA(nodeToSample, timeBudgetMillis, rootContext, searchSeed,
+                        populationSize, newBlocksGenerated, f, moSelector, m, r, null, shouldMinimize, snapshotInterval, outputDir);
             }
             default -> {
                 throw new IllegalStateException("Cannot support search strategy: " + searchStrategy);

@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Set;
 
 public class ElitistArchive {
-    private final Set<CodeBlock> archive;
+    private final HashSet<CodeBlock> archive;
 
     // Pretty terrible way to show that only the LOC should be minimized
     private final boolean[] shouldMinimize;
@@ -27,14 +27,14 @@ public class ElitistArchive {
     }
 
     public static int dominates(double[] f1, double[] f2, boolean[] shouldMinimize) {
-        int b1Superior = 0, b2Superior = 0, bothEqual = 0;
+        int b1Superior = 0, b2Superior = 0;
 
         for (int i = 0; i < f1.length; i++) {
             double b1Feature = f1[i];
             double b2Feature = f2[i];
 
             boolean shouldMinimizeFeature = shouldMinimize[i];
-            Integer comparisonResult = Double.compare(b1Feature, b2Feature);
+            int comparisonResult = Double.compare(b1Feature, b2Feature);
 
             if (shouldMinimizeFeature) {
                 comparisonResult *= -1;
@@ -46,9 +46,6 @@ public class ElitistArchive {
                 }
                 case -1 -> {
                     b2Superior++;
-                }
-                default -> {
-                    bothEqual++;
                 }
             }
         }
@@ -65,6 +62,10 @@ public class ElitistArchive {
     }
 
     public boolean add(CodeBlock b, MOFitnessFunction fitnessFunction) {
+        if (archive.contains(b)) {
+            return false;
+        }
+
         Set<CodeBlock> dominated = new HashSet<>();
         boolean isDominated = false;
 
@@ -78,8 +79,7 @@ public class ElitistArchive {
 
             if (comparisonResult == -1) {
                 isDominated = true;
-                // TODO uncomment. Only commented as to improve the power of the following check.
-//                break;
+                break;
             }
         }
 

@@ -5,9 +5,11 @@ import org.fuzzer.representations.context.Context;
 import org.fuzzer.search.chromosome.CodeBlock;
 import org.fuzzer.search.clustering.ClusteringEngine;
 import org.fuzzer.search.fitness.IndividualFitnessFunction;
+import org.fuzzer.search.operators.mutation.block.MutationOperator;
 import org.fuzzer.search.operators.recombination.block.RecombinationOperator;
 import org.fuzzer.search.operators.selection.block.SelectionOperator;
 import org.fuzzer.utils.RandomNumberGenerator;
+import org.fuzzer.utils.Tuple;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -22,25 +24,37 @@ public abstract class GA extends Search {
 
     protected final RandomNumberGenerator choiceGenerator;
 
+    protected final Long newBlocksGenerated;
+
+    protected final MutationOperator mutationOperator;
+
     protected final ClusteringEngine<CodeBlock> clusteringEngine;
-    public GA(SyntaxNode nodeToSample, Long timeBudgetMilis,
+
+    protected final IndividualFitnessFunction fitnessFunction;
+
+    public GA(SyntaxNode nodeToSample, Long timeBudgetMillis,
                 Context rootContext, Long seed,
-                Long populationSize,
+                Long populationSize, Long newBlocksGenerated,
                 IndividualFitnessFunction fitnessFunction,
                 SelectionOperator selectionOperator,
+                MutationOperator mutationOperator,
                 RecombinationOperator recombinationOperator,
-                ClusteringEngine<CodeBlock> clusteringEngine) {
-        super(nodeToSample, timeBudgetMilis, rootContext, seed);
+                ClusteringEngine<CodeBlock> clusteringEngine,
+                Long snapshotInterval, String outputDir) {
+        super(nodeToSample, timeBudgetMillis, rootContext, seed, snapshotInterval, outputDir);
 
         this.populationSize = populationSize;
+        this.newBlocksGenerated = newBlocksGenerated;
+        this.fitnessFunction = fitnessFunction;
         this.selectionOperator = selectionOperator;
+        this.mutationOperator = mutationOperator;
         this.recombinationOperator = recombinationOperator;
         this.choiceGenerator = new RandomNumberGenerator(getSeed());
         this.clusteringEngine = clusteringEngine;
     }
 
-    protected List<CodeBlock> getParents(List<CodeBlock> pop) {
-        long numberOfSelections = populationSize / 4L;
+    protected List<CodeBlock> selectParents(List<CodeBlock> pop) {
+        long numberOfSelections = (populationSize - newBlocksGenerated) / 2L;
         List<CodeBlock> parents;
 
         if (clusteringEngine != null) {
@@ -52,9 +66,9 @@ public abstract class GA extends Search {
         return parents;
     }
 
-    protected List<CodeBlock> getChildren(List<CodeBlock> parents) {
+    protected List<CodeBlock> getOffspring(List<CodeBlock> parents) {
 
-        List<CodeBlock> children = new LinkedList<>();
+        List<CodeBlock> offspring = new LinkedList<>();
 
         for (int i = 0; i < parents.size(); i++) {
             CodeBlock parent1 = parents.get(i);
@@ -64,13 +78,17 @@ public abstract class GA extends Search {
                 continue;
             }
 
-            CodeBlock parent2 = compatibleParents.get(choiceGenerator.fromUniformDiscrete(0, compatibleParents.size() - 1));
+            CodeBlock parent2 = choiceGenerator.selectFromList(compatibleParents);
+            Tuple<CodeBlock, CodeBlock> newOffspring = recombinationOperator.combine(parent1, parent2);
 
-            CodeBlock child = recombinationOperator.combine(parent1, parent2);
-            children.add(child);
+            CodeBlock o1 = mutationOperator.mutate(newOffspring.first());
+            CodeBlock o2 = mutationOperator.mutate(newOffspring.second());
+
+            offspring.add(o1);
+            offspring.add(o2);
         }
 
-        return children;
+        return offspring;
     }
 
     protected void updatePopulation(List<CodeBlock> population, List<CodeBlock> selectedParents,
