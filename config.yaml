@@ -1,7 +1,7 @@
 config:
   heuristic:
-    type: proximity-ga
-    population-size: 10
+    type: random
+    population-size: 20
     new-blocks-generated: 2
     distance-metric: euclidean
     blocks-per-suite: 20
@@ -79,23 +79,23 @@ config:
         weight: 1.0
       if-expr:
         enable: true
-        weight: 19.0
+        weight: 1.0
       elvis-expr:
         enable: true
-        weight: 14.0
+        weight: 1.0
       try-catch-expr:
         enable: true
-        weight: 13.0
+        weight: 1.0
     statements:
       simple-stmt:
         enable: true
         weight: 1.0
       do-while-stmt:
         enable: true
-        weight: 16.0
+        weight: 1.0
       assignment-stmt:
         enable: true
-        weight: 18.0
+        weight: 1.0
       loop-stmt:
         enable: false
         weight: 1.0

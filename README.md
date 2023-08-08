@@ -9,9 +9,10 @@ Fuzzing and differential testing for the Kotlin compiler.
    - The `clustering` (or targets) service provides pre-defined targets used for the proximity heuristics. To start up this service, run `docker run -it --rm -p 9091:80 --name kotfuzz-clustering -v $(pwd)/services/clustering_service/default_models:/models  kotfuzz-clustering-service`.
    - The `embedding` service provides an API that transforms generated code to a vectorized representation through the use of code models. To run the embedding service, use `docker run -it --rm -p 9090:80 --name kotfuzz-embedding kotfuzz-embedding-service`.
    - The `compiler` service performs differential testing and can be run in parallel to, or independent of, the fuzzer.
-   - The `oom` service API allows the fuzzer to dynamically check whether generated files are too large to result in interesting bugs. Since setting an appropriate simplicity bias in the configuration also solves this problem, we recommend against using this service, as to avoid overhead. To start the service, run its container: `docker run -d --rm -p 9092:80 --name kotfuzz-oom -v $(pwd)/services/oom_classifier_service/default_models:/models -e MODELFILE=adaboost-oom -e MODELNAME=adaboost kotfuzz-oom-classifier-service`.
-3. Configure the fuzzer by following the `src/scripts/analytics/README.md` documentation.
-4. Run the main fuzzing application by adapting the following command
+   - The `oom` service API allows the fuzzer to dynamically check whether generated files are too large to result in interesting bugs. Since setting an appropriate simplicity bias in the configuration also solves this problem, we recommend against using this service, as to avoid overhead. To start the service, run its container: 
+  ```docker run -d --rm -p 9092:80 --name kotfuzz-oom -v $(pwd)/services/oom_classifier_service/default_models:/models -e MODELFILE=adaboost-oom -e MODELNAME=adaboost kotfuzz-oom-classifier-service```
+1. Configure the fuzzer by following the `src/scripts/analytics/README.md` documentation.
+2. Run the main fuzzing application by adapting the following command
 
 ```bash
 docker run --name randfuzzer-test -it --rm\
