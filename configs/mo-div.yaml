@@ -1,6 +1,6 @@
 config:
   heuristic:
-    type: proximity-ga
+    type: structure-moga
     population-size: 50
     new-blocks-generated: 10
     distance-metric: euclidean
@@ -23,8 +23,8 @@ config:
     remote:
       embedding-single: http://localhost:9090/embedding-single/
       embedding-multi: http://localhost:9090/embedding-multiple/
-      targets: http://localhost:9091/centers/kmeans_400/
-      num-targets: 400
+      targets: http://localhost:9091/centers/kmeans100/
+      num-targets: 100
       oom:
         enable: true
         oom-single: http://localhost:9092/predict-single/
