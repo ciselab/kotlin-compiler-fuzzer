@@ -6,6 +6,7 @@ import org.fuzzer.search.chromosome.TestSuite;
 import org.fuzzer.search.operators.generator.BlockGenerator;
 import org.fuzzer.utils.RandomNumberGenerator;
 
+import java.util.LinkedList;
 import java.util.List;
 
 public class WTSMutationOperator implements SuiteMutationOperator {
@@ -28,7 +29,7 @@ public class WTSMutationOperator implements SuiteMutationOperator {
         if (rng.randomBoolean(0.33d)) {
             return insertionSuiteMutation.mutate(suite, rng);
         } else {
-            if (rng.randomBoolean(0.33d)) {
+            if (rng.randomBoolean(0.5d)) {
                 return removalSuiteMutation.mutate(suite, rng);
             } else {
                 return changeSuiteMutation.mutate(suite, rng);

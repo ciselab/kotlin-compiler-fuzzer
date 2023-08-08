@@ -52,16 +52,19 @@ public class ProximityWholeTestSuite extends SuiteGA {
         pop = getNewSuites(populationSize, blocksPerSuite);
 
         while (!exceededTimeBudget()) {
-            if (takeSnapshots) {
-                processSnapshot();
-            }
 
             List<TestSuite> parents = getParents(pop);
             List<TestSuite> children = getChildren(parents);
             List<TestSuite> newBlocks = getNewSuites(populationSize - children.size() - parents.size(), blocksPerSuite);
 
             updatePopulation(pop, parents, children, newBlocks);
-            updatePopulation(pop, mutationOperator.mutate(pop, mutationRng));
+
+            // In-place
+            mutationOperator.mutate(pop, mutationRng);
+
+            if (takeSnapshots) {
+                processSnapshot();
+            }
         }
 
         return selectionOperator.getBestSuite().getBlocks();

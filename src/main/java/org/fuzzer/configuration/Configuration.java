@@ -98,7 +98,7 @@ public class Configuration {
 
         File configFile = new File(fullyQualifiedFileName);
 
-        if (!configFile.exists() || !configFile.exists()) {
+        if (!configFile.exists()) {
             throw new IllegalArgumentException("Cannot read config file: " + fullyQualifiedFileName + ".");
         }
 
